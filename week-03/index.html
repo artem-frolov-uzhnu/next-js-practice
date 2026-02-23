@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Практика 3: Роутинг та навігація | Протокол заняття</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/practical.css">
+</head>
+<body>
+  <!-- Навігація -->
+  <nav class="lecture-nav">
+    <div class="container">
+      <div class="nav-title">Тиждень 3: Практичне заняття</div>
+      <div class="nav-links">
+        <a href="../" class="btn btn-outline">&larr; На головну</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Основний контент -->
+  <article class="lecture-content">
+    <!-- Заголовок -->
+    <header class="lecture-header">
+      <span class="lecture-number">Практика 3</span>
+      <h1>Роутинг та навігація</h1>
+      <div class="lecture-meta">
+        <span>&#x1F4C5; Тиждень 3</span>
+        <span>&#x1F4BB; Практичне заняття</span>
+      </div>
+    </header>
+
+    <!-- Зміст -->
+    <nav class="toc">
+      <h3>Зміст заняття</h3>
+      <ol>
+        <li><a href="#structure">Планування та створення структури маршрутів</a></li>
+        <li><a href="#navigation">Навігація з активними лінками</a></li>
+        <li><a href="#dynamic">Динамічні маршрути для напоїв</a></li>
+        <li><a href="#result">Перевірка результату та домашнє завдання</a></li>
+      </ol>
+    </nav>
+
+    <!-- Вступ -->
+    <section class="lecture-section">
+      <h2>Мета заняття</h2>
+      <p>На цьому практичному занятті ви:</p>
+      <ul>
+        <li>Створите нові маршрути для вашого застосунку</li>
+        <li>Оновите навігацію з використанням <code>Link</code> та активних лінків</li>
+        <li>Додасте динамічні маршрути для окремих елементів</li>
+        <li>Реалізуєте сторінку 404 для неіснуючих записів</li>
+      </ul>
+
+      <div class="info-box info">
+        <strong>Передумова:</strong> Ви маєте мати працюючий Next.js проект з тижня 2
+        (компоненти Header/Footer, MenuCard, MenuFilter, сторінки /, /about, /menu).
+        Ми продовжуємо працювати з тим самим проектом.
+      </div>
+
+      <div class="info-box warning">
+        <strong>Приклад викладача:</strong> Кав'ярня «Кофеїн». Ви маєте адаптувати код під свою тему з 15 варіантів.
+      </div>
+    </section>
+
+    <!-- Частина 1: Структура маршрутів -->
+    <section class="lecture-section" id="structure">
+      <h2>1. Планування та створення структури маршрутів</h2>
+      <p>
+        Зараз наш проект має лише 3 сторінки: <code>/</code>, <code>/about</code>, <code>/menu</code>.
+        Ми додамо нові маршрути та організуємо їх за допомогою Route Groups.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Спланувати структуру маршрутів</h4>
+        <p>Перед тим як писати код, спланйуте структуру URL вашого застосунку:</p>
+        <div class="code-block">
+          <div class="code-header">Цільова структура (приклад «Кофеїн»)</div>
+          <pre><code>app/
+├── layout.js              # Root layout (Header + Footer)
+├── page.js                # "/" — Landing page
+├── about/
+│   └── page.js            # "/about"
+├── menu/
+│   ├── page.js            # "/menu" — каталог з фільтрацією
+│   └── [id]/
+│       └── page.js        # "/menu/1" — деталі напою
+├── contact/
+│   └── page.js            # "/contact"
+├── dashboard/
+│   ├── layout.js          # Dashboard layout (з сайдбаром)
+│   ├── page.js            # "/dashboard" — огляд
+│   └── drinks/
+│       ├── page.js        # "/dashboard/drinks" — список
+│       ├── [id]/
+│       │   └── page.js    # "/dashboard/drinks/1" — деталі
+│       └── new/
+│           └── page.js    # "/dashboard/drinks/new" — додати
+└── not-found.js           # Глобальна 404 сторінка</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Адаптація:</strong> Замініть <code>drinks</code> на відповідну сутність вашого проекту:
+          <code>books</code> (Бібліотека), <code>movies</code> (Кінотеатр), <code>rooms</code> (Готель) тощо.
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити сторінку контактів</h4>
+        <p>Створіть файл <code>app/contact/page.js</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/contact/page.js</div>
+          <pre><code>export const metadata = {
+  title: "Контакти",
+  description: "Зв'яжіться з кав'ярнею «Кофеїн»",
+};
+
+export default function ContactPage() {
+  return (
+    &lt;div&gt;
+      &lt;section className="bg-gradient-to-r from-amber-800 to-amber-600 text-white py-12"&gt;
+        &lt;div className="container mx-auto px-4 text-center"&gt;
+          &lt;h1 className="text-4xl font-bold mb-2"&gt;Контакти&lt;/h1&gt;
+          &lt;p className="text-lg opacity-90"&gt;Ми завжди раді вас бачити&lt;/p&gt;
+        &lt;/div&gt;
+      &lt;/section&gt;
+
+      &lt;section className="py-12"&gt;
+        &lt;div className="container mx-auto px-4"&gt;
+          &lt;div className="grid grid-cols-1 md:grid-cols-2 gap-12"&gt;
+            &lt;div&gt;
+              &lt;h2 className="text-2xl font-bold mb-6 text-gray-900"&gt;Наші контакти&lt;/h2&gt;
+              &lt;div className="space-y-4"&gt;
+                &lt;div className="flex items-center gap-3"&gt;
+                  &lt;span className="text-2xl"&gt;&#x1F4CD;&lt;/span&gt;
+                  &lt;div&gt;
+                    &lt;p className="font-semibold text-gray-900"&gt;Адреса&lt;/p&gt;
+                    &lt;p className="text-gray-600"&gt;вул. Хрещатик, 1, Київ&lt;/p&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+                &lt;div className="flex items-center gap-3"&gt;
+                  &lt;span className="text-2xl"&gt;&#x1F4DE;&lt;/span&gt;
+                  &lt;div&gt;
+                    &lt;p className="font-semibold text-gray-900"&gt;Телефон&lt;/p&gt;
+                    &lt;p className="text-gray-600"&gt;+380 44 123-45-67&lt;/p&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+                &lt;div className="flex items-center gap-3"&gt;
+                  &lt;span className="text-2xl"&gt;&#x1F552;&lt;/span&gt;
+                  &lt;div&gt;
+                    &lt;p className="font-semibold text-gray-900"&gt;Графік роботи&lt;/p&gt;
+                    &lt;p className="text-gray-600"&gt;Пн-Пт: 8:00 - 22:00&lt;/p&gt;
+                    &lt;p className="text-gray-600"&gt;Сб-Нд: 9:00 - 23:00&lt;/p&gt;
+                  &lt;/div&gt;
+                &lt;/div&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div&gt;
+              &lt;h2 className="text-2xl font-bold mb-6 text-gray-900"&gt;Напишіть нам&lt;/h2&gt;
+              &lt;div className="bg-gray-50 p-6 rounded-lg"&gt;
+                &lt;p className="text-gray-600"&gt;
+                  Форма зворотного зв'язку буде додана пізніше (тиждень 12).
+                &lt;/p&gt;
+              &lt;/div&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/section&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити глобальну 404 сторінку</h4>
+        <p>Створіть файл <code>app/not-found.js</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/not-found.js</div>
+          <pre><code>import Link from "next/link";
+
+export default function NotFound() {
+  return (
+    &lt;div className="min-h-[60vh] flex items-center justify-center"&gt;
+      &lt;div className="text-center"&gt;
+        &lt;p className="text-6xl mb-4"&gt;&#x2615;&lt;/p&gt;
+        &lt;h1 className="text-5xl font-bold text-gray-800 mb-4"&gt;404&lt;/h1&gt;
+        &lt;p className="text-xl text-gray-600 mb-8"&gt;
+          Ой! Цю сторінку не знайдено.
+        &lt;/p&gt;
+        &lt;Link
+          href="/"
+          className="bg-amber-700 text-white px-6 py-3 rounded-lg hover:bg-amber-800 transition"
+        &gt;
+          На головну
+        &lt;/Link&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Сторінка /contact відкривається</li>
+          <li>Перехід на неіснуючий URL (наприклад, /xyz) показує 404 сторінку</li>
+          <li>Структура папок відповідає запланованим URL</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 2: Навігація -->
+    <section class="lecture-section" id="navigation">
+      <h2>2. Навігація з активними лінками</h2>
+      <p>
+        Зараз наш Header використовує <code>Link</code>, але не показує, на якій сторінці ми знаходимось.
+        Додамо підсвітку активного лінку за допомогою хука <code>usePathname</code>.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Оновити Header з активними лінками</h4>
+        <p>Оновіть <code>components/Header.jsx</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">components/Header.jsx — оновлений</div>
+          <pre><code>'use client'
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const navLinks = [
+  { href: "/", label: "Головна" },
+  { href: "/menu", label: "Меню" },
+  { href: "/about", label: "Про нас" },
+  { href: "/contact", label: "Контакти" },
+];
+
+export default function Header() {
+  const pathname = usePathname();
+
+  return (
+    &lt;header className="bg-amber-900 text-white py-4"&gt;
+      &lt;div className="container mx-auto px-4 flex justify-between items-center"&gt;
+        &lt;Link href="/" className="text-xl font-bold hover:text-amber-200 transition"&gt;
+          Кофеїн
+        &lt;/Link&gt;
+        &lt;nav&gt;
+          &lt;ul className="flex gap-6"&gt;
+            {navLinks.map((link) =&gt; {
+              const isActive =
+                link.href === "/"
+                  ? pathname === "/"
+                  : pathname.startsWith(link.href);
+
+              return (
+                &lt;li key={link.href}&gt;
+                  &lt;Link
+                    href={link.href}
+                    className={`transition ${
+                      isActive
+                        ? "text-amber-300 font-semibold"
+                        : "hover:text-amber-200"
+                    }`}
+                  &gt;
+                    {link.label}
+                  &lt;/Link&gt;
+                &lt;/li&gt;
+              );
+            })}
+          &lt;/ul&gt;
+        &lt;/nav&gt;
+      &lt;/div&gt;
+    &lt;/header&gt;
+  );
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Зверніть увагу:</strong>
+          <ul>
+            <li>Додали <code>'use client'</code> &mdash; необхідно для <code>usePathname</code></li>
+            <li>Масив <code>navLinks</code> &mdash; посилання описані як дані, а не дублюються в JSX</li>
+            <li>Для <code>/</code> перевіряємо точну відповідність, для інших &mdash; <code>startsWith</code>
+              (щоб /menu/1 теж підсвічував "Меню")</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити Dashboard Layout з навігацією</h4>
+        <p>Створіть структуру для адміністративної панелі. Спочатку &mdash; layout з сайдбаром.</p>
+
+        <p>Створіть файл <code>components/DashboardNav.jsx</code>:</p>
+        <div class="code-block">
+          <div class="code-header">components/DashboardNav.jsx</div>
+          <pre><code>'use client'
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+
+const links = [
+  { href: "/dashboard", label: "Огляд" },
+  { href: "/dashboard/drinks", label: "Напої" },
+];
+
+export default function DashboardNav() {
+  const pathname = usePathname();
+
+  return (
+    &lt;nav&gt;
+      &lt;ul className="space-y-2"&gt;
+        {links.map((link) =&gt; {
+          const isActive =
+            link.href === "/dashboard"
+              ? pathname === "/dashboard"
+              : pathname.startsWith(link.href);
+
+          return (
+            &lt;li key={link.href}&gt;
+              &lt;Link
+                href={link.href}
+                className={`block px-4 py-2 rounded transition-colors ${
+                  isActive
+                    ? "bg-amber-700 text-white"
+                    : "text-gray-300 hover:bg-gray-700"
+                }`}
+              &gt;
+                {link.label}
+              &lt;/Link&gt;
+            &lt;/li&gt;
+          );
+        })}
+      &lt;/ul&gt;
+    &lt;/nav&gt;
+  );
+}</code></pre>
+        </div>
+
+        <p>Створіть файл <code>app/dashboard/layout.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">app/dashboard/layout.js</div>
+          <pre><code>import DashboardNav from "@/components/DashboardNav";
+
+export default function DashboardLayout({ children }) {
+  return (
+    &lt;div className="flex min-h-[calc(100vh-130px)]"&gt;
+      &lt;aside className="w-64 bg-gray-800 text-white p-6"&gt;
+        &lt;h2 className="text-xl font-bold mb-6"&gt;Dashboard&lt;/h2&gt;
+        &lt;DashboardNav /&gt;
+      &lt;/aside&gt;
+      &lt;div className="flex-1 bg-gray-100 p-8"&gt;
+        {children}
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+
+        <p>Створіть файл <code>app/dashboard/page.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">app/dashboard/page.js</div>
+          <pre><code>export const metadata = {
+  title: "Dashboard",
+};
+
+export default function DashboardPage() {
+  return (
+    &lt;div&gt;
+      &lt;h1 className="text-3xl font-bold mb-6 text-gray-900"&gt;Огляд&lt;/h1&gt;
+      &lt;div className="grid grid-cols-1 md:grid-cols-3 gap-6"&gt;
+        &lt;div className="bg-white p-6 rounded-lg shadow"&gt;
+          &lt;h3 className="text-gray-500 text-sm font-bold"&gt;Позицій у меню&lt;/h3&gt;
+          &lt;p className="text-4xl font-bold text-amber-700 mt-2"&gt;24&lt;/p&gt;
+        &lt;/div&gt;
+        &lt;div className="bg-white p-6 rounded-lg shadow"&gt;
+          &lt;h3 className="text-gray-500 text-sm font-bold"&gt;Замовлень сьогодні&lt;/h3&gt;
+          &lt;p className="text-4xl font-bold text-green-600 mt-2"&gt;156&lt;/p&gt;
+        &lt;/div&gt;
+        &lt;div className="bg-white p-6 rounded-lg shadow"&gt;
+          &lt;h3 className="text-gray-500 text-sm font-bold"&gt;Виручка&lt;/h3&gt;
+          &lt;p className="text-4xl font-bold text-blue-600 mt-2"&gt;12 450 &#x20B4;&lt;/p&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Активна сторінка підсвічується в Header</li>
+          <li>/dashboard відкривається з сайдбаром зліва</li>
+          <li>Dashboard навігація показує активний лінк</li>
+          <li>Header та Footer продовжують відображатися на dashboard сторінках</li>
+        </ul>
+      </div>
+
+      <div class="error-box">
+        <h5>Поширені помилки</h5>
+        <ul>
+          <li>
+            <strong>usePathname не працює</strong><br>
+            Забули <code>'use client'</code> на першому рядку файлу
+          </li>
+          <li>
+            <strong>Сайдбар не відображається на /dashboard/drinks</strong><br>
+            Перевірте, що <code>layout.js</code> знаходиться в <code>app/dashboard/</code>, а не глибше
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 3: Динамічні маршрути -->
+    <section class="lecture-section" id="dynamic">
+      <h2>3. Динамічні маршрути для напоїв</h2>
+      <p>
+        Зараз сторінка <code>/menu</code> показує список усіх напоїв. Додамо можливість
+        клікнути на напій та перейти на окрему сторінку з детальною інформацією.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Винести дані у спільний файл</h4>
+        <p>
+          Спочатку винесемо дані меню в окремий файл, щоб використовувати їх на різних сторінках.
+          Створіть файл <code>lib/drinks.js</code> (створіть папку <code>lib</code> в корені проекту):
+        </p>
+
+        <div class="code-block">
+          <div class="code-header">lib/drinks.js</div>
+          <pre><code>export const drinks = [
+  { id: 1, name: "Еспресо", description: "Класичний італійський еспресо. Міцний, насичений смак.", price: 45, emoji: "&#x2615;", category: "Кава", available: true },
+  { id: 2, name: "Капучино", description: "Еспресо з ніжною молочною пінкою. Ідеальний баланс кави та молока.", price: 65, emoji: "&#x1F95B;", category: "Кава", available: true },
+  { id: 3, name: "Латте", description: "М'який кавовий напій з великою кількістю молока.", price: 70, emoji: "&#x1F375;", category: "Кава", available: true },
+  { id: 4, name: "Американо", description: "Еспресо розбавлений гарячою водою. Легкий та освіжаючий.", price: 50, emoji: "&#x2615;", category: "Кава", available: true },
+  { id: 5, name: "Раф", description: "Вершковий кавовий напій з ванільним сиропом.", price: 75, emoji: "&#x1F368;", category: "Кава", available: false },
+  { id: 6, name: "Круасан", description: "Свіжий французький круасан з маслом.", price: 55, emoji: "&#x1F950;", category: "Їжа", available: true },
+  { id: 7, name: "Чізкейк", description: "Ніжний чізкейк Нью-Йорк з ягідним соусом.", price: 95, emoji: "&#x1F370;", category: "Їжа", available: true },
+  { id: 8, name: "Зелений чай", description: "Японський зелений чай Сенча. Свіжий та тонізуючий.", price: 55, emoji: "&#x1F343;", category: "Чай", available: true },
+  { id: 9, name: "Матча латте", description: "Японський зелений чай матча з молоком.", price: 85, emoji: "&#x1F35C;", category: "Чай", available: true },
+  { id: 10, name: "Какао", description: "Гарячий шоколадний напій з маршмелоу.", price: 60, emoji: "&#x1F36B;", category: "Інше", available: true },
+];
+
+export function getDrinkById(id) {
+  return drinks.find((drink) =&gt; drink.id === Number(id));
+}
+
+export function getCategories() {
+  return ["Всі", ...new Set(drinks.map((item) =&gt; item.category))];
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Навіщо окремий файл?</strong> Тепер дані <code>drinks</code> можна імпортувати
+          на будь-якій сторінці: /menu, /menu/[id], /dashboard/drinks. Це запобігає дублюванню даних.
+          Пізніше (тиждень 7) ми замінимо цей файл на запити до бази даних.
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Оновити MenuFilter для використання спільних даних</h4>
+        <p>Оновіть <code>components/MenuFilter.jsx</code> &mdash; імпортуйте дані з <code>lib/drinks.js</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">components/MenuFilter.jsx &mdash; оновлений (початок файлу)</div>
+          <pre><code>'use client'
+import { useState } from 'react'
+import MenuCard from './MenuCard'
+import { drinks, getCategories } from '@/lib/drinks'
+
+const categories = getCategories()
+
+export default function MenuFilter() {
+  // ... решта коду без змін
+}</code></pre>
+        </div>
+        <p>Видаліть масиви <code>menuItems</code> та <code>categories</code>, що були раніше в цьому файлі.
+           Замініть <code>menuItems</code> на <code>drinks</code> у всьому файлі.</p>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Оновити MenuCard з посиланням на деталі</h4>
+        <p>Додайте посилання "Детальніше" в компонент <code>MenuCard</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">components/MenuCard.jsx &mdash; оновлений</div>
+          <pre><code>import Link from "next/link";
+
+export default function MenuCard({ id, name, description, price, emoji, category, available = true }) {
+  return (
+    &lt;div className={`bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition ${!available ? 'opacity-60' : ''}`}&gt;
+      &lt;div className="h-32 bg-amber-100 flex items-center justify-center"&gt;
+        &lt;span className="text-5xl"&gt;{emoji}&lt;/span&gt;
+      &lt;/div&gt;
+      &lt;div className="p-4"&gt;
+        &lt;div className="flex justify-between items-start mb-2"&gt;
+          &lt;h3 className="text-lg font-semibold text-gray-900"&gt;{name}&lt;/h3&gt;
+          {available ? (
+            &lt;span className="text-xs px-2 py-1 rounded bg-green-100 text-green-700"&gt;
+              В наявності
+            &lt;/span&gt;
+          ) : (
+            &lt;span className="text-xs px-2 py-1 rounded bg-red-100 text-red-700"&gt;
+              Немає
+            &lt;/span&gt;
+          )}
+        &lt;/div&gt;
+        &lt;p className="text-gray-600 text-sm mb-3"&gt;{description}&lt;/p&gt;
+        &lt;div className="flex justify-between items-center"&gt;
+          &lt;span className="text-amber-700 font-bold text-lg"&gt;{price} грн&lt;/span&gt;
+          &lt;div className="flex items-center gap-2"&gt;
+            &lt;span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded"&gt;{category}&lt;/span&gt;
+            {id &amp;&amp; (
+              &lt;Link
+                href={`/menu/${id}`}
+                className="text-xs text-amber-700 hover:text-amber-900 font-medium"
+              &gt;
+                Детальніше &amp;rarr;
+              &lt;/Link&gt;
+            )}
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити сторінку деталей напою</h4>
+        <p>Створіть файл <code>app/menu/[id]/page.js</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/menu/[id]/page.js</div>
+          <pre><code>import Link from "next/link";
+import { notFound } from "next/navigation";
+import { getDrinkById, drinks } from "@/lib/drinks";
+
+export async function generateMetadata({ params }) {
+  const { id } = await params;
+  const drink = getDrinkById(id);
+  if (!drink) return { title: "Не знайдено" };
+
+  return {
+    title: drink.name,
+    description: drink.description,
+  };
+}
+
+export default async function DrinkPage({ params }) {
+  const { id } = await params;
+  const drink = getDrinkById(id);
+
+  if (!drink) {
+    notFound();
+  }
+
+  return (
+    &lt;div&gt;
+      &lt;section className="bg-gradient-to-r from-amber-800 to-amber-600 text-white py-12"&gt;
+        &lt;div className="container mx-auto px-4"&gt;
+          &lt;Link href="/menu" className="text-amber-200 hover:text-white transition"&gt;
+            &amp;larr; Назад до меню
+          &lt;/Link&gt;
+          &lt;div className="mt-4 flex items-center gap-6"&gt;
+            &lt;span className="text-7xl"&gt;{drink.emoji}&lt;/span&gt;
+            &lt;div&gt;
+              &lt;h1 className="text-4xl font-bold"&gt;{drink.name}&lt;/h1&gt;
+              &lt;span className="text-amber-200"&gt;{drink.category}&lt;/span&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/section&gt;
+
+      &lt;section className="py-12"&gt;
+        &lt;div className="container mx-auto px-4"&gt;
+          &lt;div className="bg-white rounded-lg shadow-md p-8 max-w-2xl"&gt;
+            &lt;div className="grid grid-cols-2 gap-6 mb-6"&gt;
+              &lt;div&gt;
+                &lt;h3 className="text-gray-500 text-sm font-bold mb-1"&gt;Ціна&lt;/h3&gt;
+                &lt;p className="text-2xl font-bold text-amber-700"&gt;{drink.price} грн&lt;/p&gt;
+              &lt;/div&gt;
+              &lt;div&gt;
+                &lt;h3 className="text-gray-500 text-sm font-bold mb-1"&gt;Наявність&lt;/h3&gt;
+                {drink.available ? (
+                  &lt;span className="text-green-600 font-semibold"&gt;В наявності&lt;/span&gt;
+                ) : (
+                  &lt;span className="text-red-600 font-semibold"&gt;Тимчасово немає&lt;/span&gt;
+                )}
+              &lt;/div&gt;
+            &lt;/div&gt;
+            &lt;div&gt;
+              &lt;h3 className="text-gray-500 text-sm font-bold mb-2"&gt;Опис&lt;/h3&gt;
+              &lt;p className="text-gray-700 leading-relaxed"&gt;{drink.description}&lt;/p&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/section&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Зверніть увагу на <code>notFound()</code>:</strong> Це функція з <code>next/navigation</code>,
+          яка показує найближчу 404 сторінку. Якщо напій з таким ID не існує &mdash; замість помилки
+          показується красива сторінка "Не знайдено".
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити сторінку списку напоїв у Dashboard</h4>
+        <p>Створіть файл <code>app/dashboard/drinks/page.js</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/dashboard/drinks/page.js</div>
+          <pre><code>import Link from "next/link";
+import { drinks } from "@/lib/drinks";
+
+export const metadata = {
+  title: "Управління напоями",
+};
+
+export default function DrinksListPage() {
+  return (
+    &lt;div&gt;
+      &lt;div className="flex justify-between items-center mb-6"&gt;
+        &lt;h1 className="text-3xl font-bold text-gray-900"&gt;Напої&lt;/h1&gt;
+        &lt;Link
+          href="/dashboard/drinks/new"
+          className="bg-amber-700 text-white px-6 py-2 rounded hover:bg-amber-800 transition"
+        &gt;
+          + Додати напій
+        &lt;/Link&gt;
+      &lt;/div&gt;
+
+      &lt;div className="bg-white rounded-lg shadow overflow-hidden"&gt;
+        &lt;table className="w-full"&gt;
+          &lt;thead className="bg-gray-50"&gt;
+            &lt;tr&gt;
+              &lt;th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;Назва&lt;/th&gt;
+              &lt;th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;Категорія&lt;/th&gt;
+              &lt;th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;Ціна&lt;/th&gt;
+              &lt;th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;Статус&lt;/th&gt;
+              &lt;th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;Дії&lt;/th&gt;
+            &lt;/tr&gt;
+          &lt;/thead&gt;
+          &lt;tbody className="divide-y divide-gray-200"&gt;
+            {drinks.map((drink) =&gt; (
+              &lt;tr key={drink.id} className="hover:bg-gray-50"&gt;
+                &lt;td className="px-6 py-4"&gt;
+                  &lt;div className="flex items-center gap-2"&gt;
+                    &lt;span&gt;{drink.emoji}&lt;/span&gt;
+                    &lt;span className="font-medium text-gray-900"&gt;{drink.name}&lt;/span&gt;
+                  &lt;/div&gt;
+                &lt;/td&gt;
+                &lt;td className="px-6 py-4 text-gray-700"&gt;{drink.category}&lt;/td&gt;
+                &lt;td className="px-6 py-4 text-gray-700"&gt;{drink.price} грн&lt;/td&gt;
+                &lt;td className="px-6 py-4"&gt;
+                  {drink.available ? (
+                    &lt;span className="text-xs px-2 py-1 rounded bg-green-100 text-green-700"&gt;В наявності&lt;/span&gt;
+                  ) : (
+                    &lt;span className="text-xs px-2 py-1 rounded bg-red-100 text-red-700"&gt;Немає&lt;/span&gt;
+                  )}
+                &lt;/td&gt;
+                &lt;td className="px-6 py-4"&gt;
+                  &lt;Link
+                    href={`/dashboard/drinks/${drink.id}`}
+                    className="text-amber-700 hover:underline"
+                  &gt;
+                    Переглянути
+                  &lt;/Link&gt;
+                &lt;/td&gt;
+              &lt;/tr&gt;
+            ))}
+          &lt;/tbody&gt;
+        &lt;/table&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити сторінку деталей напою в Dashboard</h4>
+        <p>Створіть файл <code>app/dashboard/drinks/[id]/page.js</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/dashboard/drinks/[id]/page.js</div>
+          <pre><code>import Link from "next/link";
+import { notFound } from "next/navigation";
+import { getDrinkById } from "@/lib/drinks";
+
+export default async function DrinkDetailPage({ params }) {
+  const { id } = await params;
+  const drink = getDrinkById(id);
+
+  if (!drink) {
+    notFound();
+  }
+
+  return (
+    &lt;div&gt;
+      &lt;Link href="/dashboard/drinks" className="text-amber-700 hover:underline mb-4 inline-block"&gt;
+        &amp;larr; Назад до списку
+      &lt;/Link&gt;
+
+      &lt;div className="bg-white rounded-lg shadow p-8"&gt;
+        &lt;div className="flex justify-between items-start mb-6"&gt;
+          &lt;div className="flex items-center gap-4"&gt;
+            &lt;span className="text-5xl"&gt;{drink.emoji}&lt;/span&gt;
+            &lt;h1 className="text-3xl font-bold text-gray-900"&gt;{drink.name}&lt;/h1&gt;
+          &lt;/div&gt;
+          &lt;div className="space-x-2"&gt;
+            &lt;button className="bg-amber-700 text-white px-4 py-2 rounded hover:bg-amber-800"&gt;
+              Редагувати
+            &lt;/button&gt;
+            &lt;button className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"&gt;
+              Видалити
+            &lt;/button&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div className="grid grid-cols-2 gap-6"&gt;
+          &lt;div&gt;
+            &lt;h3 className="text-gray-500 text-sm font-bold mb-1"&gt;Категорія&lt;/h3&gt;
+            &lt;p className="text-lg text-gray-900"&gt;{drink.category}&lt;/p&gt;
+          &lt;/div&gt;
+          &lt;div&gt;
+            &lt;h3 className="text-gray-500 text-sm font-bold mb-1"&gt;Ціна&lt;/h3&gt;
+            &lt;p className="text-lg text-gray-900"&gt;{drink.price} грн&lt;/p&gt;
+          &lt;/div&gt;
+          &lt;div&gt;
+            &lt;h3 className="text-gray-500 text-sm font-bold mb-1"&gt;Наявність&lt;/h3&gt;
+            {drink.available ? (
+              &lt;span className="text-green-600 font-semibold"&gt;В наявності&lt;/span&gt;
+            ) : (
+              &lt;span className="text-red-600 font-semibold"&gt;Немає&lt;/span&gt;
+            )}
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div className="mt-6"&gt;
+          &lt;h3 className="text-gray-500 text-sm font-bold mb-2"&gt;Опис&lt;/h3&gt;
+          &lt;p className="text-gray-700"&gt;{drink.description}&lt;/p&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити сторінку додавання напою</h4>
+        <p>Створіть файл <code>app/dashboard/drinks/new/page.js</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/dashboard/drinks/new/page.js</div>
+          <pre><code>'use client'
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+
+export default function NewDrinkPage() {
+  const router = useRouter();
+  const [formData, setFormData] = useState({
+    name: "",
+    category: "",
+    price: "",
+    description: "",
+  });
+
+  const handleChange = (e) =&gt; {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = (e) =&gt; {
+    e.preventDefault();
+    console.log("Створення напою:", formData);
+    // Поки просто повертаємося до списку
+    router.push("/dashboard/drinks");
+  };
+
+  return (
+    &lt;div&gt;
+      &lt;Link href="/dashboard/drinks" className="text-amber-700 hover:underline mb-4 inline-block"&gt;
+        &amp;larr; Назад до списку
+      &lt;/Link&gt;
+
+      &lt;div className="bg-white rounded-lg shadow p-8"&gt;
+        &lt;h1 className="text-3xl font-bold mb-6 text-gray-900"&gt;Додати новий напій&lt;/h1&gt;
+
+        &lt;form onSubmit={handleSubmit} className="space-y-6"&gt;
+          &lt;div className="grid grid-cols-1 md:grid-cols-2 gap-6"&gt;
+            &lt;div&gt;
+              &lt;label className="block text-gray-700 font-bold mb-2"&gt;Назва *&lt;/label&gt;
+              &lt;input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 border rounded focus:outline-none focus:border-amber-500"
+              /&gt;
+            &lt;/div&gt;
+            &lt;div&gt;
+              &lt;label className="block text-gray-700 font-bold mb-2"&gt;Категорія *&lt;/label&gt;
+              &lt;input
+                type="text"
+                name="category"
+                value={formData.category}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 border rounded focus:outline-none focus:border-amber-500"
+              /&gt;
+            &lt;/div&gt;
+            &lt;div&gt;
+              &lt;label className="block text-gray-700 font-bold mb-2"&gt;Ціна (грн) *&lt;/label&gt;
+              &lt;input
+                type="number"
+                name="price"
+                value={formData.price}
+                onChange={handleChange}
+                required
+                className="w-full px-4 py-2 border rounded focus:outline-none focus:border-amber-500"
+              /&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+
+          &lt;div&gt;
+            &lt;label className="block text-gray-700 font-bold mb-2"&gt;Опис&lt;/label&gt;
+            &lt;textarea
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              rows="4"
+              className="w-full px-4 py-2 border rounded focus:outline-none focus:border-amber-500"
+            /&gt;
+          &lt;/div&gt;
+
+          &lt;div className="flex gap-4"&gt;
+            &lt;button
+              type="submit"
+              className="bg-amber-700 text-white px-6 py-3 rounded hover:bg-amber-800 font-bold"
+            &gt;
+              Створити
+            &lt;/button&gt;
+            &lt;Link
+              href="/dashboard/drinks"
+              className="bg-gray-300 text-gray-700 px-6 py-3 rounded hover:bg-gray-400 font-bold inline-block"
+            &gt;
+              Скасувати
+            &lt;/Link&gt;
+          &lt;/div&gt;
+        &lt;/form&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Зверніть увагу на <code>useRouter</code>:</strong> Після натискання "Створити"
+          ми програмно перенаправляємо користувача на список напоїв за допомогою <code>router.push()</code>.
+          Це приклад програмної навігації, яку ми вивчали на лекції.
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Клік на картку в /menu відкриває сторінку /menu/1, /menu/2 тощо</li>
+          <li>Неіснуючий ID (наприклад /menu/999) показує 404</li>
+          <li>Dashboard: таблиця напоїв відображається</li>
+          <li>Dashboard: клік "Переглянути" відкриває деталі напою</li>
+          <li>Dashboard: форма "Додати напій" працює, після submit — повернення до списку</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 4: Результат -->
+    <section class="lecture-section" id="result">
+      <h2>4. Перевірка результату та домашнє завдання</h2>
+
+      <div class="task-box">
+        <h4>Завдання: Оновити metadata в layout.js</h4>
+        <p>Додайте шаблон title у <code>app/layout.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">app/layout.js — оновити metadata</div>
+          <pre><code>export const metadata = {
+  title: {
+    default: "Кав'ярня «Кофеїн»",
+    template: "%s | Кофеїн",
+  },
+  description: "Найкраща кава у місті.",
+};</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Зробити коміт</h4>
+        <div class="code-block">
+          <div class="code-header">Terminal (в папці проекту)</div>
+          <pre><code>git add .
+git commit -m "Week 3: routing, navigation, dynamic routes, dashboard"</code></pre>
+        </div>
+      </div>
+
+      <div class="final-result">
+        <h4>Критерії успішного виконання практичного заняття</h4>
+        <ul class="criteria-list">
+          <li>Створена сторінка /contact</li>
+          <li>Глобальна 404 сторінка працює</li>
+          <li>Header показує активну сторінку</li>
+          <li>Dashboard layout з сайдбаром працює</li>
+          <li>Dashboard навігація з активними лінками</li>
+          <li>Динамічний маршрут /menu/[id] працює</li>
+          <li>Неіснуючий напій показує 404</li>
+          <li>Дані винесені у lib/drinks.js</li>
+          <li>Таблиця напоїв у dashboard</li>
+          <li>Форма додавання з програмною навігацією (useRouter)</li>
+          <li>Metadata з шаблоном title</li>
+        </ul>
+      </div>
+
+      <h3>Домашнє завдання</h3>
+
+      <h4>Обов'язково:</h4>
+      <ol>
+        <li><strong>Адаптувати всі маршрути</strong> під свою тему (замість drinks &mdash; ваша сутність)</li>
+        <li><strong>Мінімум 10 позицій</strong> у масиві даних</li>
+        <li><strong>Додати другу сутність</strong> до dashboard (наприклад, /dashboard/orders)</li>
+        <li><strong>Завантажити на GitHub</strong></li>
+      </ol>
+
+      <h4>Додатково (для вищого балу):</h4>
+      <ul>
+        <li>Створити <strong>Route Groups</strong> &mdash; (auth) з окремим layout для login/register</li>
+        <li>Додати компонент <strong>Breadcrumbs</strong> (хлібні крихти)</li>
+        <li>Реалізувати <strong>metadata</strong> з <code>generateMetadata</code> для динамічних сторінок</li>
+        <li>Додати сторінку <strong>not-found.js</strong> спеціально для /dashboard/drinks/[id]</li>
+      </ul>
+    </section>
+
+    <!-- Футер -->
+    <footer class="lecture-footer">
+      <p>Курс "Основи обробки та передачі інформації" | Next.js Full-Stack Development</p>
+      <p>Кібербезпека та захист інформації, 3 курс</p>
+
+      <div class="nav-buttons">
+        <a href="../" class="btn btn-outline">&larr; На головну</a>
+      </div>
+    </footer>
+  </article>
+</body>
+</html>

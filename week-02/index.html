@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Практика 2: Основи React — компоненти, props, state | Протокол заняття</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/practical.css">
+</head>
+<body>
+  <!-- Навігація -->
+  <nav class="lecture-nav">
+    <div class="container">
+      <div class="nav-title">Тиждень 2: Практичне заняття</div>
+      <div class="nav-links">
+        <a href="../" class="btn btn-outline">← На головну</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Основний контент -->
+  <article class="lecture-content">
+    <!-- Заголовок -->
+    <header class="lecture-header">
+      <span class="lecture-number">Практика 2</span>
+      <h1>Основи React: компоненти, props, state</h1>
+      <div class="lecture-meta">
+        <span>📅 Тиждень 2</span>
+        <span>💻 Практичне заняття</span>
+      </div>
+    </header>
+
+    <!-- Зміст -->
+    <nav class="toc">
+      <h3>Зміст заняття</h3>
+      <ol>
+        <li><a href="#components">Виділення компонентів Header та Footer</a></li>
+        <li><a href="#props">Компонент з props — картка товару</a></li>
+        <li><a href="#state">Інтерактивність зі useState — фільтрація меню</a></li>
+        <li><a href="#result">Перевірка результату та домашнє завдання</a></li>
+      </ol>
+    </nav>
+
+    <!-- Вступ -->
+    <section class="lecture-section">
+      <h2>Мета заняття</h2>
+      <p>На цьому практичному занятті ви:</p>
+      <ul>
+        <li>Виділите повторюваний код у перевикористовувані компоненти</li>
+        <li>Навчитесь передавати дані через props</li>
+        <li>Додасте інтерактивність за допомогою хука useState</li>
+        <li>Створите сторінку з пошуком та фільтрацією</li>
+      </ul>
+
+      <div class="info-box info">
+        <strong>Передумова:</strong> Ви маєте мати працюючий Next.js проект з тижня 1 (landing page та сторінка /about).
+        Ми будемо працювати з тим самим проектом, додаючи нові можливості.
+      </div>
+
+      <div class="info-box warning">
+        <strong>Приклад викладача:</strong> Кав'ярня «Кофеїн». Ви маєте адаптувати код під свою тему з 15 варіантів.
+      </div>
+    </section>
+
+    <!-- Частина 1: Компоненти -->
+    <section class="lecture-section" id="components">
+      <h2>1. Виділення компонентів Header та Footer</h2>
+      <p>
+        На минулому занятті ви писали Header (навігацію) та Footer прямо в кожній сторінці.
+        Зараз ми <strong>виділимо їх в окремі компоненти</strong> і підключимо через <code>layout.js</code>,
+        щоб вони з'являлися на <strong>всіх</strong> сторінках автоматично.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Створити папку components</h4>
+        <p>Створіть папку <code>components</code> в корені проекту (поруч з папкою <code>app</code>):</p>
+        <div class="code-block">
+          <div class="code-header">Структура проекту</div>
+          <pre><code>my-project/
+├── app/
+│   ├── layout.js
+│   ├── page.js
+│   └── about/
+├── components/      ← нова папка
+│   ├── Header.jsx
+│   └── Footer.jsx
+└── package.json</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити компонент Header</h4>
+        <p>Створіть файл <code>components/Header.jsx</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">components/Header.jsx</div>
+          <pre><code>// Компонент Header — навігація сайту
+import Link from "next/link";
+
+export default function Header() {
+  return (
+    &lt;header className="bg-amber-900 text-white py-4"&gt;
+      &lt;div className="container mx-auto px-4 flex justify-between items-center"&gt;
+        &lt;Link href="/" className="text-xl font-bold hover:text-amber-200 transition"&gt;
+          Кофеїн
+        &lt;/Link&gt;
+        &lt;nav&gt;
+          &lt;ul className="flex gap-6"&gt;
+            &lt;li&gt;
+              &lt;Link href="/" className="hover:text-amber-200 transition"&gt;
+                Головна
+              &lt;/Link&gt;
+            &lt;/li&gt;
+            &lt;li&gt;
+              &lt;Link href="/menu" className="hover:text-amber-200 transition"&gt;
+                Меню
+              &lt;/Link&gt;
+            &lt;/li&gt;
+            &lt;li&gt;
+              &lt;Link href="/about" className="hover:text-amber-200 transition"&gt;
+                Про нас
+              &lt;/Link&gt;
+            &lt;/li&gt;
+          &lt;/ul&gt;
+        &lt;/nav&gt;
+      &lt;/div&gt;
+    &lt;/header&gt;
+  );
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Адаптація:</strong> Замініть «Кофеїн» на назву вашого проекту, а посилання меню —
+          на відповідні вашій темі (наприклад: Каталог, Бронювання, Контакти).
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити компонент Footer</h4>
+        <p>Створіть файл <code>components/Footer.jsx</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">components/Footer.jsx</div>
+          <pre><code>// Компонент Footer — підвал сайту
+export default function Footer() {
+  return (
+    &lt;footer className="bg-gray-800 text-white py-8"&gt;
+      &lt;div className="container mx-auto px-4 text-center"&gt;
+        &lt;h3 className="text-xl font-semibold mb-2"&gt;Кав'ярня «Кофеїн»&lt;/h3&gt;
+        &lt;p className="text-gray-400 mb-4"&gt;вул. Хрещатик, 1, Київ&lt;/p&gt;
+        &lt;p className="text-gray-500 text-sm"&gt;
+          © 2024 Ваше Ім'я | Курс «Основи обробки та передачі інформації»
+        &lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/footer&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Підключити компоненти в layout.js</h4>
+        <p>Відкрийте <code>app/layout.js</code> та додайте Header і Footer:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/layout.js — оновлений</div>
+          <pre><code>import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+export const metadata = {
+  title: "Кав'ярня «Кофеїн»",
+  description: "Найкраща кава у місті.",
+};
+
+export default function RootLayout({ children }) {
+  return (
+    &lt;html lang="uk"&gt;
+      &lt;body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}&gt;
+        &lt;Header /&gt;
+        &lt;main className="flex-1"&gt;
+          {children}
+        &lt;/main&gt;
+        &lt;Footer /&gt;
+      &lt;/body&gt;
+    &lt;/html&gt;
+  );
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Що таке @/components?</strong> Символ <code>@</code> — це аліас для кореня проекту.
+          Next.js автоматично налаштовує його при створенні проекту. Це зручніше, ніж писати <code>../../components</code>.
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Очистити сторінки від дублікатів</h4>
+        <p>
+          Тепер Header та Footer відображаються з <code>layout.js</code>.
+          <strong>Видаліть</strong> навігацію та футер з <code>app/page.js</code> та <code>app/about/page.js</code>.
+        </p>
+        <p>Також видаліть обгортку <code>&lt;div className="min-h-screen"&gt;</code> — тепер <code>min-h-screen</code> забезпечує layout.</p>
+      </div>
+
+      <div class="checkpoint">
+        <h5>✅ Контрольна точка</h5>
+        <ul>
+          <li>Header з навігацією відображається на <strong>всіх</strong> сторінках</li>
+          <li>Footer відображається внизу кожної сторінки</li>
+          <li>Навігація між сторінками працює</li>
+          <li>В <code>page.js</code> та <code>about/page.js</code> немає дубльованої навігації</li>
+        </ul>
+      </div>
+
+      <div class="error-box">
+        <h5>Якщо Header/Footer не з'являються</h5>
+        <ul>
+          <li>Перевірте імпорт: <code>import Header from "@/components/Header"</code></li>
+          <li>Переконайтеся, що файли мають розширення <code>.jsx</code></li>
+          <li>Назви компонентів — з великої літери: <code>Header</code>, <code>Footer</code></li>
+          <li>Перевірте, що <code>export default</code> є в кожному компоненті</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 2: Props -->
+    <section class="lecture-section" id="props">
+      <h2>2. Компонент з props — картка товару</h2>
+      <p>
+        На минулому тижні ви створювали картки копіюючи HTML-код для кожної. Зараз ми створимо
+        <strong>один компонент</strong>, що приймає дані через props і може відображати будь-який товар.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Створити компонент MenuCard</h4>
+        <p>Створіть файл <code>components/MenuCard.jsx</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">components/MenuCard.jsx</div>
+          <pre><code>// Компонент картки товару з props
+export default function MenuCard({ name, description, price, emoji, category, available = true }) {
+  return (
+    &lt;div className={`bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition ${!available ? 'opacity-60' : ''}`}&gt;
+      &lt;div className="h-32 bg-amber-100 flex items-center justify-center"&gt;
+        &lt;span className="text-5xl"&gt;{emoji}&lt;/span&gt;
+      &lt;/div&gt;
+      &lt;div className="p-4"&gt;
+        &lt;div className="flex justify-between items-start mb-2"&gt;
+          &lt;h3 className="text-lg font-semibold text-gray-900"&gt;{name}&lt;/h3&gt;
+          {available ? (
+            &lt;span className="text-xs px-2 py-1 rounded bg-green-100 text-green-700"&gt;
+              В наявності
+            &lt;/span&gt;
+          ) : (
+            &lt;span className="text-xs px-2 py-1 rounded bg-red-100 text-red-700"&gt;
+              Немає
+            &lt;/span&gt;
+          )}
+        &lt;/div&gt;
+        &lt;p className="text-gray-600 text-sm mb-3"&gt;{description}&lt;/p&gt;
+        &lt;div className="flex justify-between items-center"&gt;
+          &lt;span className="text-amber-700 font-bold text-lg"&gt;{price} грн&lt;/span&gt;
+          &lt;span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded"&gt;{category}&lt;/span&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Зверніть увагу:</strong>
+          <ul>
+            <li><strong>Деструктуризація props</strong> — <code>{ name, description, price, ... }</code></li>
+            <li><strong>Значення за замовчуванням</strong> — <code>available = true</code></li>
+            <li><strong>Умовний рендеринг</strong> — тернарний оператор для статусу доступності</li>
+            <li><strong>Умовні класи</strong> — <code>!available ? 'opacity-60' : ''</code></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Використати MenuCard на головній сторінці</h4>
+        <p>Оновіть <code>app/page.js</code> — замініть статичні картки на компонент:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/page.js — оновлений (фрагмент)</div>
+          <pre><code>import MenuCard from "@/components/MenuCard";
+
+// Дані для популярних позицій
+const popularItems = [
+  { id: 1, name: "Еспресо", description: "Класичний італійський еспресо.", price: 45, emoji: "☕", category: "Кава", available: true },
+  { id: 2, name: "Капучино", description: "Еспресо з молочною пінкою.", price: 65, emoji: "🥛", category: "Кава", available: true },
+  { id: 3, name: "Латте", description: "М'який смак з молоком.", price: 70, emoji: "🍵", category: "Кава", available: true },
+];
+
+export default function Home() {
+  return (
+    &lt;div&gt;
+      {/* ... Hero секція ... */}
+
+      {/* Популярні напої */}
+      &lt;section className="py-16 bg-gray-50"&gt;
+        &lt;div className="container mx-auto px-4"&gt;
+          &lt;h2 className="text-3xl font-bold text-center mb-12 text-gray-900"&gt;
+            Популярні напої
+          &lt;/h2&gt;
+          &lt;div className="grid grid-cols-1 md:grid-cols-3 gap-8"&gt;
+            {popularItems.map(item =&gt; (
+              &lt;MenuCard key={item.id} {...item} /&gt;
+            ))}
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/section&gt;
+
+      {/* ... інші секції ... */}
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Що таке <code>{...item}</code>?</strong> Це spread-оператор — він передає всі поля об'єкта як окремі props.
+          Те саме, що написати <code>name={item.name} description={item.description} price={item.price} ...</code>
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>✅ Контрольна точка</h5>
+        <ul>
+          <li>Компонент MenuCard відображає назву, опис, ціну, emoji, категорію</li>
+          <li>На головній сторінці відображаються 3 картки через <code>.map()</code></li>
+          <li>Кожна картка має унікальний <code>key</code></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 3: State -->
+    <section class="lecture-section" id="state">
+      <h2>3. Інтерактивність зі useState — фільтрація меню</h2>
+      <p>
+        Тепер створимо нову сторінку <code>/menu</code> з повним меню, <strong>пошуком</strong>
+        та <strong>фільтрацією по категорії</strong>. Для цього потрібен хук <code>useState</code>
+        і директива <code>'use client'</code>.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Створити компонент MenuFilter</h4>
+        <p>Створіть файл <code>components/MenuFilter.jsx</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">components/MenuFilter.jsx</div>
+          <pre><code>'use client'
+import { useState } from 'react'
+import MenuCard from './MenuCard'
+
+// Дані меню (адаптуйте під свою тему!)
+const menuItems = [
+  { id: 1, name: "Еспресо", description: "Класичний еспресо.", price: 45, emoji: "☕", category: "Кава", available: true },
+  { id: 2, name: "Капучино", description: "Еспресо з пінкою.", price: 65, emoji: "🥛", category: "Кава", available: true },
+  { id: 3, name: "Латте", description: "Кава з молоком.", price: 70, emoji: "🍵", category: "Кава", available: true },
+  { id: 4, name: "Американо", description: "Еспресо з водою.", price: 50, emoji: "☕", category: "Кава", available: true },
+  { id: 5, name: "Раф", description: "Вершковий кавовий напій.", price: 75, emoji: "🍨", category: "Кава", available: false },
+  { id: 6, name: "Круасан", description: "Свіжий французький круасан.", price: 55, emoji: "🥐", category: "Їжа", available: true },
+  { id: 7, name: "Чізкейк", description: "Чізкейк з ягідним соусом.", price: 95, emoji: "🍰", category: "Їжа", available: true },
+  { id: 8, name: "Зелений чай", description: "Японський зелений чай.", price: 55, emoji: "🍃", category: "Чай", available: true },
+]
+
+// Категорії для фільтрів
+const categories = ["Всі", ...new Set(menuItems.map(item =&gt; item.category))]
+
+export default function MenuFilter() {
+  // Стан для пошуку та фільтрації
+  const [search, setSearch] = useState('')
+  const [activeCategory, setActiveCategory] = useState('Всі')
+  const [showAvailableOnly, setShowAvailableOnly] = useState(false)
+
+  // Логіка фільтрації
+  const filteredItems = menuItems.filter(item =&gt; {
+    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase())
+    const matchesCategory = activeCategory === 'Всі' || item.category === activeCategory
+    const matchesAvailability = !showAvailableOnly || item.available
+    return matchesSearch &amp;&amp; matchesCategory &amp;&amp; matchesAvailability
+  })
+
+  return (
+    &lt;div&gt;
+      {/* Пошук */}
+      &lt;input
+        type="text"
+        value={search}
+        onChange={(e) =&gt; setSearch(e.target.value)}
+        placeholder="Пошук..."
+        className="w-full px-4 py-3 border rounded-lg mb-6 focus:outline-none focus:border-amber-500 text-gray-900"
+      /&gt;
+
+      {/* Кнопки категорій */}
+      &lt;div className="flex flex-wrap gap-2 mb-4"&gt;
+        {categories.map(cat =&gt; (
+          &lt;button
+            key={cat}
+            onClick={() =&gt; setActiveCategory(cat)}
+            className={`px-4 py-2 rounded-lg font-medium transition cursor-pointer ${
+              activeCategory === cat
+                ? 'bg-amber-700 text-white'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
+          &gt;
+            {cat}
+          &lt;/button&gt;
+        ))}
+      &lt;/div&gt;
+
+      {/* Чекбокс */}
+      &lt;label className="flex items-center gap-2 mb-6 cursor-pointer"&gt;
+        &lt;input
+          type="checkbox"
+          checked={showAvailableOnly}
+          onChange={(e) =&gt; setShowAvailableOnly(e.target.checked)}
+          className="w-4 h-4"
+        /&gt;
+        &lt;span className="text-gray-700"&gt;Тільки в наявності&lt;/span&gt;
+      &lt;/label&gt;
+
+      {/* Кількість */}
+      &lt;p className="text-sm text-gray-500 mb-4"&gt;
+        Знайдено: {filteredItems.length} з {menuItems.length}
+      &lt;/p&gt;
+
+      {/* Картки або повідомлення */}
+      {filteredItems.length &gt; 0 ? (
+        &lt;div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"&gt;
+          {filteredItems.map(item =&gt; (
+            &lt;MenuCard key={item.id} {...item} /&gt;
+          ))}
+        &lt;/div&gt;
+      ) : (
+        &lt;p className="text-center py-12 text-gray-400"&gt;Нічого не знайдено&lt;/p&gt;
+      )}
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+
+        <div class="info-box warning">
+          <strong>Зверніть увагу:</strong> На першому рядку обов'язково стоїть <code>'use client'</code> —
+          без нього <code>useState</code> не працюватиме! В Next.js компоненти за замовчуванням виконуються на сервері.
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити сторінку /menu</h4>
+        <p>Створіть файл <code>app/menu/page.js</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/menu/page.js</div>
+          <pre><code>import MenuFilter from "@/components/MenuFilter";
+
+export default function MenuPage() {
+  return (
+    &lt;div&gt;
+      &lt;section className="bg-gradient-to-r from-amber-800 to-amber-600 text-white py-12"&gt;
+        &lt;div className="container mx-auto px-4 text-center"&gt;
+          &lt;h1 className="text-4xl font-bold mb-2"&gt;Наше меню&lt;/h1&gt;
+          &lt;p className="text-lg opacity-90"&gt;Знайдіть свій ідеальний напій або перекус&lt;/p&gt;
+        &lt;/div&gt;
+      &lt;/section&gt;
+
+      &lt;section className="py-12 bg-gray-50"&gt;
+        &lt;div className="container mx-auto px-4"&gt;
+          &lt;MenuFilter /&gt;
+        &lt;/div&gt;
+      &lt;/section&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Чому page.js не має 'use client'?</strong> Сторінка <code>menu/page.js</code> — це Server Component.
+          Вона лише <strong>підключає</strong> клієнтський компонент <code>MenuFilter</code>.
+          Інтерактивність «живе» в окремому компоненті — це рекомендований паттерн в Next.js.
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Адаптувати дані під свою тему</h4>
+        <p>Замініть масив <code>menuItems</code> на дані вашого проекту. Приклади:</p>
+
+        <div class="code-block">
+          <div class="code-header">Приклади для різних тем</div>
+          <pre><code>// Бібліотека
+const books = [
+  { id: 1, name: "1984", description: "Антиутопія Орвелла", price: 250, emoji: "📕", category: "Фантастика", available: true },
+  { id: 2, name: "Кобзар", description: "Поезії Шевченка", price: 180, emoji: "📗", category: "Поезія", available: false },
+]
+
+// Кінотеатр
+const movies = [
+  { id: 1, name: "Інтерстеллар", description: "Космічна одіссея", price: 220, emoji: "🎬", category: "Фантастика", available: true },
+  { id: 2, name: "Зелена миля", description: "Драма Стівена Кінга", price: 180, emoji: "🎭", category: "Драма", available: true },
+]
+
+// Готель
+const rooms = [
+  { id: 1, name: "Стандарт", description: "Затишний номер", price: 1200, emoji: "🛏️", category: "Стандарт", available: true },
+  { id: 2, name: "Люкс", description: "Просторий номер", price: 3500, emoji: "👑", category: "Люкс", available: false },
+]</code></pre>
+        </div>
+
+        <p><strong>Мінімальні вимоги:</strong></p>
+        <ul>
+          <li>Не менше <strong>8 позицій</strong> у масиві</li>
+          <li>Мінімум <strong>3 категорії</strong></li>
+          <li>Хоча б 1-2 позиції з <code>available: false</code></li>
+        </ul>
+      </div>
+
+      <div class="checkpoint">
+        <h5>✅ Контрольна точка</h5>
+        <ul>
+          <li>Сторінка /menu відкривається</li>
+          <li>Пошук фільтрує картки в реальному часі</li>
+          <li>Кнопки категорій працюють (активна кнопка підсвічується)</li>
+          <li>Чекбокс "Тільки в наявності" працює</li>
+          <li>Відображається кількість знайдених позицій</li>
+          <li>При відсутності результатів показується повідомлення</li>
+        </ul>
+      </div>
+
+      <div class="error-box">
+        <h5>Поширені помилки</h5>
+        <ul>
+          <li>
+            <strong>Error: useState is not a function</strong><br>
+            Забули <code>'use client'</code> на першому рядку файлу
+          </li>
+          <li>
+            <strong>Each child in a list should have a unique "key"</strong><br>
+            Додайте <code>key={item.id}</code> в <code>.map()</code>
+          </li>
+          <li>
+            <strong>Фільтрація не працює</strong><br>
+            Перевірте, що <code>value={search}</code> та <code>onChange</code> присутні на input
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 4: Результат -->
+    <section class="lecture-section" id="result">
+      <h2>4. Перевірка результату та домашнє завдання</h2>
+      <div class="task-box">
+        <h4>Завдання: Зробити коміт</h4>
+        <div class="code-block">
+          <div class="code-header">Terminal (в папці проекту)</div>
+          <pre><code>git add .
+git commit -m "Week 2: add components, props, useState, menu page"</code></pre>
+        </div>
+      </div>
+
+      <div class="final-result">
+        <h4>Критерії успішного виконання практичного заняття</h4>
+        <ul class="criteria-list">
+          <li>Header та Footer виділені в компоненти</li>
+          <li>Header/Footer підключені в layout.js</li>
+          <li>MenuCard приймає та відображає props</li>
+          <li>Головна сторінка використовує MenuCard через .map()</li>
+          <li>Створена сторінка /menu з пошуком</li>
+          <li>Фільтрація по категорії працює</li>
+          <li>Чекбокс "Тільки в наявності" працює</li>
+          <li>Дані адаптовані під обрану тему</li>
+        </ul>
+      </div>
+
+      <h3>Домашнє завдання</h3>
+
+      <h4>Обов'язково:</h4>
+      <ol>
+        <li><strong>Мінімум 8 позицій</strong> у масиві menuItems, 3+ категорії</li>
+        <li><strong>Адаптувати всі тексти</strong> під свою тему</li>
+        <li><strong>Завантажити на GitHub</strong></li>
+      </ol>
+
+      <h4>Додатково (для вищого балу):</h4>
+      <ul>
+        <li>Додати <strong>сортування</strong> (за ціною, за назвою)</li>
+        <li>Створити компонент <strong>форми</strong> для додавання нової позиції (з useState)</li>
+        <li>Додати <strong>лічильник</strong> загальної вартості обраних позицій</li>
+        <li>Покращити дизайн — додати більше hover-ефектів, анімацій</li>
+      </ul>
+    </section>
+
+    <!-- Футер -->
+    <footer class="lecture-footer">
+      <p>Курс "Основи обробки та передачі інформації" | Next.js Full-Stack Development</p>
+      <p>Кібербезпека та захист інформації, 3 курс</p>
+
+      <div class="nav-buttons">
+        <a href="../" class="btn btn-outline">← На головну</a>
+      </div>
+    </footer>
+  </article>
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Практичні заняття | Основи обробки та передачі інформації</title>
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    .hero {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+      color: white;
+      padding: 3rem 0;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .hero p {
+      opacity: 0.9;
+      font-size: 1.1rem;
+      margin-bottom: 0;
+    }
+
+    .content {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem var(--spacing);
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      color: var(--text-primary);
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--primary);
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+
+    .week-card {
+      background: var(--bg-white);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      transition: box-shadow 0.2s, transform 0.2s;
+      text-decoration: none;
+      color: inherit;
+      display: block;
+    }
+
+    .week-card:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transform: translateY(-2px);
+      text-decoration: none;
+    }
+
+    .week-card .week-number {
+      display: inline-block;
+      background: var(--primary);
+      color: white;
+      padding: 0.25rem 0.75rem;
+      border-radius: var(--radius);
+      font-weight: 600;
+      font-size: 0.85rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .week-card h3 {
+      font-size: 1.15rem;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .week-card p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 0;
+    }
+
+    .variants-link {
+      background: var(--bg-white);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      transition: box-shadow 0.2s, transform 0.2s;
+      text-decoration: none;
+      color: inherit;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .variants-link:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transform: translateY(-2px);
+      text-decoration: none;
+    }
+
+    .variants-link .icon {
+      font-size: 2.5rem;
+      flex-shrink: 0;
+    }
+
+    .variants-link h3 {
+      font-size: 1.15rem;
+      color: var(--text-primary);
+      margin-bottom: 0.25rem;
+    }
+
+    .variants-link p {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      margin-bottom: 0;
+    }
+
+    .footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      border-top: 1px solid #e2e8f0;
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="hero">
+    <div class="container">
+      <h1>Практичні заняття</h1>
+      <p>Основи обробки та передачі інформації — Next.js Full-Stack Development</p>
+    </div>
+  </div>
+
+  <div class="content">
+    <h2 class="section-title">Практичні роботи</h2>
+    <div class="cards-grid">
+      <a href="week-01/" class="week-card">
+        <span class="week-number">Тиждень 1</span>
+        <h3>Створення першого Next.js проекту</h3>
+        <p>Підготовка середовища, створення проекту, landing page</p>
+      </a>
+
+      <a href="week-02/" class="week-card">
+        <span class="week-number">Тиждень 2</span>
+        <h3>Основи React: компоненти, props, state</h3>
+        <p>Компоненти Header/Footer, MenuCard з props, фільтрація зі useState</p>
+      </a>
+
+      <a href="week-03/" class="week-card">
+        <span class="week-number">Тиждень 3</span>
+        <h3>Роутинг та навігація</h3>
+        <p>Структура маршрутів, активні лінки, динамічні маршрути, dashboard</p>
+      </a>
+    </div>
+
+    <h2 class="section-title">Проект</h2>
+    <a href="variants.html" class="variants-link">
+      <span class="icon">📋</span>
+      <div>
+        <h3>Варіанти проектів</h3>
+        <p>15 тем з повними специфікаціями, схемами Mongoose та правами доступу</p>
+      </div>
+    </a>
+  </div>
+
+  <div class="footer">
+    <p>Курс "Основи обробки та передачі інформації" | Кібербезпека та захист інформації, 3 курс</p>
+  </div>
+</body>
+</html>

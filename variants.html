@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Варіанти проектів | Основи обробки та передачі інформації</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/practical.css">
+  <style>
+    .variant-card {
+      background: var(--bg-white);
+      border-radius: var(--radius);
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .variant-card summary {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.5rem;
+      cursor: pointer;
+      background: var(--bg-dark);
+      color: white;
+      font-weight: 600;
+      font-size: 1.1rem;
+      list-style: none;
+      user-select: none;
+      transition: background 0.2s;
+    }
+    .variant-card summary::-webkit-details-marker { display: none; }
+    .variant-card summary::before {
+      content: '▶';
+      font-size: 0.75rem;
+      transition: transform 0.2s;
+      flex-shrink: 0;
+    }
+    .variant-card[open] summary::before { transform: rotate(90deg); }
+    .variant-card summary:hover { background: #2d3a4d; }
+    .variant-badge {
+      background: var(--primary);
+      color: white;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+    .variant-body { padding: 1.5rem; }
+    .variant-body h4 {
+      color: var(--primary);
+      margin: 1.5rem 0 0.75rem;
+      padding-bottom: 0.25rem;
+      border-bottom: 2px solid var(--bg-light);
+    }
+    .variant-body h4:first-child { margin-top: 0; }
+    .variant-desc {
+      background: var(--bg-light);
+      padding: 1rem;
+      border-radius: var(--radius);
+      margin-bottom: 1rem;
+      color: var(--text-secondary);
+    }
+
+    .schema-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+    .schema-table th {
+      background: var(--bg-dark);
+      color: white;
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+      font-weight: 500;
+    }
+    .schema-table td {
+      padding: 0.4rem 0.75rem;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+    .schema-table tr:nth-child(even) { background: #f8fafc; }
+    .schema-table code {
+      background: #e2e8f0;
+      padding: 0.1rem 0.4rem;
+      border-radius: 3px;
+      font-size: 0.85em;
+    }
+
+    .roles-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+      margin-bottom: 1rem;
+    }
+    .roles-table th {
+      background: var(--bg-dark);
+      color: white;
+      padding: 0.5rem 0.75rem;
+      text-align: center;
+      font-weight: 500;
+    }
+    .roles-table th:first-child { text-align: left; }
+    .roles-table td {
+      padding: 0.4rem 0.75rem;
+      border-bottom: 1px solid #e2e8f0;
+      text-align: center;
+    }
+    .roles-table td:first-child { text-align: left; }
+    .roles-table tr:nth-child(even) { background: #f8fafc; }
+
+    .example-data {
+      background: var(--bg-dark);
+      color: #e2e8f0;
+      padding: 1rem;
+      border-radius: var(--radius);
+      overflow-x: auto;
+      font-size: 0.85rem;
+      margin-bottom: 1rem;
+    }
+    .example-data pre { margin: 0; white-space: pre-wrap; }
+
+    .use-cases {
+      list-style: decimal;
+      padding-left: 1.5rem;
+      color: var(--text-secondary);
+    }
+    .use-cases li { margin-bottom: 0.3rem; }
+
+    /* Student assignments */
+    .groups-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin: 1.5rem 0;
+    }
+    .group-card {
+      background: var(--bg-white);
+      border-radius: var(--radius);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      overflow: hidden;
+    }
+    .group-card h3 {
+      background: var(--primary);
+      color: white;
+      padding: 0.75rem 1rem;
+      margin: 0;
+      font-size: 1.1rem;
+    }
+    .group-card table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9rem;
+    }
+    .group-card th {
+      background: var(--bg-light);
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+      font-weight: 600;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+    .group-card td {
+      padding: 0.4rem 0.75rem;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .group-card tr:nth-child(even) td { background: #f8fafc; }
+    .group-card td:first-child {
+      text-align: center;
+      font-weight: 600;
+      color: var(--primary);
+      width: 30px;
+    }
+
+    /* Requirements section */
+    .requirements-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      margin: 1rem 0;
+    }
+    .req-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem;
+      background: var(--bg-light);
+      border-radius: var(--radius);
+    }
+
+    /* Expand/collapse all button */
+    .controls {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+    }
+    .controls button {
+      padding: 0.5rem 1rem;
+      border: 2px solid var(--primary);
+      border-radius: var(--radius);
+      background: white;
+      color: var(--primary);
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .controls button:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    /* TOC for variants */
+    .variants-toc {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 0.5rem;
+      margin: 1rem 0 2rem;
+    }
+    .variants-toc a {
+      display: block;
+      padding: 0.5rem 0.75rem;
+      background: var(--bg-light);
+      border-radius: var(--radius);
+      color: var(--text-primary);
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+    .variants-toc a:hover {
+      background: #e2e8f0;
+      text-decoration: none;
+    }
+    .variants-toc a span {
+      color: var(--primary);
+      font-weight: 600;
+      margin-right: 0.5rem;
+    }
+  </style>
+</head>
+<body>
+  <nav class="lecture-nav">
+    <div class="container">
+      <div class="nav-title">Варіанти проектів</div>
+      <div class="nav-links">
+        <a href="./" class="btn btn-outline">← На головну</a>
+      </div>
+    </div>
+  </nav>
+
+  <article class="lecture-content" style="max-width: 1000px;">
+    <header class="lecture-header">
+      <h1>Варіанти проектів</h1>
+      <div class="lecture-meta">
+        <span>📚 15 варіантів</span>
+        <span>💻 Full-Stack Next.js</span>
+        <span>🗄️ MongoDB + Mongoose</span>
+      </div>
+    </header>
+
+    <!-- Student assignments -->
+    <section class="lecture-section" id="students">
+      <h2>Розподіл варіантів по студентах</h2>
+      <div id="students-container">
+        <p style="color: var(--text-secondary);">Завантаження списку...</p>
+      </div>
+    </section>
+
+    <!-- General requirements -->
+    <section class="lecture-section" id="requirements">
+      <h2>Загальні вимоги</h2>
+      <div class="requirements-grid">
+        <div class="req-item">⚡ Next.js 14+ (App Router)</div>
+        <div class="req-item">🗄️ MongoDB + Mongoose</div>
+        <div class="req-item">🔐 NextAuth.js авторизація</div>
+        <div class="req-item">👥 Мінімум 2 ролі</div>
+        <div class="req-item">📦 2 пов'язані CRUD об'єкти</div>
+        <div class="req-item">✅ Валідація клієнт + сервер</div>
+        <div class="req-item">📱 Responsive дизайн</div>
+        <div class="req-item">👤 Управління користувачами</div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Спільні поля для всіх моделей:</strong> <code>_id</code> (ObjectId, автоматично), <code>createdAt</code> (Date), <code>updatedAt</code> (Date) — додаються через <code>timestamps: true</code> в Mongoose.
+      </div>
+    </section>
+
+    <!-- Variants TOC -->
+    <section class="lecture-section" id="variants">
+      <h2>Специфікації варіантів</h2>
+      <div class="variants-toc">
+        <a href="#variant-1"><span>1</span> Бібліотека</a>
+        <a href="#variant-2"><span>2</span> Інтернет-магазин</a>
+        <a href="#variant-3"><span>3</span> Кінотеатр</a>
+        <a href="#variant-4"><span>4</span> Проєкти та задачі</a>
+        <a href="#variant-5"><span>5</span> Автосервіс</a>
+        <a href="#variant-6"><span>6</span> Оренда житла</a>
+        <a href="#variant-7"><span>7</span> Ресторан (бронювання столів)</a>
+        <a href="#variant-8"><span>8</span> Фітнес-зал</a>
+        <a href="#variant-9"><span>9</span> Блог + коментарі</a>
+        <a href="#variant-10"><span>10</span> HR: вакансії та відгуки</a>
+        <a href="#variant-11"><span>11</span> Паркінг / Автостоянка</a>
+        <a href="#variant-12"><span>12</span> Готель</a>
+        <a href="#variant-13"><span>13</span> Спа-салон</a>
+        <a href="#variant-14"><span>14</span> Консультації викладача</a>
+        <a href="#variant-15"><span>15</span> Музей / Екскурсії</a>
+      </div>
+
+      <div class="controls">
+        <button onclick="toggleAll(true)">Розгорнути всі</button>
+        <button onclick="toggleAll(false)">Згорнути всі</button>
+      </div>
+
+      <!-- Variant 1 -->
+      <details class="variant-card" id="variant-1">
+        <summary><span class="variant-badge">1</span> Бібліотека</summary>
+        <div class="variant-body">
+          <div class="variant-desc">Система управління бібліотекою. Адміністратор керує каталогом книг, користувач може переглядати книги та створювати бронювання.</div>
+
+          <h4>CRUD Об'єкт #1: Book (Книга)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>title</code></td><td>String</td><td>Required, 2-200 символів, trim</td></tr>
+            <tr><td><code>author</code></td><td>String</td><td>Required, 2-100 символів</td></tr>
+            <tr><td><code>genre</code></td><td>String</td><td>Required, enum: fiction, non-fiction, science, history, poetry, other</td></tr>
+            <tr><td><code>year</code></td><td>Number</td><td>Min: 1000, max: поточний рік</td></tr>
+            <tr><td><code>description</code></td><td>String</td><td>Max 1000 символів</td></tr>
+            <tr><td><code>available</code></td><td>Boolean</td><td>Default: true</td></tr>
+          </table>
+
+          <h4>CRUD Об'єкт #2: BookReservation (Бронювання книги)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>book</code></td><td>ObjectId</td><td>Required, ref: Book</td></tr>
+            <tr><td><code>user</code></td><td>ObjectId</td><td>Required, ref: User</td></tr>
+            <tr><td><code>status</code></td><td>String</td><td>Required, enum: pending, active, returned, cancelled. Default: pending</td></tr>
+            <tr><td><code>borrowDate</code></td><td>Date</td><td>Required</td></tr>
+            <tr><td><code>returnDate</code></td><td>Date</td><td>Required</td></tr>
+            <tr><td><code>notes</code></td><td>String</td><td>Max 500 символів</td></tr>
+          </table>
+
+          <h4>Ролі та права доступу</h4>
+          <table class="roles-table">
+            <tr><th>Дія</th><th>Бібліотекар (admin)</th><th>Читач (user)</th></tr>
+            <tr><td>Перегляд книг</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Створення/редагування книг</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Видалення книг</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Перегляд бронювань</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
+            <tr><td>Створення бронювань</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Скасування бронювань</td><td>✅ (будь-яке)</td><td>✅ (свої, pending)</td></tr>
+            <tr><td>Управління користувачами</td><td>✅</td><td>❌</td></tr>
+          </table>
+
+          <h4>Use Cases</h4>
+          <ol class="use-cases">
+            <li>Бібліотекар додає нову книгу до каталогу</li>
+            <li>Читач шукає книгу за назвою або автором</li>
+            <li>Читач створює бронювання книги</li>
+            <li>Бібліотекар змінює статус бронювання на "active" (видано)</li>
+            <li>Читач повертає книгу (статус → "returned")</li>
+            <li>Бібліотекар переглядає всі активні бронювання</li>
+          </ol>
+        </div>
+      </details>
+
+      <!-- Variant 2 -->
+      <details class="variant-card" id="variant-2">
+        <summary><span class="variant-badge">2</span> Інтернет-магазин</summary>
+        <div class="variant-body">
+          <div class="variant-desc">Інтернет-магазин товарів. Адміністратор керує каталогом товарів, користувач може переглядати товари та створювати замовлення (одне замовлення = один товар).</div>
+
+          <h4>CRUD Об'єкт #1: Item (Товар)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>name</code></td><td>String</td><td>Required, 2-150 символів, trim</td></tr>
+            <tr><td><code>category</code></td><td>String</td><td>Required, enum: electronics, clothing, books, home, sports, other</td></tr>
+            <tr><td><code>price</code></td><td>Number</td><td>Required, min: 0.01</td></tr>
+            <tr><td><code>description</code></td><td>String</td><td>Max 1000 символів</td></tr>
+            <tr><td><code>inStock</code></td><td>Boolean</td><td>Default: true</td></tr>
+          </table>
+
+          <h4>CRUD Об'єкт #2: Order (Замовлення)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>item</code></td><td>ObjectId</td><td>Required, ref: Item</td></tr>
+            <tr><td><code>user</code></td><td>ObjectId</td><td>Required, ref: User</td></tr>
+            <tr><td><code>status</code></td><td>String</td><td>Required, enum: new, processing, shipped, delivered, cancelled. Default: new</td></tr>
+            <tr><td><code>quantity</code></td><td>Number</td><td>Required, min: 1</td></tr>
+            <tr><td><code>totalPrice</code></td><td>Number</td><td>Required, min: 0</td></tr>
+            <tr><td><code>shippingAddress</code></td><td>String</td><td>Required, max 300 символів</td></tr>
+          </table>
+
+          <h4>Ролі та права доступу</h4>
+          <table class="roles-table">
+            <tr><th>Дія</th><th>Адміністратор (admin)</th><th>Покупець (user)</th></tr>
+            <tr><td>Перегляд товарів</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Створення/редагування товарів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Видалення товарів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Перегляд замовлень</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
+            <tr><td>Створення замовлень</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Зміна статусу замовлень</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Скасування замовлень</td><td>✅ (будь-яке)</td><td>✅ (свої, new)</td></tr>
+            <tr><td>Управління користувачами</td><td>✅</td><td>❌</td></tr>
+          </table>
+
+          <h4>Use Cases</h4>
+          <ol class="use-cases">
+            <li>Адміністратор додає новий товар до каталогу</li>
+            <li>Покупець переглядає список товарів з фільтрацією за категорією</li>
+            <li>Покупець створює замовлення на товар</li>
+            <li>Адміністратор змінює статус замовлення (processing → shipped)</li>
+            <li>Покупець скасовує своє замовлення зі статусом "new"</li>
+            <li>Адміністратор переглядає всі замовлення</li>
+          </ol>
+        </div>
+      </details>
+
+      <!-- Variant 3 -->
+      <details class="variant-card" id="variant-3">
+        <summary><span class="variant-badge">3</span> Кінотеатр</summary>
+        <div class="variant-body">
+          <div class="variant-desc">Система кінотеатру. Адміністратор керує сеансами (з інформацією про фільм inline), користувач може переглядати розклад та замовляти квитки.</div>
+
+          <h4>CRUD Об'єкт #1: Screening (Сеанс)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>movieTitle</code></td><td>String</td><td>Required, 2-200 символів, trim</td></tr>
+            <tr><td><code>genre</code></td><td>String</td><td>Required, enum: action, comedy, drama, horror, sci-fi, animation, other</td></tr>
+            <tr><td><code>date</code></td><td>Date</td><td>Required</td></tr>
+            <tr><td><code>time</code></td><td>String</td><td>Required, формат: HH:MM</td></tr>
+            <tr><td><code>hall</code></td><td>Number</td><td>Required, min: 1</td></tr>
+            <tr><td><code>price</code></td><td>Number</td><td>Required, min: 0</td></tr>
+          </table>
+
+          <h4>CRUD Об'єкт #2: Order (Замовлення квитків)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>screening</code></td><td>ObjectId</td><td>Required, ref: Screening</td></tr>
+            <tr><td><code>user</code></td><td>ObjectId</td><td>Required, ref: User</td></tr>
+            <tr><td><code>status</code></td><td>String</td><td>Required, enum: new, paid, used, cancelled. Default: new</td></tr>
+            <tr><td><code>seats</code></td><td>Number</td><td>Required, min: 1</td></tr>
+            <tr><td><code>totalPrice</code></td><td>Number</td><td>Required, min: 0</td></tr>
+          </table>
+
+          <h4>Ролі та права доступу</h4>
+          <table class="roles-table">
+            <tr><th>Дія</th><th>Менеджер (admin)</th><th>Глядач (user)</th></tr>
+            <tr><td>Перегляд сеансів</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Створення/редагування сеансів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Видалення сеансів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Перегляд замовлень</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
+            <tr><td>Створення замовлень</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Зміна статусу замовлень</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Скасування замовлень</td><td>✅ (будь-яке)</td><td>✅ (свої, new)</td></tr>
+            <tr><td>Управління користувачами</td><td>✅</td><td>❌</td></tr>
+          </table>
+
+          <h4>Use Cases</h4>
+          <ol class="use-cases">
+            <li>Менеджер створює новий сеанс із даними фільму</li>
+            <li>Глядач переглядає розклад сеансів за датою</li>
+            <li>Глядач замовляє квитки на сеанс</li>
+            <li>Менеджер змінює статус замовлення на "paid"</li>
+            <li>Глядач скасовує неоплачене замовлення</li>
+            <li>Менеджер переглядає всі замовлення на сеанс</li>
+          </ol>
+        </div>
+      </details>
+
+      <!-- Variant 4 -->
+      <details class="variant-card" id="variant-4">
+        <summary><span class="variant-badge">4</span> Проєкти та задачі</summary>
+        <div class="variant-body">
+          <div class="variant-desc">Система управління проєктами. Адміністратор створює проєкти, користувач працює зі своїми задачами в рамках проєктів (бачить тільки свої задачі).</div>
+
+          <h4>CRUD Об'єкт #1: Project (Проєкт)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>title</code></td><td>String</td><td>Required, 2-150 символів, trim</td></tr>
+            <tr><td><code>description</code></td><td>String</td><td>Max 1000 символів</td></tr>
+            <tr><td><code>category</code></td><td>String</td><td>Enum: development, design, marketing, research, other</td></tr>
+            <tr><td><code>deadline</code></td><td>Date</td><td>—</td></tr>
+            <tr><td><code>isActive</code></td><td>Boolean</td><td>Default: true</td></tr>
+          </table>
+
+          <h4>CRUD Об'єкт #2: Task (Задача)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>project</code></td><td>ObjectId</td><td>Required, ref: Project</td></tr>
+            <tr><td><code>user</code></td><td>ObjectId</td><td>Required, ref: User</td></tr>
+            <tr><td><code>status</code></td><td>String</td><td>Required, enum: todo, in_progress, done, cancelled. Default: todo</td></tr>
+            <tr><td><code>title</code></td><td>String</td><td>Required, 2-200 символів</td></tr>
+            <tr><td><code>priority</code></td><td>String</td><td>Enum: low, medium, high. Default: medium</td></tr>
+            <tr><td><code>dueDate</code></td><td>Date</td><td>—</td></tr>
+          </table>
+
+          <h4>Ролі та права доступу</h4>
+          <table class="roles-table">
+            <tr><th>Дія</th><th>Менеджер (admin)</th><th>Виконавець (user)</th></tr>
+            <tr><td>Перегляд проєктів</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Створення/редагування проєктів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Видалення проєктів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Перегляд задач</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
+            <tr><td>Створення задач</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Редагування задач</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
+            <tr><td>Видалення задач</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Управління користувачами</td><td>✅</td><td>❌</td></tr>
+          </table>
+
+          <h4>Use Cases</h4>
+          <ol class="use-cases">
+            <li>Менеджер створює новий проєкт з дедлайном</li>
+            <li>Виконавець створює задачу в проєкті</li>
+            <li>Виконавець змінює статус своєї задачі (todo → in_progress → done)</li>
+            <li>Менеджер переглядає всі задачі по проєкту</li>
+            <li>Виконавець бачить тільки свої задачі</li>
+            <li>Менеджер видаляє завершений проєкт</li>
+          </ol>
+        </div>
+      </details>
+
+      <!-- Variant 5 -->
+      <details class="variant-card" id="variant-5">
+        <summary><span class="variant-badge">5</span> Автосервіс</summary>
+        <div class="variant-body">
+          <div class="variant-desc">Система автосервісу. Користувач реєструє свої автомобілі та створює заявки на обслуговування. Адміністратор обробляє заявки. <strong>Особливість:</strong> Car також належить користувачу — user бачить тільки свої авто.</div>
+
+          <h4>CRUD Об'єкт #1: Car (Автомобіль)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>user</code></td><td>ObjectId</td><td>Required, ref: User</td></tr>
+            <tr><td><code>brand</code></td><td>String</td><td>Required, max 50 символів</td></tr>
+            <tr><td><code>model</code></td><td>String</td><td>Required, max 50 символів</td></tr>
+            <tr><td><code>year</code></td><td>Number</td><td>Required, min: 1900</td></tr>
+            <tr><td><code>plateNumber</code></td><td>String</td><td>Required, unique, max 20 символів</td></tr>
+          </table>
+
+          <h4>CRUD Об'єкт #2: ServiceRequest (Заявка на обслуговування)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>car</code></td><td>ObjectId</td><td>Required, ref: Car</td></tr>
+            <tr><td><code>user</code></td><td>ObjectId</td><td>Required, ref: User</td></tr>
+            <tr><td><code>status</code></td><td>String</td><td>Required, enum: new, in_progress, completed, cancelled. Default: new</td></tr>
+            <tr><td><code>serviceType</code></td><td>String</td><td>Required, enum: maintenance, repair, diagnostics, tire_change, other</td></tr>
+            <tr><td><code>description</code></td><td>String</td><td>Required, max 1000 символів</td></tr>
+            <tr><td><code>preferredDate</code></td><td>Date</td><td>—</td></tr>
+          </table>
+
+          <h4>Ролі та права доступу</h4>
+          <table class="roles-table">
+            <tr><th>Дія</th><th>Майстер (admin)</th><th>Клієнт (user)</th></tr>
+            <tr><td>Перегляд автомобілів</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
+            <tr><td>Створення автомобілів</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Редагування автомобілів</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
+            <tr><td>Видалення автомобілів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Перегляд заявок</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
+            <tr><td>Створення заявок</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Зміна статусу заявок</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Скасування заявок</td><td>✅ (будь-яку)</td><td>✅ (свої, new)</td></tr>
+            <tr><td>Управління користувачами</td><td>✅</td><td>❌</td></tr>
+          </table>
+
+          <h4>Use Cases</h4>
+          <ol class="use-cases">
+            <li>Клієнт реєструє свій автомобіль у системі</li>
+            <li>Клієнт створює заявку на обслуговування для свого авто</li>
+            <li>Майстер переглядає нові заявки</li>
+            <li>Майстер змінює статус заявки (new → in_progress → completed)</li>
+            <li>Клієнт скасовує заявку зі статусом "new"</li>
+            <li>Клієнт бачить тільки свої авто та заявки</li>
+          </ol>
+        </div>
+      </details>
+
+      <!-- Variant 6 -->
+      <details class="variant-card" id="variant-6">
+        <summary><span class="variant-badge">6</span> Оренда житла</summary>
+        <div class="variant-body">
+          <div class="variant-desc">Платформа оренди житла. Адміністратор керує об'єктами нерухомості, користувач може переглядати об'єкти та подавати заявки на оренду.</div>
+
+          <h4>CRUD Об'єкт #1: Property (Об'єкт нерухомості)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>title</code></td><td>String</td><td>Required, 2-200 символів, trim</td></tr>
+            <tr><td><code>type</code></td><td>String</td><td>Required, enum: apartment, house, room, studio</td></tr>
+            <tr><td><code>address</code></td><td>String</td><td>Required, max 300 символів</td></tr>
+            <tr><td><code>price</code></td><td>Number</td><td>Required, min: 0</td></tr>
+            <tr><td><code>rooms</code></td><td>Number</td><td>Required, min: 1</td></tr>
+            <tr><td><code>description</code></td><td>String</td><td>Max 1000 символів</td></tr>
+          </table>
+
+          <h4>CRUD Об'єкт #2: RentRequest (Заявка на оренду)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>property</code></td><td>ObjectId</td><td>Required, ref: Property</td></tr>
+            <tr><td><code>user</code></td><td>ObjectId</td><td>Required, ref: User</td></tr>
+            <tr><td><code>status</code></td><td>String</td><td>Required, enum: pending, approved, rejected, cancelled. Default: pending</td></tr>
+            <tr><td><code>checkIn</code></td><td>Date</td><td>Required</td></tr>
+            <tr><td><code>checkOut</code></td><td>Date</td><td>Required</td></tr>
+            <tr><td><code>message</code></td><td>String</td><td>Max 500 символів</td></tr>
+          </table>
+
+          <h4>Ролі та права доступу</h4>
+          <table class="roles-table">
+            <tr><th>Дія</th><th>Власник (admin)</th><th>Орендар (user)</th></tr>
+            <tr><td>Перегляд об'єктів</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Створення/редагування об'єктів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Видалення об'єктів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Перегляд заявок</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
+            <tr><td>Створення заявок</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Схвалення/відхилення заявок</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Скасування заявок</td><td>✅ (будь-яку)</td><td>✅ (свої, pending)</td></tr>
+            <tr><td>Управління користувачами</td><td>✅</td><td>❌</td></tr>
+          </table>
+
+          <h4>Use Cases</h4>
+          <ol class="use-cases">
+            <li>Власник додає новий об'єкт нерухомості</li>
+            <li>Орендар переглядає доступні об'єкти з фільтрацією за типом</li>
+            <li>Орендар подає заявку на оренду</li>
+            <li>Власник розглядає заявку та схвалює/відхиляє</li>
+            <li>Орендар скасовує свою заявку зі статусом "pending"</li>
+            <li>Власник переглядає всі заявки по об'єкту</li>
+          </ol>
+        </div>
+      </details>
+
+      <!-- Variant 7 -->
+      <details class="variant-card" id="variant-7">
+        <summary><span class="variant-badge">7</span> Ресторан (бронювання столів)</summary>
+        <div class="variant-body">
+          <div class="variant-desc">Система бронювання столів у ресторані. Адміністратор керує столами, користувач може бронювати стіл на певну дату та час.</div>
+
+          <h4>CRUD Об'єкт #1: Table (Стіл)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>number</code></td><td>Number</td><td>Required, unique, min: 1</td></tr>
+            <tr><td><code>capacity</code></td><td>Number</td><td>Required, min: 1</td></tr>
+            <tr><td><code>location</code></td><td>String</td><td>Enum: main_hall, terrace, vip, bar</td></tr>
+            <tr><td><code>description</code></td><td>String</td><td>Max 300 символів</td></tr>
+            <tr><td><code>isAvailable</code></td><td>Boolean</td><td>Default: true</td></tr>
+          </table>
+
+          <h4>CRUD Об'єкт #2: Reservation (Бронювання)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>table</code></td><td>ObjectId</td><td>Required, ref: Table</td></tr>
+            <tr><td><code>user</code></td><td>ObjectId</td><td>Required, ref: User</td></tr>
+            <tr><td><code>status</code></td><td>String</td><td>Required, enum: pending, confirmed, completed, cancelled. Default: pending</td></tr>
+            <tr><td><code>date</code></td><td>Date</td><td>Required</td></tr>
+            <tr><td><code>time</code></td><td>String</td><td>Required, формат: HH:MM</td></tr>
+            <tr><td><code>guestCount</code></td><td>Number</td><td>Required, min: 1</td></tr>
+          </table>
+
+          <h4>Ролі та права доступу</h4>
+          <table class="roles-table">
+            <tr><th>Дія</th><th>Менеджер (admin)</th><th>Гість (user)</th></tr>
+            <tr><td>Перегляд столів</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Створення/редагування столів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Видалення столів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Перегляд бронювань</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
+            <tr><td>Створення бронювань</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Підтвердження бронювань</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Скасування бронювань</td><td>✅ (будь-яке)</td><td>✅ (свої, pending)</td></tr>
+            <tr><td>Управління користувачами</td><td>✅</td><td>❌</td></tr>
+          </table>
+
+          <h4>Use Cases</h4>
+          <ol class="use-cases">
+            <li>Менеджер додає новий стіл з описом</li>
+            <li>Гість переглядає доступні столи</li>
+            <li>Гість створює бронювання на дату та час</li>
+            <li>Менеджер підтверджує бронювання</li>
+            <li>Гість скасовує бронювання зі статусом "pending"</li>
+            <li>Менеджер переглядає всі бронювання на сьогодні</li>
+          </ol>
+        </div>
+      </details>
+
+      <!-- Variant 8 -->
+      <details class="variant-card" id="variant-8">
+        <summary><span class="variant-badge">8</span> Фітнес-зал</summary>
+        <div class="variant-body">
+          <div class="variant-desc">Система фітнес-залу. Адміністратор керує списком тренерів, користувач може записуватися на тренування до обраного тренера.</div>
+
+          <h4>CRUD Об'єкт #1: Trainer (Тренер)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>name</code></td><td>String</td><td>Required, 2-100 символів</td></tr>
+            <tr><td><code>specialization</code></td><td>String</td><td>Required, enum: fitness, yoga, boxing, swimming, crossfit, other</td></tr>
+            <tr><td><code>experience</code></td><td>Number</td><td>Min: 0 (роки)</td></tr>
+            <tr><td><code>bio</code></td><td>String</td><td>Max 1000 символів</td></tr>
+            <tr><td><code>phone</code></td><td>String</td><td>Max 20 символів</td></tr>
+          </table>
+
+          <h4>CRUD Об'єкт #2: Appointment (Запис на тренування)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>trainer</code></td><td>ObjectId</td><td>Required, ref: Trainer</td></tr>
+            <tr><td><code>user</code></td><td>ObjectId</td><td>Required, ref: User</td></tr>
+            <tr><td><code>status</code></td><td>String</td><td>Required, enum: pending, confirmed, completed, cancelled. Default: pending</td></tr>
+            <tr><td><code>date</code></td><td>Date</td><td>Required</td></tr>
+            <tr><td><code>time</code></td><td>String</td><td>Required, формат: HH:MM</td></tr>
+            <tr><td><code>type</code></td><td>String</td><td>Enum: personal, group, consultation. Default: personal</td></tr>
+          </table>
+
+          <h4>Ролі та права доступу</h4>
+          <table class="roles-table">
+            <tr><th>Дія</th><th>Адміністратор (admin)</th><th>Клієнт (user)</th></tr>
+            <tr><td>Перегляд тренерів</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Створення/редагування тренерів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Видалення тренерів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Перегляд записів</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
+            <tr><td>Створення записів</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Підтвердження записів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Скасування записів</td><td>✅ (будь-який)</td><td>✅ (свої, pending)</td></tr>
+            <tr><td>Управління користувачами</td><td>✅</td><td>❌</td></tr>
+          </table>
+
+          <h4>Use Cases</h4>
+          <ol class="use-cases">
+            <li>Адміністратор додає нового тренера</li>
+            <li>Клієнт переглядає список тренерів за спеціалізацією</li>
+            <li>Клієнт записується на тренування до тренера</li>
+            <li>Адміністратор підтверджує запис</li>
+            <li>Клієнт скасовує запис зі статусом "pending"</li>
+            <li>Адміністратор переглядає розклад тренера</li>
+          </ol>
+        </div>
+      </details>
+
+      <!-- Variant 9 -->
+      <details class="variant-card" id="variant-9">
+        <summary><span class="variant-badge">9</span> Блог + коментарі</summary>
+        <div class="variant-body">
+          <div class="variant-desc">Блог-платформа. Адміністратор керує постами, користувач може переглядати всі опубліковані пости та залишати коментарі (CRUD тільки своїх коментарів).</div>
+
+          <h4>CRUD Об'єкт #1: Post (Пост)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>title</code></td><td>String</td><td>Required, 2-200 символів, trim</td></tr>
+            <tr><td><code>content</code></td><td>String</td><td>Required, max 5000 символів</td></tr>
+            <tr><td><code>category</code></td><td>String</td><td>Enum: tech, lifestyle, travel, food, other</td></tr>
+            <tr><td><code>tags</code></td><td>[String]</td><td>—</td></tr>
+            <tr><td><code>isPublished</code></td><td>Boolean</td><td>Default: false</td></tr>
+          </table>
+
+          <h4>CRUD Об'єкт #2: Comment (Коментар)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>post</code></td><td>ObjectId</td><td>Required, ref: Post</td></tr>
+            <tr><td><code>user</code></td><td>ObjectId</td><td>Required, ref: User</td></tr>
+            <tr><td><code>status</code></td><td>String</td><td>Required, enum: active, hidden, deleted. Default: active</td></tr>
+            <tr><td><code>text</code></td><td>String</td><td>Required, 2-1000 символів</td></tr>
+          </table>
+
+          <h4>Ролі та права доступу</h4>
+          <table class="roles-table">
+            <tr><th>Дія</th><th>Автор (admin)</th><th>Читач (user)</th></tr>
+            <tr><td>Перегляд постів</td><td>✅ (всі)</td><td>✅ (опубліковані)</td></tr>
+            <tr><td>Створення/редагування постів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Видалення постів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Перегляд коментарів</td><td>✅ (всі)</td><td>✅ (active)</td></tr>
+            <tr><td>Створення коментарів</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Редагування коментарів</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
+            <tr><td>Приховування коментарів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Управління користувачами</td><td>✅</td><td>❌</td></tr>
+          </table>
+
+          <h4>Use Cases</h4>
+          <ol class="use-cases">
+            <li>Автор створює та публікує пост</li>
+            <li>Читач переглядає список опублікованих постів</li>
+            <li>Читач залишає коментар до поста</li>
+            <li>Читач редагує свій коментар</li>
+            <li>Автор приховує небажаний коментар (status → "hidden")</li>
+            <li>Автор переглядає всі коментарі до своїх постів</li>
+          </ol>
+        </div>
+      </details>
+
+      <!-- Variant 10 -->
+      <details class="variant-card" id="variant-10">
+        <summary><span class="variant-badge">10</span> HR: вакансії та відгуки</summary>
+        <div class="variant-body">
+          <div class="variant-desc">HR-платформа для управління вакансіями. Адміністратор створює вакансії, користувач може переглядати відкриті вакансії та подавати заявки.</div>
+
+          <h4>CRUD Об'єкт #1: Vacancy (Вакансія)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>title</code></td><td>String</td><td>Required, 2-200 символів, trim</td></tr>
+            <tr><td><code>department</code></td><td>String</td><td>Required, enum: engineering, marketing, sales, hr, finance, other</td></tr>
+            <tr><td><code>salary</code></td><td>Number</td><td>Min: 0</td></tr>
+            <tr><td><code>description</code></td><td>String</td><td>Required, max 2000 символів</td></tr>
+            <tr><td><code>isOpen</code></td><td>Boolean</td><td>Default: true</td></tr>
+          </table>
+
+          <h4>CRUD Об'єкт #2: Application (Заявка)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>vacancy</code></td><td>ObjectId</td><td>Required, ref: Vacancy</td></tr>
+            <tr><td><code>user</code></td><td>ObjectId</td><td>Required, ref: User</td></tr>
+            <tr><td><code>status</code></td><td>String</td><td>Required, enum: new, reviewed, interview, accepted, rejected. Default: new</td></tr>
+            <tr><td><code>coverLetter</code></td><td>String</td><td>Required, max 2000 символів</td></tr>
+            <tr><td><code>experience</code></td><td>Number</td><td>Min: 0 (роки)</td></tr>
+          </table>
+
+          <h4>Ролі та права доступу</h4>
+          <table class="roles-table">
+            <tr><th>Дія</th><th>HR-менеджер (admin)</th><th>Кандидат (user)</th></tr>
+            <tr><td>Перегляд вакансій</td><td>✅ (всі)</td><td>✅ (відкриті)</td></tr>
+            <tr><td>Створення/редагування вакансій</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Видалення вакансій</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Перегляд заявок</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
+            <tr><td>Створення заявок</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Зміна статусу заявок</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Скасування заявок</td><td>✅ (будь-яку)</td><td>✅ (свої, new)</td></tr>
+            <tr><td>Управління користувачами</td><td>✅</td><td>❌</td></tr>
+          </table>
+
+          <h4>Use Cases</h4>
+          <ol class="use-cases">
+            <li>HR-менеджер створює нову вакансію</li>
+            <li>Кандидат переглядає відкриті вакансії за відділом</li>
+            <li>Кандидат подає заявку із супровідним листом</li>
+            <li>HR-менеджер змінює статус заявки (new → reviewed → interview)</li>
+            <li>Кандидат скасовує свою заявку зі статусом "new"</li>
+            <li>HR-менеджер закриває вакансію (isOpen → false)</li>
+          </ol>
+        </div>
+      </details>
+
+      <!-- Variant 11 -->
+      <details class="variant-card" id="variant-11">
+        <summary><span class="variant-badge">11</span> Паркінг / Автостоянка</summary>
+        <div class="variant-body">
+          <div class="variant-desc">Система управління паркінгом. Адміністратор керує паркомісцями, користувач може бронювати місце для свого автомобіля.</div>
+
+          <h4>CRUD Об'єкт #1: ParkingSpot (Паркомісце)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>number</code></td><td>String</td><td>Required, unique, max 10 символів</td></tr>
+            <tr><td><code>zone</code></td><td>String</td><td>Required, enum: A, B, C, VIP</td></tr>
+            <tr><td><code>type</code></td><td>String</td><td>Enum: standard, disabled, electric, motorcycle. Default: standard</td></tr>
+            <tr><td><code>pricePerHour</code></td><td>Number</td><td>Required, min: 0</td></tr>
+            <tr><td><code>isAvailable</code></td><td>Boolean</td><td>Default: true</td></tr>
+          </table>
+
+          <h4>CRUD Об'єкт #2: ParkingReservation (Бронювання паркомісця)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>parkingSpot</code></td><td>ObjectId</td><td>Required, ref: ParkingSpot</td></tr>
+            <tr><td><code>user</code></td><td>ObjectId</td><td>Required, ref: User</td></tr>
+            <tr><td><code>status</code></td><td>String</td><td>Required, enum: active, completed, cancelled. Default: active</td></tr>
+            <tr><td><code>startTime</code></td><td>Date</td><td>Required</td></tr>
+            <tr><td><code>endTime</code></td><td>Date</td><td>Required</td></tr>
+            <tr><td><code>vehiclePlate</code></td><td>String</td><td>Required, max 20 символів</td></tr>
+          </table>
+
+          <h4>Ролі та права доступу</h4>
+          <table class="roles-table">
+            <tr><th>Дія</th><th>Адміністратор (admin)</th><th>Водій (user)</th></tr>
+            <tr><td>Перегляд паркомісць</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Створення/редагування паркомісць</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Видалення паркомісць</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Перегляд бронювань</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
+            <tr><td>Створення бронювань</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Завершення бронювань</td><td>✅</td><td>✅ (свої)</td></tr>
+            <tr><td>Скасування бронювань</td><td>✅ (будь-яке)</td><td>✅ (свої, active)</td></tr>
+            <tr><td>Управління користувачами</td><td>✅</td><td>❌</td></tr>
+          </table>
+
+          <h4>Use Cases</h4>
+          <ol class="use-cases">
+            <li>Адміністратор додає нове паркомісце з зоною та ціною</li>
+            <li>Водій переглядає вільні паркомісця за зоною</li>
+            <li>Водій бронює паркомісце на певний час</li>
+            <li>Водій завершує бронювання при від'їзді</li>
+            <li>Водій скасовує активне бронювання</li>
+            <li>Адміністратор переглядає всі бронювання за день</li>
+          </ol>
+        </div>
+      </details>
+
+      <!-- Variant 12 -->
+      <details class="variant-card" id="variant-12">
+        <summary><span class="variant-badge">12</span> Готель</summary>
+        <div class="variant-body">
+          <div class="variant-desc">Система бронювання готелю. Адміністратор керує номерами, користувач може переглядати доступні номери та створювати бронювання.</div>
+
+          <h4>CRUD Об'єкт #1: Room (Номер)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>number</code></td><td>String</td><td>Required, unique, max 10 символів</td></tr>
+            <tr><td><code>type</code></td><td>String</td><td>Required, enum: single, double, suite, family</td></tr>
+            <tr><td><code>price</code></td><td>Number</td><td>Required, min: 0</td></tr>
+            <tr><td><code>capacity</code></td><td>Number</td><td>Required, min: 1</td></tr>
+            <tr><td><code>amenities</code></td><td>String</td><td>Max 500 символів</td></tr>
+            <tr><td><code>isAvailable</code></td><td>Boolean</td><td>Default: true</td></tr>
+          </table>
+
+          <h4>CRUD Об'єкт #2: Booking (Бронювання)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>room</code></td><td>ObjectId</td><td>Required, ref: Room</td></tr>
+            <tr><td><code>user</code></td><td>ObjectId</td><td>Required, ref: User</td></tr>
+            <tr><td><code>status</code></td><td>String</td><td>Required, enum: pending, confirmed, checked_in, checked_out, cancelled. Default: pending</td></tr>
+            <tr><td><code>checkIn</code></td><td>Date</td><td>Required</td></tr>
+            <tr><td><code>checkOut</code></td><td>Date</td><td>Required</td></tr>
+            <tr><td><code>guests</code></td><td>Number</td><td>Required, min: 1</td></tr>
+          </table>
+
+          <h4>Ролі та права доступу</h4>
+          <table class="roles-table">
+            <tr><th>Дія</th><th>Рецепціоніст (admin)</th><th>Гість (user)</th></tr>
+            <tr><td>Перегляд номерів</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Створення/редагування номерів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Видалення номерів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Перегляд бронювань</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
+            <tr><td>Створення бронювань</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Зміна статусу бронювань</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Скасування бронювань</td><td>✅ (будь-яке)</td><td>✅ (свої, pending)</td></tr>
+            <tr><td>Управління користувачами</td><td>✅</td><td>❌</td></tr>
+          </table>
+
+          <h4>Use Cases</h4>
+          <ol class="use-cases">
+            <li>Рецепціоніст додає новий номер з описом зручностей</li>
+            <li>Гість переглядає доступні номери за типом</li>
+            <li>Гість створює бронювання на дати</li>
+            <li>Рецепціоніст підтверджує бронювання</li>
+            <li>Рецепціоніст реєструє заїзд гостя (status → "checked_in")</li>
+            <li>Гість скасовує бронювання зі статусом "pending"</li>
+          </ol>
+        </div>
+      </details>
+
+      <!-- Variant 13 -->
+      <details class="variant-card" id="variant-13">
+        <summary><span class="variant-badge">13</span> Спа-салон</summary>
+        <div class="variant-body">
+          <div class="variant-desc">Система спа-салону. Адміністратор керує списком послуг, користувач може переглядати послуги та записуватися на процедури.</div>
+
+          <h4>CRUD Об'єкт #1: Service (Послуга)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>name</code></td><td>String</td><td>Required, 2-150 символів, trim</td></tr>
+            <tr><td><code>category</code></td><td>String</td><td>Required, enum: massage, facial, body, hair, nails</td></tr>
+            <tr><td><code>duration</code></td><td>Number</td><td>Required, min: 15 (хвилин)</td></tr>
+            <tr><td><code>price</code></td><td>Number</td><td>Required, min: 0</td></tr>
+            <tr><td><code>description</code></td><td>String</td><td>Max 1000 символів</td></tr>
+          </table>
+
+          <h4>CRUD Об'єкт #2: Appointment (Запис на процедуру)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>service</code></td><td>ObjectId</td><td>Required, ref: Service</td></tr>
+            <tr><td><code>user</code></td><td>ObjectId</td><td>Required, ref: User</td></tr>
+            <tr><td><code>status</code></td><td>String</td><td>Required, enum: pending, confirmed, completed, cancelled. Default: pending</td></tr>
+            <tr><td><code>date</code></td><td>Date</td><td>Required</td></tr>
+            <tr><td><code>time</code></td><td>String</td><td>Required, формат: HH:MM</td></tr>
+            <tr><td><code>notes</code></td><td>String</td><td>Max 500 символів</td></tr>
+          </table>
+
+          <h4>Ролі та права доступу</h4>
+          <table class="roles-table">
+            <tr><th>Дія</th><th>Адміністратор (admin)</th><th>Клієнт (user)</th></tr>
+            <tr><td>Перегляд послуг</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Створення/редагування послуг</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Видалення послуг</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Перегляд записів</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
+            <tr><td>Створення записів</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Підтвердження записів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Скасування записів</td><td>✅ (будь-який)</td><td>✅ (свої, pending)</td></tr>
+            <tr><td>Управління користувачами</td><td>✅</td><td>❌</td></tr>
+          </table>
+
+          <h4>Use Cases</h4>
+          <ol class="use-cases">
+            <li>Адміністратор додає нову послугу з описом</li>
+            <li>Клієнт переглядає послуги за категорією</li>
+            <li>Клієнт записується на процедуру</li>
+            <li>Адміністратор підтверджує запис</li>
+            <li>Клієнт скасовує запис зі статусом "pending"</li>
+            <li>Адміністратор переглядає розклад записів на день</li>
+          </ol>
+        </div>
+      </details>
+
+      <!-- Variant 14 -->
+      <details class="variant-card" id="variant-14">
+        <summary><span class="variant-badge">14</span> Консультації викладача</summary>
+        <div class="variant-body">
+          <div class="variant-desc">Система запису на консультації до викладачів. Адміністратор керує списком викладачів, студент може обирати викладача та подавати заявку на консультацію.</div>
+
+          <h4>CRUD Об'єкт #1: Teacher (Викладач)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>name</code></td><td>String</td><td>Required, 2-100 символів</td></tr>
+            <tr><td><code>department</code></td><td>String</td><td>Required, enum: cs, math, physics, economics, languages, other</td></tr>
+            <tr><td><code>subject</code></td><td>String</td><td>Required, max 200 символів</td></tr>
+            <tr><td><code>bio</code></td><td>String</td><td>Max 1000 символів</td></tr>
+            <tr><td><code>email</code></td><td>String</td><td>Required, email формат</td></tr>
+          </table>
+
+          <h4>CRUD Об'єкт #2: ConsultationRequest (Заявка на консультацію)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>teacher</code></td><td>ObjectId</td><td>Required, ref: Teacher</td></tr>
+            <tr><td><code>user</code></td><td>ObjectId</td><td>Required, ref: User</td></tr>
+            <tr><td><code>status</code></td><td>String</td><td>Required, enum: pending, approved, completed, rejected. Default: pending</td></tr>
+            <tr><td><code>date</code></td><td>Date</td><td>Required</td></tr>
+            <tr><td><code>topic</code></td><td>String</td><td>Required, max 300 символів</td></tr>
+            <tr><td><code>message</code></td><td>String</td><td>Max 1000 символів</td></tr>
+          </table>
+
+          <h4>Ролі та права доступу</h4>
+          <table class="roles-table">
+            <tr><th>Дія</th><th>Адміністратор (admin)</th><th>Студент (user)</th></tr>
+            <tr><td>Перегляд викладачів</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Створення/редагування викладачів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Видалення викладачів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Перегляд заявок</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
+            <tr><td>Створення заявок</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Схвалення/відхилення заявок</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Скасування заявок</td><td>✅ (будь-яку)</td><td>✅ (свої, pending)</td></tr>
+            <tr><td>Управління користувачами</td><td>✅</td><td>❌</td></tr>
+          </table>
+
+          <h4>Use Cases</h4>
+          <ol class="use-cases">
+            <li>Адміністратор додає викладача з контактною інформацією</li>
+            <li>Студент переглядає викладачів за кафедрою</li>
+            <li>Студент подає заявку на консультацію з темою</li>
+            <li>Адміністратор схвалює або відхиляє заявку</li>
+            <li>Студент скасовує заявку зі статусом "pending"</li>
+            <li>Адміністратор переглядає заявки по викладачу</li>
+          </ol>
+        </div>
+      </details>
+
+      <!-- Variant 15 -->
+      <details class="variant-card" id="variant-15">
+        <summary><span class="variant-badge">15</span> Музей / Екскурсії</summary>
+        <div class="variant-body">
+          <div class="variant-desc">Система музею для замовлення екскурсій. Адміністратор керує турами (екскурсіями), відвідувач може переглядати тури та замовляти квитки.</div>
+
+          <h4>CRUD Об'єкт #1: Tour (Тур / Екскурсія)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>title</code></td><td>String</td><td>Required, 2-200 символів, trim</td></tr>
+            <tr><td><code>description</code></td><td>String</td><td>Required, max 1000 символів</td></tr>
+            <tr><td><code>duration</code></td><td>Number</td><td>Required, min: 15 (хвилин)</td></tr>
+            <tr><td><code>price</code></td><td>Number</td><td>Required, min: 0</td></tr>
+            <tr><td><code>maxParticipants</code></td><td>Number</td><td>Required, min: 1</td></tr>
+          </table>
+
+          <h4>CRUD Об'єкт #2: TicketOrder (Замовлення квитків)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>tour</code></td><td>ObjectId</td><td>Required, ref: Tour</td></tr>
+            <tr><td><code>user</code></td><td>ObjectId</td><td>Required, ref: User</td></tr>
+            <tr><td><code>status</code></td><td>String</td><td>Required, enum: new, paid, used, cancelled. Default: new</td></tr>
+            <tr><td><code>date</code></td><td>Date</td><td>Required</td></tr>
+            <tr><td><code>tickets</code></td><td>Number</td><td>Required, min: 1</td></tr>
+            <tr><td><code>totalPrice</code></td><td>Number</td><td>Required, min: 0</td></tr>
+          </table>
+
+          <h4>Ролі та права доступу</h4>
+          <table class="roles-table">
+            <tr><th>Дія</th><th>Куратор (admin)</th><th>Відвідувач (user)</th></tr>
+            <tr><td>Перегляд турів</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Створення/редагування турів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Видалення турів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Перегляд замовлень</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
+            <tr><td>Створення замовлень</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Зміна статусу замовлень</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Скасування замовлень</td><td>✅ (будь-яке)</td><td>✅ (свої, new)</td></tr>
+            <tr><td>Управління користувачами</td><td>✅</td><td>❌</td></tr>
+          </table>
+
+          <h4>Use Cases</h4>
+          <ol class="use-cases">
+            <li>Куратор створює новий тур з описом та ціною</li>
+            <li>Відвідувач переглядає доступні тури</li>
+            <li>Відвідувач замовляє квитки на тур</li>
+            <li>Куратор змінює статус замовлення на "paid"</li>
+            <li>Відвідувач скасовує неоплачене замовлення</li>
+            <li>Куратор переглядає замовлення по туру</li>
+          </ol>
+        </div>
+      </details>
+
+    </section>
+
+    <footer class="lecture-footer">
+      <p>Курс "Основи обробки та передачі інформації" | Next.js Full-Stack Development</p>
+    </footer>
+  </article>
+
+  <script>
+    // Load students from JSON
+    async function loadStudents() {
+      try {
+        const response = await fetch('data/students.json');
+        const data = await response.json();
+        const variantNames = {
+          1: 'Бібліотека', 2: 'Інтернет-магазин', 3: 'Кінотеатр',
+          4: 'Проєкти та задачі', 5: 'Автосервіс', 6: 'Оренда житла',
+          7: 'Ресторан (бронювання столів)', 8: 'Фітнес-зал', 9: 'Блог + коментарі',
+          10: 'HR: вакансії та відгуки', 11: 'Паркінг / Автостоянка', 12: 'Готель',
+          13: 'Спа-салон', 14: 'Консультації викладача', 15: 'Музей / Екскурсії'
+        };
+
+        let html = '<div class="groups-grid">';
+        for (const group of data.groups) {
+          html += `<div class="group-card">
+            <h3>${group.name} (${group.students.length} студентів)</h3>
+            <table>
+              <tr><th>№</th><th>ПІБ студента</th><th>Тема</th></tr>`;
+          for (const student of group.students) {
+            html += `<tr>
+              <td><a href="#variant-${student.variant}">${student.variant}</a></td>
+              <td>${student.name}</td>
+              <td>${variantNames[student.variant] || '—'}</td>
+            </tr>`;
+          }
+          html += '</table></div>';
+        }
+        html += '</div>';
+        document.getElementById('students-container').innerHTML = html;
+      } catch (e) {
+        document.getElementById('students-container').innerHTML =
+          '<p style="color: var(--danger);">Не вдалося завантажити список студентів. Переконайтеся, що файл <code>data/students.json</code> існує та сервер запущено.</p>';
+      }
+    }
+
+    function toggleAll(open) {
+      document.querySelectorAll('.variant-card').forEach(d => d.open = open);
+    }
+
+    loadStudents();
+  </script>
+</body>
+</html>

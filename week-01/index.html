@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Практика 1: Створення першого Next.js проекту | Протокол заняття</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/practical.css">
+</head>
+<body>
+  <!-- Навігація -->
+  <nav class="lecture-nav">
+    <div class="container">
+      <div class="nav-title">Тиждень 1: Практичне заняття</div>
+      <div class="nav-links">
+        <a href="../" class="btn btn-outline">← На головну</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Основний контент -->
+  <article class="lecture-content">
+    <!-- Заголовок -->
+    <header class="lecture-header">
+      <span class="lecture-number">Практика 1</span>
+      <h1>Створення першого Next.js проекту</h1>
+      <div class="lecture-meta">
+        <span>📅 Тиждень 1</span>
+        <span>💻 Практичне заняття</span>
+      </div>
+    </header>
+
+    <!-- Зміст -->
+    <nav class="toc">
+      <h3>Зміст заняття</h3>
+      <ol>
+        <li><a href="#preparation">Підготовка середовища</a></li>
+        <li><a href="#create-project">Створення Next.js проекту</a></li>
+        <li><a href="#landing-page">Створення Landing Page</a></li>
+        <li><a href="#result">Перевірка результату</a></li>
+      </ol>
+    </nav>
+
+    <!-- Вступ -->
+    <section class="lecture-section">
+      <h2>Мета заняття</h2>
+      <p>На цьому практичному занятті ви:</p>
+      <ul>
+        <li>Встановите необхідне програмне забезпечення (Node.js, VS Code, Git)</li>
+        <li>Створите перший Next.js проект з нуля</li>
+        <li>Запустите локальний сервер розробки</li>
+        <li>Створите просту landing page з використанням Tailwind CSS</li>
+      </ul>
+
+      <div class="info-box info">
+        <strong>Приклад результату:</strong> На цьому занятті ви створите landing page для вашого майбутнього проекту.
+        Викладач продемонструє приклад на темі "Кав'ярня", але ви маєте адаптувати його під свою обрану тему з 15 варіантів.
+      </div>
+    </section>
+
+    <!-- Частина 1: Підготовка середовища -->
+    <section class="lecture-section" id="preparation">
+      <h2>1. Підготовка середовища</h2>
+      <!-- Вибір ОС -->
+      <div class="info-box warning">
+        <strong>Оберіть вашу операційну систему</strong> — інструкції відрізняються для різних ОС.
+        Натисніть на вкладку з вашою системою.
+      </div>
+
+      <h3>1.1. Встановлення Node.js</h3>
+
+      <div class="os-tabs" id="nodejs-tabs">
+        <button class="os-tab active" onclick="showOS('nodejs', 'windows')">🪟 Windows</button>
+        <button class="os-tab" onclick="showOS('nodejs', 'macos')">🍎 macOS</button>
+        <button class="os-tab" onclick="showOS('nodejs', 'linux')">🐧 Linux/Ubuntu</button>
+      </div>
+
+      <!-- Windows -->
+      <div class="os-content active" id="nodejs-windows">
+        <div class="task-box">
+          <h4>Завдання: Встановити Node.js на Windows</h4>
+          <ol>
+            <li>Відкрийте браузер та перейдіть на <a href="https://nodejs.org" target="_blank">nodejs.org</a></li>
+            <li>Завантажте версію <strong>LTS</strong> (Long Term Support) — зелена кнопка</li>
+            <li>Запустіть завантажений файл <code>node-vXX.X.X-x64.msi</code></li>
+            <li>Слідуйте інструкціям інсталятора (Next → Next → Install)</li>
+            <li>Перезапустіть комп'ютер (рекомендовано)</li>
+          </ol>
+        </div>
+
+        <p><strong>Перевірка встановлення:</strong></p>
+        <div class="code-block">
+          <div class="code-header">PowerShell або Command Prompt (cmd)</div>
+          <pre><code># Відкрийте PowerShell (Win + X → Windows PowerShell)
+# або Command Prompt (Win + R → cmd → Enter)
+
+node -v
+# Очікуваний результат: v20.x.x або v22.x.x
+
+npm -v
+# Очікуваний результат: 10.x.x</code></pre>
+        </div>
+
+        <div class="error-box">
+          <h5>Якщо команда не знайдена ("not recognized")</h5>
+          <ul>
+            <li>Перезапустіть термінал після встановлення</li>
+            <li>Перезавантажте комп'ютер</li>
+            <li>Переконайтеся, що Node.js додано до змінної PATH</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- macOS -->
+      <div class="os-content" id="nodejs-macos">
+        <div class="task-box">
+          <h4>Завдання: Встановити Node.js на macOS</h4>
+
+          <p><strong>Варіант 1: Через офіційний інсталятор</strong></p>
+          <ol>
+            <li>Відкрийте <a href="https://nodejs.org" target="_blank">nodejs.org</a></li>
+            <li>Завантажте версію <strong>LTS</strong> для macOS</li>
+            <li>Відкрийте завантажений <code>.pkg</code> файл</li>
+            <li>Слідуйте інструкціям інсталятора</li>
+          </ol>
+
+          <p><strong>Варіант 2: Через Homebrew (рекомендовано)</strong></p>
+          <div class="code-block">
+            <div class="code-header">Terminal</div>
+            <pre><code># Якщо Homebrew не встановлений:
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# Встановлення Node.js:
+brew install node</code></pre>
+          </div>
+        </div>
+
+        <p><strong>Перевірка встановлення:</strong></p>
+        <div class="code-block">
+          <div class="code-header">Terminal</div>
+          <pre><code>node -v
+# Очікуваний результат: v20.x.x або v22.x.x
+
+npm -v
+# Очікуваний результат: 10.x.x</code></pre>
+        </div>
+      </div>
+
+      <!-- Linux -->
+      <div class="os-content" id="nodejs-linux">
+        <div class="task-box">
+          <h4>Завдання: Встановити Node.js на Linux/Ubuntu</h4>
+
+          <p><strong>Рекомендований спосіб — через NodeSource:</strong></p>
+          <div class="code-block">
+            <div class="code-header">Terminal</div>
+            <pre><code># Оновіть пакети
+sudo apt update
+
+# Встановіть curl якщо немає
+sudo apt install -y curl
+
+# Додайте репозиторій NodeSource (Node.js 20.x)
+curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+
+# Встановіть Node.js
+sudo apt install -y nodejs</code></pre>
+          </div>
+
+          <p><strong>Альтернатива — через snap:</strong></p>
+          <div class="code-block">
+            <pre><code>sudo snap install node --classic</code></pre>
+          </div>
+        </div>
+
+        <p><strong>Перевірка встановлення:</strong></p>
+        <div class="code-block">
+          <div class="code-header">Terminal</div>
+          <pre><code>node -v
+# Очікуваний результат: v20.x.x або v22.x.x
+
+npm -v
+# Очікуваний результат: 10.x.x</code></pre>
+        </div>
+
+        <div class="error-box">
+          <h5>Якщо є помилки з правами доступу (EACCES)</h5>
+          <p>Не використовуйте <code>sudo</code> з npm. Натомість налаштуйте npm prefix:</p>
+          <div class="code-block">
+            <pre><code>mkdir -p ~/.npm-global
+npm config set prefix '~/.npm-global'
+echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>✅ Контрольна точка</h5>
+        <p>Команди <code>node -v</code> та <code>npm -v</code> повертають версії без помилок.</p>
+      </div>
+
+      <!-- VS Code -->
+      <h3>1.2. Встановлення VS Code</h3>
+
+      <div class="os-tabs" id="vscode-tabs">
+        <button class="os-tab active" onclick="showOS('vscode', 'windows')">🪟 Windows</button>
+        <button class="os-tab" onclick="showOS('vscode', 'macos')">🍎 macOS</button>
+        <button class="os-tab" onclick="showOS('vscode', 'linux')">🐧 Linux/Ubuntu</button>
+      </div>
+
+      <!-- Windows -->
+      <div class="os-content active" id="vscode-windows">
+        <div class="task-box">
+          <h4>Завдання: Встановити VS Code на Windows</h4>
+          <ol>
+            <li>Перейдіть на <a href="https://code.visualstudio.com" target="_blank">code.visualstudio.com</a></li>
+            <li>Натисніть "Download for Windows"</li>
+            <li>Запустіть інсталятор <code>VSCodeSetup-x64.exe</code></li>
+            <li>
+              <strong>Важливо!</strong> На кроці "Select Additional Tasks" відмітьте:
+              <ul>
+                <li>✅ Add "Open with Code" action to Windows Explorer file context menu</li>
+                <li>✅ Add "Open with Code" action to Windows Explorer directory context menu</li>
+                <li>✅ Add to PATH</li>
+              </ul>
+            </li>
+            <li>Завершіть встановлення</li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- macOS -->
+      <div class="os-content" id="vscode-macos">
+        <div class="task-box">
+          <h4>Завдання: Встановити VS Code на macOS</h4>
+          <ol>
+            <li>Перейдіть на <a href="https://code.visualstudio.com" target="_blank">code.visualstudio.com</a></li>
+            <li>Завантажте версію для macOS (.zip)</li>
+            <li>Розпакуйте архів</li>
+            <li>Перетягніть <strong>Visual Studio Code.app</strong> в папку <strong>Applications</strong></li>
+            <li>
+              Для команди <code>code</code> в терміналі:
+              <ul>
+                <li>Відкрийте VS Code</li>
+                <li>Натисніть <kbd>Cmd + Shift + P</kbd></li>
+                <li>Введіть "Shell Command: Install 'code' command in PATH"</li>
+                <li>Виберіть цю опцію</li>
+              </ul>
+            </li>
+          </ol>
+        </div>
+      </div>
+
+      <!-- Linux -->
+      <div class="os-content" id="vscode-linux">
+        <div class="task-box">
+          <h4>Завдання: Встановити VS Code на Linux/Ubuntu</h4>
+
+          <p><strong>Через snap (найпростіше):</strong></p>
+          <div class="code-block">
+            <pre><code>sudo snap install code --classic</code></pre>
+          </div>
+
+          <p><strong>Або через .deb пакет:</strong></p>
+          <div class="code-block">
+            <pre><code># Завантажте .deb з code.visualstudio.com
+# Встановіть:
+sudo dpkg -i code_*.deb
+sudo apt install -f  # якщо є помилки залежностей</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <h4>Рекомендовані розширення VS Code</h4>
+      <p>Після встановлення VS Code, встановіть ці розширення (Extensions → Search):</p>
+      <ul>
+        <li><strong>ES7+ React/Redux/React-Native snippets</strong> — швидкі шаблони коду</li>
+        <li><strong>Prettier - Code formatter</strong> — автоформатування коду</li>
+        <li><strong>ESLint</strong> — перевірка помилок JavaScript</li>
+        <li><strong>Tailwind CSS IntelliSense</strong> — автодоповнення Tailwind класів</li>
+        <li><strong>Auto Rename Tag</strong> — автоматичне перейменування HTML тегів</li>
+      </ul>
+
+      <div class="checkpoint">
+        <h5>✅ Контрольна точка</h5>
+        <p>VS Code встановлений, розширення додані. Команда <code>code .</code> в терміналі відкриває VS Code.</p>
+      </div>
+
+      <!-- Git -->
+      <h3>1.3. Встановлення Git</h3>
+
+      <div class="os-tabs" id="git-tabs">
+        <button class="os-tab active" onclick="showOS('git', 'windows')">🪟 Windows</button>
+        <button class="os-tab" onclick="showOS('git', 'macos')">🍎 macOS</button>
+        <button class="os-tab" onclick="showOS('git', 'linux')">🐧 Linux/Ubuntu</button>
+      </div>
+
+      <!-- Windows -->
+      <div class="os-content active" id="git-windows">
+        <div class="task-box">
+          <h4>Завдання: Встановити Git на Windows</h4>
+          <ol>
+            <li>Перейдіть на <a href="https://git-scm.com/download/win" target="_blank">git-scm.com/download/win</a></li>
+            <li>Завантаження почнеться автоматично</li>
+            <li>Запустіть інсталятор</li>
+            <li>
+              Під час встановлення:
+              <ul>
+                <li>Default editor: оберіть <strong>Visual Studio Code</strong></li>
+                <li>Adjusting PATH: оберіть <strong>"Git from the command line and also from 3rd-party software"</strong></li>
+                <li>Інші опції залиште за замовчуванням</li>
+              </ul>
+            </li>
+          </ol>
+        </div>
+
+        <p><strong>Перевірка:</strong></p>
+        <div class="code-block">
+          <div class="code-header">PowerShell (новий термінал!)</div>
+          <pre><code>git --version
+# Очікуваний результат: git version 2.x.x</code></pre>
+        </div>
+      </div>
+
+      <!-- macOS -->
+      <div class="os-content" id="git-macos">
+        <div class="task-box">
+          <h4>Завдання: Встановити Git на macOS</h4>
+
+          <p>Git зазвичай вже встановлений на macOS. Перевірте:</p>
+          <div class="code-block">
+            <pre><code>git --version</code></pre>
+          </div>
+
+          <p>Якщо Git не встановлений, система запропонує встановити Command Line Tools.</p>
+
+          <p><strong>Альтернатива через Homebrew:</strong></p>
+          <div class="code-block">
+            <pre><code>brew install git</code></pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- Linux -->
+      <div class="os-content" id="git-linux">
+        <div class="task-box">
+          <h4>Завдання: Встановити Git на Linux/Ubuntu</h4>
+          <div class="code-block">
+            <pre><code>sudo apt update
+sudo apt install git</code></pre>
+          </div>
+        </div>
+
+        <p><strong>Перевірка:</strong></p>
+        <div class="code-block">
+          <pre><code>git --version
+# Очікуваний результат: git version 2.x.x</code></pre>
+        </div>
+      </div>
+
+      <h4>Налаштування Git (для всіх ОС)</h4>
+      <div class="code-block">
+        <div class="code-header">Terminal / PowerShell</div>
+        <pre><code># Замініть на своє ім'я та email
+git config --global user.name "Ваше Ім'я"
+git config --global user.email "your.email@example.com"
+
+# Перевірка налаштувань
+git config --list</code></pre>
+      </div>
+
+      <div class="checkpoint">
+        <h5>✅ Контрольна точка — Підготовка завершена</h5>
+        <p>Всі три інструменти встановлені та працюють:</p>
+        <ul>
+          <li><code>node -v</code> → v20.x.x або новіше</li>
+          <li><code>npm -v</code> → 10.x.x</li>
+          <li><code>git --version</code> → git version 2.x.x</li>
+          <li>VS Code відкривається</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 2: Створення проекту -->
+    <section class="lecture-section" id="create-project">
+      <h2>2. Створення Next.js проекту</h2>
+      <div class="task-box">
+        <h4>Завдання: Створити новий Next.js проект</h4>
+
+        <p><strong>Крок 1:</strong> Відкрийте термінал і перейдіть в папку для проектів</p>
+        <div class="code-block">
+          <div class="code-header">Terminal / PowerShell</div>
+          <pre><code># Windows (PowerShell)
+cd C:\Users\ВашеІмя\Desktop
+# або
+cd ~\Desktop
+
+# macOS / Linux
+cd ~/Desktop
+# або будь-яка інша папка для проектів</code></pre>
+        </div>
+
+        <p><strong>Крок 2:</strong> Створіть Next.js проект</p>
+        <div class="code-block">
+          <div class="code-header">Terminal / PowerShell</div>
+          <pre><code>npx create-next-app@latest my-project</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Примітка:</strong> Замініть <code>my-project</code> на назву вашого проекту (латиницею, без пробілів).
+          Наприклад: <code>library-app</code>, <code>cinema-system</code>, <code>hotel-booking</code>.
+        </div>
+
+        <p><strong>Крок 3:</strong> Якщо система запитає про встановлення пакету — погодьтеся:</p>
+        <div class="code-block">
+          <div class="code-header">Запит на встановлення</div>
+          <pre><code>Need to install the following packages:
+  create-next-app@16.x.x
+Ok to proceed? (y) › <strong>y</strong></code></pre>
+        </div>
+
+        <p><strong>Крок 4:</strong> На питання про налаштування за замовчуванням оберіть "No":</p>
+        <div class="code-block">
+          <div class="code-header">Вибір режиму налаштування</div>
+          <pre><code>? Would you like to use the recommended Next.js defaults? › <strong>No, customize settings</strong></code></pre>
+        </div>
+
+        <p><strong>Крок 5:</strong> Відповідайте на питання:</p>
+        <div class="code-block">
+          <div class="code-header">Інтерактивне меню</div>
+          <pre><code>✔ Would you like to use TypeScript? › <strong>No</strong>
+✔ Which linter would you like to use? › <strong>ESLint</strong>
+✔ Would you like to use Tailwind CSS? › <strong>Yes</strong>
+✔ Would you like your code inside a `src/` directory? › <strong>No</strong>
+✔ Would you like to use App Router? (recommended) › <strong>Yes</strong>
+✔ Would you like to use React Compiler? › <strong>No</strong>
+✔ Would you like to customize the import alias (@/* by default)? › <strong>No</strong></code></pre>
+        </div>
+
+        <div class="info-box warning">
+          <strong>Важливо:</strong> Обов'язково оберіть <strong>Yes</strong> для App Router та <strong>No</strong> для React Compiler!
+        </div>
+
+        <p><strong>Крок 4:</strong> Дочекайтеся завершення встановлення (1-5 хвилин)</p>
+      </div>
+
+      <div class="error-box">
+        <h5>Можливі помилки та їх вирішення</h5>
+        <ul>
+          <li>
+            <strong>EACCES / Permission denied:</strong>
+            <br>Windows: запустіть PowerShell як Адміністратор
+            <br>Linux/macOS: НЕ використовуйте sudo, налаштуйте npm prefix
+          </li>
+          <li>
+            <strong>Network error / ETIMEDOUT:</strong>
+            <br>Перевірте інтернет-з'єднання або спробуйте пізніше
+          </li>
+          <li>
+            <strong>npm WARN deprecated:</strong>
+            <br>Це попередження, не помилка. Можна ігнорувати.
+          </li>
+        </ul>
+      </div>
+
+      <h3>2.2. Запуск проекту</h3>
+
+      <div class="task-box">
+        <h4>Завдання: Запустити dev сервер</h4>
+
+        <div class="code-block">
+          <div class="code-header">Terminal / PowerShell</div>
+          <pre><code># Перейти в папку проекту
+cd my-project
+
+# Запустити dev сервер
+npm run dev</code></pre>
+        </div>
+
+        <p><strong>Очікуваний результат:</strong></p>
+        <div class="code-block">
+          <pre><code>   ▲ Next.js 15.x.x
+   - Local:        http://localhost:3000
+
+ ✓ Starting...
+ ✓ Ready in 2.3s</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Відкрити проект в браузері</h4>
+        <ol>
+          <li>Відкрийте браузер (Chrome, Firefox, Edge)</li>
+          <li>Перейдіть за адресою: <a href="http://localhost:3000" target="_blank">http://localhost:3000</a></li>
+          <li>Ви побачите стартову сторінку Next.js</li>
+        </ol>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Відкрити проект в VS Code</h4>
+        <p>В новому терміналі (не закривайте попередній!):</p>
+        <div class="code-block">
+          <pre><code># Переконайтеся, що ви в папці проекту
+cd my-project
+
+# Відкрийте VS Code
+code .</code></pre>
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>✅ Контрольна точка</h5>
+        <ul>
+          <li>Dev сервер запущений і показує "Ready"</li>
+          <li>Сторінка localhost:3000 відкривається в браузері</li>
+          <li>Проект відкритий у VS Code</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 3: Створення Landing Page -->
+    <section class="lecture-section" id="landing-page">
+      <h2>3. Створення Landing Page</h2>
+      <p>Тепер ви створите landing page для вашого проекту. Нижче наведено приклад для кав'ярні — <strong>адаптуйте його під вашу тему!</strong></p>
+
+      <div class="task-box">
+        <h4>Завдання: Замінити головну сторінку</h4>
+
+        <ol>
+          <li>У VS Code відкрийте файл <code>app/page.js</code></li>
+          <li>Видаліть весь вміст файлу</li>
+          <li>Вставте наступний код (та адаптуйте під свою тему):</li>
+        </ol>
+
+        <div class="code-block">
+          <div class="code-header">app/page.js</div>
+          <pre><code>// Головна сторінка вашого проекту
+// Замініть назви та тексти на відповідні вашій темі!
+
+export default function Home() {
+  return (
+    &lt;div className="min-h-screen"&gt;
+      {/* Hero секція */}
+      &lt;section className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-20"&gt;
+        &lt;div className="container mx-auto px-4 text-center"&gt;
+          &lt;h1 className="text-5xl font-bold mb-4"&gt;
+            Назва вашого проекту
+          &lt;/h1&gt;
+          &lt;p className="text-xl mb-8 opacity-90"&gt;
+            Короткий опис — що робить ваш застосунок (1-2 речення)
+          &lt;/p&gt;
+          &lt;button className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-100 transition"&gt;
+            Розпочати
+          &lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/section&gt;
+
+      {/* Секція можливостей */}
+      &lt;section className="py-16 bg-gray-50"&gt;
+        &lt;div className="container mx-auto px-4"&gt;
+          &lt;h2 className="text-3xl font-bold text-center mb-12 text-gray-900"&gt;
+            Можливості системи
+          &lt;/h2&gt;
+
+          &lt;div className="grid grid-cols-1 md:grid-cols-3 gap-8"&gt;
+            {/* Картка 1 */}
+            &lt;div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition"&gt;
+              &lt;div className="text-4xl mb-4"&gt;📚&lt;/div&gt;
+              &lt;h3 className="text-xl font-semibold mb-2 text-gray-900"&gt;Можливість 1&lt;/h3&gt;
+              &lt;p className="text-gray-600"&gt;
+                Опис першої можливості вашої системи.
+              &lt;/p&gt;
+            &lt;/div&gt;
+
+            {/* Картка 2 */}
+            &lt;div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition"&gt;
+              &lt;div className="text-4xl mb-4"&gt;👥&lt;/div&gt;
+              &lt;h3 className="text-xl font-semibold mb-2 text-gray-900"&gt;Можливість 2&lt;/h3&gt;
+              &lt;p className="text-gray-600"&gt;
+                Опис другої можливості вашої системи.
+              &lt;/p&gt;
+            &lt;/div&gt;
+
+            {/* Картка 3 */}
+            &lt;div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition"&gt;
+              &lt;div className="text-4xl mb-4"&gt;🔒&lt;/div&gt;
+              &lt;h3 className="text-xl font-semibold mb-2 text-gray-900"&gt;Можливість 3&lt;/h3&gt;
+              &lt;p className="text-gray-600"&gt;
+                Опис третьої можливості вашої системи.
+              &lt;/p&gt;
+            &lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/section&gt;
+
+      {/* Футер */}
+      &lt;footer className="bg-gray-800 text-white py-8"&gt;
+        &lt;div className="container mx-auto px-4 text-center"&gt;
+          &lt;p className="text-gray-400"&gt;
+            © 2024 Ваше Ім'я | Курс "Основи обробки та передачі інформації"
+          &lt;/p&gt;
+        &lt;/div&gt;
+      &lt;/footer&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+
+        <ol start="4">
+          <li>Збережіть файл: <kbd>Ctrl + S</kbd> (Windows/Linux) або <kbd>Cmd + S</kbd> (macOS)</li>
+          <li>Перевірте браузер — сторінка оновиться автоматично (Hot Reload)</li>
+        </ol>
+      </div>
+
+      <div class="info-box info">
+        <strong>Hot Reload:</strong> Одна з найзручніших функцій Next.js — при збереженні файлу зміни відразу
+        відображаються в браузері без перезапуску сервера.
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Адаптувати під свою тему</h4>
+        <p>Замініть у коді:</p>
+        <ul>
+          <li><strong>Назву проекту</strong> — відповідно до вашої теми (Бібліотека, Кінотеатр, Готель тощо)</li>
+          <li><strong>Опис</strong> — що робить ваша система</li>
+          <li><strong>Можливості</strong> — 3 головні функції вашого застосунку</li>
+          <li><strong>Кольори</strong> — змініть <code>blue</code> на інший колір (red, green, purple, amber тощо)</li>
+          <li><strong>Emoji</strong> — підберіть відповідні до вашої теми</li>
+          <li><strong>Ваше ім'я</strong> — у футері</li>
+        </ul>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Оновити metadata в layout.js</h4>
+        <p>Відкрийте файл <code>app/layout.js</code> та знайдіть об'єкт <code>metadata</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/layout.js — знайдіть та змініть metadata</div>
+          <pre><code>export const metadata = {
+  title: "Назва вашого проекту",           // Відображається у вкладці браузера
+  description: "Короткий опис проекту",    // Для SEO та соціальних мереж
+};</code></pre>
+        </div>
+
+        <p><strong>Приклади для різних тем:</strong></p>
+        <div class="code-block">
+          <pre><code>// Бібліотека
+title: "Система управління бібліотекою"
+description: "Зручний облік книг та читачів"
+
+// Кінотеатр
+title: "Кінотеатр «Зоряний»"
+description: "Онлайн-бронювання квитків на найкращі фільми"
+
+// Готель
+title: "Готель «Затишок»"
+description: "Система бронювання номерів"</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Що таке metadata?</strong> Це інформація про сторінку, яка відображається:
+          <ul>
+            <li>У вкладці браузера (title)</li>
+            <li>При пошуку в Google (description)</li>
+            <li>При поширенні посилання в соцмережах</li>
+          </ul>
+        </div>
+      </div>
+
+      <h3>Приклади адаптації для різних тем</h3>
+
+      <div class="code-block">
+        <div class="code-header">Приклади заголовків</div>
+        <pre><code>// Бібліотека
+&lt;h1&gt;Система управління бібліотекою&lt;/h1&gt;
+&lt;p&gt;Зручний облік книг та читачів. Швидке бронювання та видача.&lt;/p&gt;
+
+// Кінотеатр
+&lt;h1&gt;Кінотеатр "Зоряний"&lt;/h1&gt;
+&lt;p&gt;Онлайн-бронювання квитків на найкращі фільми.&lt;/p&gt;
+
+// Готель
+&lt;h1&gt;Готель "Затишок"&lt;/h1&gt;
+&lt;p&gt;Система бронювання номерів. Комфорт та сервіс на найвищому рівні.&lt;/p&gt;
+
+// Ресторан
+&lt;h1&gt;Ресторан "Смачного"&lt;/h1&gt;
+&lt;p&gt;Замовлення страв онлайн. Швидко, зручно, смачно.&lt;/p&gt;</code></pre>
+      </div>
+
+      <div class="checkpoint">
+        <h5>✅ Контрольна точка</h5>
+        <ul>
+          <li>Landing page відображається в браузері</li>
+          <li>Є Hero секція з назвою та описом</li>
+          <li>Є секція з можливостями (мінімум 3 картки)</li>
+          <li>Є футер з вашим ім'ям</li>
+          <li>Контент адаптований під вашу тему</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 4: Перевірка результату -->
+    <section class="lecture-section" id="result">
+      <h2>4. Перевірка результату</h2>
+      <div class="task-box">
+        <h4>Завдання: Ініціалізувати Git репозиторій</h4>
+
+        <p>Якщо Git репозиторій не був створений автоматично:</p>
+        <div class="code-block">
+          <div class="code-header">Terminal (в папці проекту)</div>
+          <pre><code># Ініціалізувати репозиторій
+git init
+
+# Додати всі файли
+git add .
+
+# Створити перший коміт
+git commit -m "Initial commit: create Next.js landing page"</code></pre>
+        </div>
+      </div>
+
+      <div class="final-result">
+        <h4>Критерії успішного виконання практичного заняття</h4>
+        <ul class="criteria-list">
+          <li>Node.js та npm встановлені і працюють</li>
+          <li>VS Code встановлений з рекомендованими розширеннями</li>
+          <li>Git встановлений та налаштований</li>
+          <li>Next.js проект створений та запускається</li>
+          <li>Landing page відображається коректно</li>
+          <li>Контент адаптований під обрану тему</li>
+          <li>Hot Reload працює (зміни застосовуються автоматично)</li>
+          <li>Git репозиторій ініціалізований</li>
+        </ul>
+      </div>
+
+      <h3>Зупинка сервера</h3>
+      <p>Щоб зупинити dev сервер, натисніть <kbd>Ctrl + C</kbd> в терміналі.</p>
+      <p>Щоб запустити знову: <code>npm run dev</code></p>
+
+      <h3>Домашнє завдання</h3>
+      <ul>
+        <li>Удосконалити landing page: додати більше секцій</li>
+        <li>Створити сторінку <code>/about</code> (папка <code>app/about/page.js</code>)</li>
+        <li>Експериментувати з Tailwind CSS класами</li>
+        <li>Створити репозиторій на GitHub та завантажити код</li>
+      </ul>
+    </section>
+
+    <!-- Футер -->
+    <footer class="lecture-footer">
+      <p>Курс "Основи обробки та передачі інформації" | Next.js Full-Stack Development</p>
+      <p>Кібербезпека та захист інформації, 3 курс</p>
+
+      <div class="nav-buttons">
+        <a href="../" class="btn btn-outline">← На головну</a>
+      </div>
+    </footer>
+  </article>
+
+  <script src="../js/os-tabs.js"></script>
+</body>
+</html>

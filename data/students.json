@@ -1,0 +1,55 @@
+{
+  "groups": [
+    {
+      "name": "Група 1",
+      "students": [
+        { "name": "Баглаєнко А.Ю.", "variant": 1 },
+        { "name": "Бургер В.І.", "variant": 2 },
+        { "name": "Зейкан В.В.", "variant": 3 },
+        { "name": "Киведжі Р.В.", "variant": 4 },
+        { "name": "Ленько І.І.", "variant": 5 },
+        { "name": "Місяйло М.М.", "variant": 6 },
+        { "name": "Натуркач Є.О.", "variant": 7 },
+        { "name": "Осійський В.О.", "variant": 8 },
+        { "name": "Плиска Е.М.", "variant": 9 },
+        { "name": "Подвич А.С.", "variant": 10 },
+        { "name": "Попов В.П.", "variant": 11 },
+        { "name": "Резніченко Р.О.", "variant": 12 },
+        { "name": "Світлик І.І.", "variant": 13 },
+        { "name": "Швець М.В.", "variant": 14 },
+        { "name": "Шевляков М.В.", "variant": 15 }
+      ]
+    },
+    {
+      "name": "Група 2",
+      "students": [
+        { "name": "Бідзіля М.С.", "variant": 1 },
+        { "name": "Бодак О.В.", "variant": 2 },
+        { "name": "Болехан В.А.", "variant": 3 },
+        { "name": "Вовканич Р.І.", "variant": 4 },
+        { "name": "Надь М.Ф.", "variant": 5 },
+        { "name": "Носок Н.С.", "variant": 6 },
+        { "name": "Решетар Д.В.", "variant": 7 },
+        { "name": "Танчак Ю.М.", "variant": 8 },
+        { "name": "Цалан Ю.І.", "variant": 9 },
+        { "name": "Чейпеш Ф.І.", "variant": 10 },
+        { "name": "Шако А.М.", "variant": 11 }
+      ]
+    },
+    {
+      "name": "Група 3",
+      "students": [
+        { "name": "Крулікевич П.М.", "variant": 1 },
+        { "name": "Мокрянин М.М.", "variant": 2 },
+        { "name": "Парамзін Д.І.", "variant": 3 },
+        { "name": "Перепелиця В.В.", "variant": 4 },
+        { "name": "Роман О.В.", "variant": 5 },
+        { "name": "Січко О.В.", "variant": 6 },
+        { "name": "Удут М.М.", "variant": 7 },
+        { "name": "Химишинець Є.В.", "variant": 8 },
+        { "name": "Чернявський Д.Р.", "variant": 9 },
+        { "name": "Шпичка А.О.", "variant": 10 }
+      ]
+    }
+  ]
+}
