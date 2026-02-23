@@ -141,25 +141,26 @@
 
   <div class="content">
     <h2 class="section-title">Практичні роботи</h2>
-    <div class="cards-grid">
-      <a href="week-01/" class="week-card">
-        <span class="week-number">Тиждень 1</span>
-        <h3>Створення першого Next.js проекту</h3>
-        <p>Підготовка середовища, створення проекту, landing page</p>
-      </a>
-
-      <a href="week-02/" class="week-card">
-        <span class="week-number">Тиждень 2</span>
-        <h3>Основи React: компоненти, props, state</h3>
-        <p>Компоненти Header/Footer, MenuCard з props, фільтрація зі useState</p>
-      </a>
-
-      <a href="week-03/" class="week-card">
-        <span class="week-number">Тиждень 3</span>
-        <h3>Роутинг та навігація</h3>
-        <p>Структура маршрутів, активні лінки, динамічні маршрути, dashboard</p>
-      </a>
-    </div>
+    <div id="weeks-grid" class="cards-grid"></div>
+    <noscript>
+      <div class="cards-grid">
+        <a href="week-01/" class="week-card">
+          <span class="week-number">Тиждень 1</span>
+          <h3>Створення першого Next.js проекту</h3>
+          <p>Підготовка середовища, створення проекту, landing page</p>
+        </a>
+        <a href="week-02/" class="week-card">
+          <span class="week-number">Тиждень 2</span>
+          <h3>Основи React: компоненти, props, state</h3>
+          <p>Компоненти Header/Footer, MenuCard з props, фільтрація зі useState</p>
+        </a>
+        <a href="week-03/" class="week-card">
+          <span class="week-number">Тиждень 3</span>
+          <h3>Роутинг та навігація</h3>
+          <p>Структура маршрутів, активні лінки, динамічні маршрути, dashboard</p>
+        </a>
+      </div>
+    </noscript>
 
     <h2 class="section-title">Проект</h2>
     <a href="variants.html" class="variants-link">
@@ -174,5 +175,26 @@
   <div class="footer">
     <p>Курс "Основи обробки та передачі інформації" | Кібербезпека та захист інформації, 3 курс</p>
   </div>
+
+  <script>
+    fetch('data/config.json')
+      .then(function (res) { return res.json(); })
+      .then(function (config) {
+        var grid = document.getElementById('weeks-grid');
+        var visible = config.weeks.filter(function (w) { return w.visible; });
+        if (visible.length === 0) {
+          grid.innerHTML = '<p style="color:var(--text-secondary)">Практичні заняття поки що не доступні.</p>';
+          return;
+        }
+        grid.innerHTML = visible.map(function (w) {
+          var num = w.id < 10 ? '0' + w.id : w.id;
+          return '<a href="week-' + num + '/" class="week-card">' +
+            '<span class="week-number">Тиждень ' + w.id + '</span>' +
+            '<h3>' + w.title + '</h3>' +
+            '<p>' + w.description + '</p>' +
+            '</a>';
+        }).join('');
+      });
+  </script>
 </body>
 </html>

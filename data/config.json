@@ -1,0 +1,22 @@
+{
+  "weeks": [
+    {
+      "id": 1,
+      "visible": true,
+      "title": "Створення першого Next.js проекту",
+      "description": "Підготовка середовища, створення проекту, landing page"
+    },
+    {
+      "id": 2,
+      "visible": true,
+      "title": "Основи React: компоненти, props, state",
+      "description": "Компоненти Header/Footer, MenuCard з props, фільтрація зі useState"
+    },
+    {
+      "id": 3,
+      "visible": false,
+      "title": "Роутинг та навігація",
+      "description": "Структура маршрутів, активні лінки, динамічні маршрути, dashboard"
+    }
+  ]
+}

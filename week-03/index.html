@@ -961,5 +961,23 @@ git commit -m "Week 3: routing, navigation, dynamic routes, dashboard"</code></p
       </div>
     </footer>
   </article>
+  <script>
+    (function () {
+      var weekNum = parseInt(document.querySelector('.lecture-number').textContent.replace(/\D/g, ''), 10);
+      fetch('../data/config.json')
+        .then(function (res) { return res.json(); })
+        .then(function (config) {
+          var week = config.weeks.find(function (w) { return w.id === weekNum; });
+          if (week && !week.visible) {
+            document.querySelector('article.lecture-content').style.display = 'none';
+            var msg = document.createElement('div');
+            msg.style.cssText = 'text-align:center;padding:4rem 1rem;';
+            msg.innerHTML = '<h1 style="font-size:1.5rem;color:#333;margin-bottom:1rem;">Це заняття ще не доступне</h1>' +
+              '<a href="../" style="color:var(--primary,#2563eb);">← На головну</a>';
+            document.body.insertBefore(msg, document.querySelector('article.lecture-content'));
+          }
+        });
+    })();
+  </script>
 </body>
 </html>
