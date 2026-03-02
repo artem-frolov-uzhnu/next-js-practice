@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Практика 4: Server vs Client Components | Протокол заняття</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/practical.css">
+</head>
+<body>
+  <!-- Навігація -->
+  <nav class="lecture-nav">
+    <div class="container">
+      <div class="nav-title">Тиждень 4: Практичне заняття</div>
+      <div class="nav-links">
+        <a href="../" class="btn btn-outline">&larr; На головну</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Основний контент -->
+  <article class="lecture-content">
+    <!-- Заголовок -->
+    <header class="lecture-header">
+      <span class="lecture-number">Практика 4</span>
+      <h1>Server Components vs Client Components</h1>
+      <div class="lecture-meta">
+        <span>&#x1F4C5; Тиждень 4</span>
+        <span>&#x1F4BB; Практичне заняття</span>
+      </div>
+    </header>
+
+    <!-- Зміст -->
+    <nav class="toc">
+      <h3>Зміст заняття</h3>
+      <ol>
+        <li><a href="#analyze">Аналіз існуючих компонентів</a></li>
+        <li><a href="#new-components">Створення нових Client Components</a></li>
+        <li><a href="#composition">Композиція та Context</a></li>
+        <li><a href="#result">Результат та домашнє завдання</a></li>
+      </ol>
+    </nav>
+
+    <!-- Вступ -->
+    <section class="lecture-section">
+      <h2>Мета заняття</h2>
+      <p>На цьому практичному занятті ви:</p>
+      <ul>
+        <li>Проаналізуєте існуючі компоненти та визначите їх тип (Server/Client)</li>
+        <li>Створите нові Client Components з інтерактивністю</li>
+        <li>Реалізуєте React Context для спільного стану</li>
+        <li>Навчитесь правильній композиції Server та Client компонентів</li>
+      </ul>
+
+      <div class="info-box info">
+        <strong>Передумова:</strong> Ви маєте мати працюючий Next.js проект з тижня 3
+        (маршрути, layouts, dashboard, динамічні сторінки).
+        Ми продовжуємо працювати з тим самим проектом.
+      </div>
+
+      <div class="info-box warning">
+        <strong>Приклад викладача:</strong> Кав'ярня «Кофеїн». Ви маєте адаптувати код під свою тему з 15 варіантів.
+      </div>
+    </section>
+
+    <!-- Частина 1: Аналіз -->
+    <section class="lecture-section" id="analyze">
+      <h2>1. Аналіз існуючих компонентів</h2>
+      <p>
+        Перш ніж створювати нові компоненти, проаналізуємо те, що вже маємо.
+        В Next.js всі компоненти за замовчуванням &mdash; Server Components.
+        Директива <code>'use client'</code> потрібна тільки для інтерактивності.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Класифікувати існуючі компоненти</h4>
+        <p>Подивіться на свої компоненти та заповніть таблицю:</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Компонент</th>
+              <th>Тип</th>
+              <th>Причина</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Header.jsx</td>
+              <td>Client</td>
+              <td>usePathname для активних лінків</td>
+            </tr>
+            <tr>
+              <td>Footer.jsx</td>
+              <td>Server</td>
+              <td>Статичний контент</td>
+            </tr>
+            <tr>
+              <td>MenuCard.jsx</td>
+              <td>Server</td>
+              <td>Статичний рендер (props &rarr; JSX)</td>
+            </tr>
+            <tr>
+              <td>MenuFilter.jsx</td>
+              <td>Client</td>
+              <td>useState для пошуку та фільтрації</td>
+            </tr>
+            <tr>
+              <td>DashboardNav.jsx</td>
+              <td>Client</td>
+              <td>usePathname для активних лінків</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="info-box info">
+          <strong>Правило:</strong> Якщо компонент не використовує hooks, events або Browser APIs &mdash; він має бути Server Component (без <code>'use client'</code>). Менше JS = швидше завантаження.
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Перевірити директиви &lsquo;use client&rsquo;</h4>
+        <p>Переконайтеся, що <code>'use client'</code> стоїть тільки там, де дійсно потрібно:</p>
+        <ul>
+          <li><code>Header.jsx</code> &mdash; має <code>'use client'</code> (usePathname) &#x2705;</li>
+          <li><code>Footer.jsx</code> &mdash; <strong>не має</strong> <code>'use client'</code> &#x2705;</li>
+          <li><code>MenuCard.jsx</code> &mdash; <strong>не має</strong> <code>'use client'</code> &#x2705;</li>
+          <li><code>MenuFilter.jsx</code> &mdash; має <code>'use client'</code> (useState) &#x2705;</li>
+          <li><code>DashboardNav.jsx</code> &mdash; має <code>'use client'</code> (usePathname) &#x2705;</li>
+        </ul>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Демонстрація console.log</h4>
+        <p>Додайте <code>console.log</code> в різні компоненти і подивіться, де він з'являється:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/page.js &mdash; Server Component</div>
+          <pre><code>export default function Home() {
+  console.log('HOME: це Server Component!')
+  // Цей лог з'явиться в ТЕРМІНАЛІ (не в браузері!)
+
+  return &lt;div&gt;...&lt;/div&gt;
+}</code></pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header">components/Header.jsx &mdash; Client Component</div>
+          <pre><code>'use client'
+export default function Header() {
+  console.log('HEADER: це Client Component!')
+  // Цей лог з'явиться в КОНСОЛІ БРАУЗЕРА (F12)
+
+  return &lt;header&gt;...&lt;/header&gt;
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Важливо:</strong> Після перевірки видаліть ці console.log &mdash; вони були лише для демонстрації.
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Ви знаєте тип кожного існуючого компонента</li>
+          <li>&lsquo;use client&rsquo; стоїть тільки на інтерактивних компонентах</li>
+          <li>console.log в Server Component з'являється в терміналі</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 2: Нові Client Components -->
+    <section class="lecture-section" id="new-components">
+      <h2>2. Створення нових Client Components</h2>
+
+      <div class="task-box">
+        <h4>Завдання: Створити FavoriteButton</h4>
+        <p>Створіть файл <code>components/FavoriteButton.jsx</code> &mdash; кнопка &laquo;серце&raquo; для додавання в обране:</p>
+
+        <div class="code-block">
+          <div class="code-header">components/FavoriteButton.jsx</div>
+          <pre><code>'use client'
+import { useFavorites } from '@/contexts/FavoritesContext'
+
+export default function FavoriteButton({ drinkId }) {
+  const { toggleFavorite, isFavorite } = useFavorites()
+  const liked = isFavorite(drinkId)
+
+  return (
+    &lt;button
+      onClick={() =&gt; toggleFavorite(drinkId)}
+      className="text-xl transition hover:scale-110 cursor-pointer"
+      title={liked ? 'Видалити з обраного' : 'Додати до обраного'}
+    &gt;
+      {liked ? '&#x2764;&#xFE0F;' : '&#x1F90D;'}
+    &lt;/button&gt;
+  )
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Примітка:</strong> Цей компонент використовує Context (<code>useFavorites</code>),
+          який ми створимо у частині 3. Поки що він не працюватиме &mdash; це нормально.
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Вбудувати FavoriteButton в MenuCard</h4>
+        <p>Оновіть <code>components/MenuCard.jsx</code> &mdash; додайте FavoriteButton як Client &laquo;островок&raquo;:</p>
+
+        <div class="code-block">
+          <div class="code-header">components/MenuCard.jsx &mdash; оновлений</div>
+          <pre><code>// Server Component з Client "островком"
+import Link from "next/link";
+import FavoriteButton from "./FavoriteButton";
+
+export default function MenuCard({ id, name, description, price, emoji, category, available = true }) {
+  return (
+    &lt;div className={`bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition ${!available ? 'opacity-60' : ''}`}&gt;
+      &lt;div className="h-32 bg-amber-100 flex items-center justify-center"&gt;
+        &lt;span className="text-5xl"&gt;{emoji}&lt;/span&gt;
+      &lt;/div&gt;
+      &lt;div className="p-4"&gt;
+        &lt;div className="flex justify-between items-start mb-2"&gt;
+          &lt;h3 className="text-lg font-semibold text-gray-900"&gt;{name}&lt;/h3&gt;
+          &lt;div className="flex items-center gap-2"&gt;
+            {id &amp;&amp; &lt;FavoriteButton drinkId={id} /&gt;}
+            {available ? (
+              &lt;span className="text-xs px-2 py-1 rounded bg-green-100 text-green-700"&gt;В наявності&lt;/span&gt;
+            ) : (
+              &lt;span className="text-xs px-2 py-1 rounded bg-red-100 text-red-700"&gt;Немає&lt;/span&gt;
+            )}
+          &lt;/div&gt;
+        &lt;/div&gt;
+        &lt;p className="text-gray-600 text-sm mb-3"&gt;{description}&lt;/p&gt;
+        &lt;div className="flex justify-between items-center"&gt;
+          &lt;span className="text-amber-700 font-bold text-lg"&gt;{price} грн&lt;/span&gt;
+          &lt;div className="flex items-center gap-2"&gt;
+            &lt;span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded"&gt;{category}&lt;/span&gt;
+            {id &amp;&amp; (
+              &lt;Link href={`/menu/${id}`} className="text-xs text-amber-700 hover:text-amber-900 font-medium"&gt;
+                Детальніше &amp;rarr;
+              &lt;/Link&gt;
+            )}
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Зверніть увагу:</strong> MenuCard залишається Server Component (без <code>'use client'</code>).
+          FavoriteButton &mdash; це Client &laquo;островок&raquo; всередині Server Component.
+          Більшість контенту картки рендериться на сервері, і лише кнопка серця потрапляє в JS bundle.
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити StatsCard та lib/helpers.js</h4>
+        <p>Створіть Server Component для відображення статистики та допоміжну функцію:</p>
+
+        <div class="code-block">
+          <div class="code-header">lib/helpers.js</div>
+          <pre><code>import { drinks } from './drinks'
+
+export function getDrinkStats() {
+  const total = drinks.length
+  const available = drinks.filter(d =&gt; d.available).length
+  const unavailable = total - available
+  const categories = [...new Set(drinks.map(d =&gt; d.category))]
+  const avgPrice = Math.round(drinks.reduce((sum, d) =&gt; sum + d.price, 0) / total)
+
+  return { total, available, unavailable, categoriesCount: categories.length, avgPrice }
+}</code></pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header">components/StatsCard.jsx &mdash; Server Component</div>
+          <pre><code>// Без 'use client' — це Server Component!
+const colorClasses = {
+  amber: 'text-amber-700',
+  green: 'text-green-600',
+  blue: 'text-blue-600',
+  red: 'text-red-600',
+}
+
+export default function StatsCard({ title, value, color = 'amber' }) {
+  return (
+    &lt;div className="bg-white p-6 rounded-lg shadow"&gt;
+      &lt;h3 className="text-gray-500 text-sm font-bold"&gt;{title}&lt;/h3&gt;
+      &lt;p className={`text-4xl font-bold mt-2 ${colorClasses[color] || colorClasses.amber}`}&gt;
+        {value}
+      &lt;/p&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+
+        <p>Оновіть <code>app/dashboard/page.js</code> для використання реальної статистики:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/dashboard/page.js &mdash; оновлений</div>
+          <pre><code>import StatsCard from "@/components/StatsCard";
+import { getDrinkStats } from "@/lib/helpers";
+
+export const metadata = { title: "Dashboard" };
+
+export default function DashboardPage() {
+  const stats = getDrinkStats();
+
+  return (
+    &lt;div&gt;
+      &lt;h1 className="text-3xl font-bold mb-6 text-gray-900"&gt;Огляд&lt;/h1&gt;
+      &lt;div className="grid grid-cols-1 md:grid-cols-3 gap-6"&gt;
+        &lt;StatsCard title="Позицій у меню" value={stats.total} color="amber" /&gt;
+        &lt;StatsCard title="В наявності" value={stats.available} color="green" /&gt;
+        &lt;StatsCard title="Середня ціна" value={`${stats.avgPrice} грн`} color="blue" /&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити DrinkActions</h4>
+        <p>Замініть прості кнопки &laquo;Редагувати&raquo;/&laquo;Видалити&raquo; в dashboard на Client Component з підтвердженням:</p>
+
+        <div class="code-block">
+          <div class="code-header">components/DrinkActions.jsx</div>
+          <pre><code>'use client'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+
+export default function DrinkActions({ drinkId }) {
+  const [showConfirm, setShowConfirm] = useState(false)
+  const router = useRouter()
+
+  const handleDelete = () =&gt; {
+    console.log(`Видалення напою ${drinkId}`)
+    setShowConfirm(false)
+    router.push('/dashboard/drinks')
+  }
+
+  if (showConfirm) {
+    return (
+      &lt;div className="space-x-2"&gt;
+        &lt;span className="text-red-600 font-semibold mr-2"&gt;Видалити?&lt;/span&gt;
+        &lt;button onClick={handleDelete}
+          className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 cursor-pointer"&gt;
+          Так
+        &lt;/button&gt;
+        &lt;button onClick={() =&gt; setShowConfirm(false)}
+          className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 cursor-pointer"&gt;
+          Ні
+        &lt;/button&gt;
+      &lt;/div&gt;
+    )
+  }
+
+  return (
+    &lt;div className="space-x-2"&gt;
+      &lt;button className="bg-amber-700 text-white px-4 py-2 rounded hover:bg-amber-800 cursor-pointer"&gt;
+        Редагувати
+      &lt;/button&gt;
+      &lt;button onClick={() =&gt; setShowConfirm(true)}
+        className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 cursor-pointer"&gt;
+        Видалити
+      &lt;/button&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+
+        <p>Оновіть <code>app/dashboard/drinks/[id]/page.js</code> &mdash; замініть прості кнопки на DrinkActions:</p>
+        <div class="code-block">
+          <div class="code-header">app/dashboard/drinks/[id]/page.js &mdash; зміни</div>
+          <pre><code>import DrinkActions from "@/components/DrinkActions";
+
+// Замість &lt;div className="space-x-2"&gt;...&lt;/div&gt; з кнопками:
+&lt;DrinkActions drinkId={drink.id} /&gt;</code></pre>
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Dashboard показує реальну статистику (кількість напоїв, середню ціну)</li>
+          <li>StatsCard &mdash; Server Component (без &lsquo;use client&rsquo;)</li>
+          <li>DrinkActions працює з підтвердженням видалення</li>
+          <li>MenuCard містить FavoriteButton (поки не працює без Context)</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 3: Композиція та Context -->
+    <section class="lecture-section" id="composition">
+      <h2>3. Композиція та Context</h2>
+
+      <div class="task-box">
+        <h4>Завдання: Створити FavoritesContext</h4>
+        <p>Створіть папку <code>contexts/</code> та файл <code>contexts/FavoritesContext.jsx</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">contexts/FavoritesContext.jsx</div>
+          <pre><code>'use client'
+import { createContext, useContext, useState } from 'react'
+
+const FavoritesContext = createContext()
+
+export function FavoritesProvider({ children }) {
+  const [favorites, setFavorites] = useState([])
+
+  const toggleFavorite = (id) =&gt; {
+    setFavorites(prev =&gt;
+      prev.includes(id)
+        ? prev.filter(fId =&gt; fId !== id)
+        : [...prev, id]
+    )
+  }
+
+  const isFavorite = (id) =&gt; favorites.includes(id)
+
+  return (
+    &lt;FavoritesContext.Provider value={{ favorites, toggleFavorite, isFavorite }}&gt;
+      {children}
+    &lt;/FavoritesContext.Provider&gt;
+  )
+}
+
+export function useFavorites() {
+  const context = useContext(FavoritesContext)
+  if (!context) {
+    throw new Error('useFavorites must be used within a FavoritesProvider')
+  }
+  return context
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Обгорнути layout FavoritesProvider</h4>
+        <p>Оновіть <code>app/layout.js</code> &mdash; додайте FavoritesProvider навколо children:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/layout.js &mdash; оновлений</div>
+          <pre><code>import { FavoritesProvider } from "@/contexts/FavoritesContext";
+// ... інші імпорти
+
+export default function RootLayout({ children }) {
+  return (
+    &lt;html lang="uk"&gt;
+      &lt;body className="..."&gt;
+        &lt;FavoritesProvider&gt;
+          &lt;Header /&gt;
+          &lt;main className="flex-1"&gt;{children}&lt;/main&gt;
+          &lt;Footer /&gt;
+        &lt;/FavoritesProvider&gt;
+      &lt;/body&gt;
+    &lt;/html&gt;
+  );
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Паттерн композиції:</strong> FavoritesProvider &mdash; це Client Component,
+          але <code>children</code> (сторінки) залишаються Server Components!
+          Це працює завдяки паттерну children &mdash; Server Components передаються через props,
+          а не імпортуються в Client.
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Додати FavoriteButton на сторінку деталей</h4>
+        <p>Оновіть <code>app/menu/[id]/page.js</code> &mdash; додайте кнопку серця поряд з назвою напою:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/menu/[id]/page.js &mdash; зміни</div>
+          <pre><code>import FavoriteButton from "@/components/FavoriteButton";
+
+// В JSX, поряд з &lt;h1&gt;:
+&lt;div className="flex items-center gap-3"&gt;
+  &lt;h1 className="text-4xl font-bold"&gt;{drink.name}&lt;/h1&gt;
+  &lt;FavoriteButton drinkId={drink.id} /&gt;
+&lt;/div&gt;</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити DashboardShell з toggle сайдбару</h4>
+        <p>Створіть компоненти для згортання/розгортання сайдбару dashboard:</p>
+
+        <div class="code-block">
+          <div class="code-header">components/SidebarToggle.jsx</div>
+          <pre><code>'use client'
+
+export default function SidebarToggle({ isOpen, onToggle }) {
+  return (
+    &lt;button
+      onClick={onToggle}
+      className="text-gray-400 hover:text-white transition mb-4 cursor-pointer"
+      title={isOpen ? 'Згорнути меню' : 'Розгорнути меню'}
+    &gt;
+      {isOpen ? '&#x25C0; Згорнути' : '&#x25B6; Меню'}
+    &lt;/button&gt;
+  )
+}</code></pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header">components/DashboardShell.jsx</div>
+          <pre><code>'use client'
+import { useState } from 'react'
+import DashboardNav from './DashboardNav'
+import SidebarToggle from './SidebarToggle'
+
+export default function DashboardShell({ children }) {
+  const [sidebarOpen, setSidebarOpen] = useState(true)
+
+  return (
+    &lt;div className="flex min-h-[calc(100vh-130px)]"&gt;
+      &lt;aside className={`bg-gray-800 text-white p-6 transition-all ${sidebarOpen ? 'w-64' : 'w-16'}`}&gt;
+        &lt;SidebarToggle isOpen={sidebarOpen} onToggle={() =&gt; setSidebarOpen(!sidebarOpen)} /&gt;
+        {sidebarOpen &amp;&amp; (
+          &lt;&gt;
+            &lt;h2 className="text-xl font-bold mb-6"&gt;Dashboard&lt;/h2&gt;
+            &lt;DashboardNav /&gt;
+          &lt;/&gt;
+        )}
+      &lt;/aside&gt;
+      &lt;div className="flex-1 bg-gray-100 p-8"&gt;
+        {children}
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+
+        <p>Оновіть <code>app/dashboard/layout.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">app/dashboard/layout.js &mdash; оновлений</div>
+          <pre><code>import DashboardShell from "@/components/DashboardShell";
+
+export default function DashboardLayout({ children }) {
+  return &lt;DashboardShell&gt;{children}&lt;/DashboardShell&gt;;
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Ще один приклад children:</strong> DashboardShell &mdash; Client Component (useState),
+          але <code>children</code> (dashboard pages) &mdash; Server Components.
+          Dashboard layout передає сторінки через children, не імпортуючи їх в Client.
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>FavoriteButton працює &mdash; клік на серце змінює його колір</li>
+          <li>Стан обраного зберігається при переході між /menu та /menu/[id]</li>
+          <li>Dashboard сайдбар згортається та розгортається</li>
+          <li>Всі сторінки продовжують працювати коректно</li>
+        </ul>
+      </div>
+
+      <div class="error-box">
+        <h5>Поширені помилки</h5>
+        <ul>
+          <li>
+            <strong>useFavorites must be used within a FavoritesProvider</strong><br>
+            FavoritesProvider не додано в layout.js або додано не на тому рівні
+          </li>
+          <li>
+            <strong>useState не працює</strong><br>
+            Забули <code>'use client'</code> на початку файлу
+          </li>
+          <li>
+            <strong>Client Component can't import Server Component</strong><br>
+            Перевірте, що не імпортуєте Server Component всередину Client &mdash; використовуйте children
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 4: Результат -->
+    <section class="lecture-section" id="result">
+      <h2>4. Результат та домашнє завдання</h2>
+
+      <div class="task-box">
+        <h4>Завдання: Зробити коміт</h4>
+        <div class="code-block">
+          <div class="code-header">Terminal (в папці проекту)</div>
+          <pre><code>git add .
+git commit -m "Week 4: Server/Client Components, Context, composition"</code></pre>
+        </div>
+      </div>
+
+      <div class="final-result">
+        <h4>Критерії успішного виконання практичного заняття</h4>
+        <ul class="criteria-list">
+          <li>Існуючі компоненти правильно класифіковані (Server/Client)</li>
+          <li>&lsquo;use client&rsquo; стоїть тільки на інтерактивних компонентах</li>
+          <li>FavoriteButton працює на картках та сторінці деталей</li>
+          <li>FavoritesContext зберігає стан між навігацією</li>
+          <li>StatsCard &mdash; Server Component (без &lsquo;use client&rsquo;)</li>
+          <li>Dashboard показує реальну статистику з getDrinkStats()</li>
+          <li>DrinkActions працює з діалогом підтвердження</li>
+          <li>DashboardShell з toggle сайдбару</li>
+          <li>Паттерн children використовується в layout та DashboardShell</li>
+        </ul>
+      </div>
+
+      <h3>Домашнє завдання</h3>
+
+      <h4>Обов'язково:</h4>
+      <ol>
+        <li><strong>Адаптувати всі нові компоненти</strong> під свою тему (FavoriteButton, StatsCard, DrinkActions)</li>
+        <li><strong>Створити StatsCard</strong> для своєї сутності з реальними підрахунками (getDrinkStats)</li>
+        <li><strong>Додати Context</strong> для свого проекту (обране, кошик, або інше)</li>
+        <li><strong>Завантажити на GitHub</strong></li>
+      </ol>
+
+      <h4>Додатково (для вищого балу):</h4>
+      <ul>
+        <li>Додати <strong>Suspense</strong> з fallback для повільних компонентів</li>
+        <li>Реалізувати <strong>optimistic UI</strong> &mdash; миттєве оновлення UI до відповіді сервера</li>
+        <li>Створити файл <strong>COMPONENTS.md</strong> з таблицею всіх компонентів та їх типів</li>
+        <li>Порівняти <strong>bundle size</strong> через DevTools Network tab</li>
+      </ul>
+    </section>
+
+    <!-- Футер -->
+    <footer class="lecture-footer">
+      <p>Курс "Основи обробки та передачі інформації" | Next.js Full-Stack Development</p>
+      <p>Кібербезпека та захист інформації, 3 курс</p>
+
+      <div class="nav-buttons">
+        <a href="../" class="btn btn-outline">&larr; На головну</a>
+      </div>
+    </footer>
+  </article>
+  <script>
+    (function () {
+      var weekNum = parseInt(document.querySelector('.lecture-number').textContent.replace(/\D/g, ''), 10);
+      fetch('../data/config.json')
+        .then(function (res) { return res.json(); })
+        .then(function (config) {
+          var week = config.weeks.find(function (w) { return w.id === weekNum; });
+          if (week && !week.visible) {
+            document.querySelector('article.lecture-content').style.display = 'none';
+            var msg = document.createElement('div');
+            msg.style.cssText = 'text-align:center;padding:4rem 1rem;';
+            msg.innerHTML = '<h1 style="font-size:1.5rem;color:#333;margin-bottom:1rem;">Це заняття ще не доступне</h1>' +
+              '<a href="../" style="color:var(--primary,#2563eb);">← На головну</a>';
+            document.body.insertBefore(msg, document.querySelector('article.lecture-content'));
+          }
+        });
+    })();
+  </script>
+</body>
+</html>

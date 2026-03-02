@@ -14,9 +14,15 @@
     },
     {
       "id": 3,
-      "visible": false,
+      "visible": true,
       "title": "Роутинг та навігація",
       "description": "Структура маршрутів, активні лінки, динамічні маршрути, dashboard"
+    },
+    {
+      "id": 4,
+      "visible": false,
+      "title": "Server Components vs Client Components",
+      "description": "Аналіз компонентів, FavoriteButton, Context, композиція Server/Client"
     }
   ]
 }
