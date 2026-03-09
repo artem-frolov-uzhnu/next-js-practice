@@ -26,7 +26,7 @@
     },
     {
       "id": 5,
-      "visible": true,
+      "visible": false,
       "title": "Робота з даними та завантаження",
       "description": "Data fetching, loading.js, error.js, Suspense, streaming"
     }
