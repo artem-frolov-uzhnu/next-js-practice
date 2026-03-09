@@ -20,9 +20,15 @@
     },
     {
       "id": 4,
-      "visible": false,
+      "visible": true,
       "title": "Server Components vs Client Components",
       "description": "Аналіз компонентів, FavoriteButton, Context, композиція Server/Client"
+    },
+    {
+      "id": 5,
+      "visible": true,
+      "title": "Робота з даними та завантаження",
+      "description": "Data fetching, loading.js, error.js, Suspense, streaming"
     }
   ]
 }

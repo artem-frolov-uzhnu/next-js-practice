@@ -283,6 +283,18 @@
       <div class="info-box info">
         <strong>Спільні поля для всіх моделей:</strong> <code>_id</code> (ObjectId, автоматично), <code>createdAt</code> (Date), <code>updatedAt</code> (Date) — додаються через <code>timestamps: true</code> в Mongoose.
       </div>
+
+      <div class="info-box warning">
+        <strong>Обов'язкові типи полів для Entity 1.</strong> Для підтримки практичних завдань (тижні 2-4: фільтрація, пошук, статистика) Entity 1 кожного варіанту має 5 типів полів:
+        <table class="schema-table" style="margin-top: 0.75rem;">
+          <tr><th>Тип поля</th><th>Призначення</th><th>Приклад</th></tr>
+          <tr><td>Текстове (name/title)</td><td>Пошук, відображення в картках</td><td><code>title</code>, <code>name</code>, <code>movieTitle</code></td></tr>
+          <tr><td>Опис (description)</td><td>Відображення деталей</td><td><code>description</code>, <code>content</code>, <code>bio</code></td></tr>
+          <tr><td>Категорія (enum)</td><td>Кнопки фільтрації</td><td><code>genre</code>, <code>category</code>, <code>type</code>, <code>department</code></td></tr>
+          <tr><td>Булеве доступності</td><td>Чекбокс "Тільки в наявності/доступні"</td><td><code>available</code>, <code>inStock</code>, <code>isAvailable</code>, <code>isActive</code>, <code>isPublished</code>, <code>isOpen</code></td></tr>
+          <tr><td>Числове (Number)</td><td>Відображення, статистика (середнє)</td><td><code>price</code>, <code>salary</code>, <code>pages</code>, <code>views</code></td></tr>
+        </table>
+      </div>
     </section>
 
     <!-- Variants TOC -->
@@ -293,7 +305,7 @@
         <a href="#variant-2"><span>2</span> Інтернет-магазин</a>
         <a href="#variant-3"><span>3</span> Кінотеатр</a>
         <a href="#variant-4"><span>4</span> Проєкти та задачі</a>
-        <a href="#variant-5"><span>5</span> Автосервіс</a>
+        <a href="#variant-5"><span>5</span> Автосалон</a>
         <a href="#variant-6"><span>6</span> Оренда житла</a>
         <a href="#variant-7"><span>7</span> Ресторан (бронювання столів)</a>
         <a href="#variant-8"><span>8</span> Фітнес-зал</a>
@@ -325,6 +337,7 @@
             <tr><td><code>genre</code></td><td>String</td><td>Required, enum: fiction, non-fiction, science, history, poetry, other</td></tr>
             <tr><td><code>year</code></td><td>Number</td><td>Min: 1000, max: поточний рік</td></tr>
             <tr><td><code>description</code></td><td>String</td><td>Max 1000 символів</td></tr>
+            <tr><td><code>pages</code></td><td>Number</td><td>Min: 1</td></tr>
             <tr><td><code>available</code></td><td>Boolean</td><td>Default: true</td></tr>
           </table>
 
@@ -430,6 +443,8 @@
             <tr><td><code>time</code></td><td>String</td><td>Required, формат: HH:MM</td></tr>
             <tr><td><code>hall</code></td><td>Number</td><td>Required, min: 1</td></tr>
             <tr><td><code>price</code></td><td>Number</td><td>Required, min: 0</td></tr>
+            <tr><td><code>description</code></td><td>String</td><td>Max 1000 символів</td></tr>
+            <tr><td><code>isAvailable</code></td><td>Boolean</td><td>Default: true</td></tr>
           </table>
 
           <h4>CRUD Об'єкт #2: Order (Замовлення квитків)</h4>
@@ -480,6 +495,7 @@
             <tr><td><code>description</code></td><td>String</td><td>Max 1000 символів</td></tr>
             <tr><td><code>category</code></td><td>String</td><td>Enum: development, design, marketing, research, other</td></tr>
             <tr><td><code>deadline</code></td><td>Date</td><td>—</td></tr>
+            <tr><td><code>budget</code></td><td>Number</td><td>Min: 0 (грн)</td></tr>
             <tr><td><code>isActive</code></td><td>Boolean</td><td>Default: true</td></tr>
           </table>
 
@@ -521,53 +537,54 @@
 
       <!-- Variant 5 -->
       <details class="variant-card" id="variant-5">
-        <summary><span class="variant-badge">5</span> Автосервіс</summary>
+        <summary><span class="variant-badge">5</span> Автосалон</summary>
         <div class="variant-body">
-          <div class="variant-desc">Система автосервісу. Користувач реєструє свої автомобілі та створює заявки на обслуговування. Адміністратор обробляє заявки. <strong>Особливість:</strong> Car також належить користувачу — user бачить тільки свої авто.</div>
+          <div class="variant-desc">Система автосалону. Менеджер керує каталогом автомобілів, покупець може переглядати автомобілі та створювати замовлення (покупка або тест-драйв).</div>
 
           <h4>CRUD Об'єкт #1: Car (Автомобіль)</h4>
           <table class="schema-table">
             <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
-            <tr><td><code>user</code></td><td>ObjectId</td><td>Required, ref: User</td></tr>
+            <tr><td><code>name</code></td><td>String</td><td>Required, 2-200 символів, trim</td></tr>
             <tr><td><code>brand</code></td><td>String</td><td>Required, max 50 символів</td></tr>
-            <tr><td><code>model</code></td><td>String</td><td>Required, max 50 символів</td></tr>
             <tr><td><code>year</code></td><td>Number</td><td>Required, min: 1900</td></tr>
-            <tr><td><code>plateNumber</code></td><td>String</td><td>Required, unique, max 20 символів</td></tr>
+            <tr><td><code>price</code></td><td>Number</td><td>Required, min: 0</td></tr>
+            <tr><td><code>category</code></td><td>String</td><td>Required, enum: sedan, suv, hatchback, coupe, minivan, truck</td></tr>
+            <tr><td><code>description</code></td><td>String</td><td>Max 1000 символів</td></tr>
+            <tr><td><code>available</code></td><td>Boolean</td><td>Default: true</td></tr>
           </table>
 
-          <h4>CRUD Об'єкт #2: ServiceRequest (Заявка на обслуговування)</h4>
+          <h4>CRUD Об'єкт #2: Order (Замовлення)</h4>
           <table class="schema-table">
             <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
             <tr><td><code>car</code></td><td>ObjectId</td><td>Required, ref: Car</td></tr>
             <tr><td><code>user</code></td><td>ObjectId</td><td>Required, ref: User</td></tr>
-            <tr><td><code>status</code></td><td>String</td><td>Required, enum: new, in_progress, completed, cancelled. Default: new</td></tr>
-            <tr><td><code>serviceType</code></td><td>String</td><td>Required, enum: maintenance, repair, diagnostics, tire_change, other</td></tr>
-            <tr><td><code>description</code></td><td>String</td><td>Required, max 1000 символів</td></tr>
+            <tr><td><code>status</code></td><td>String</td><td>Required, enum: new, confirmed, test_drive, completed, cancelled. Default: new</td></tr>
+            <tr><td><code>type</code></td><td>String</td><td>Required, enum: purchase, test_drive</td></tr>
+            <tr><td><code>message</code></td><td>String</td><td>Max 1000 символів</td></tr>
             <tr><td><code>preferredDate</code></td><td>Date</td><td>—</td></tr>
           </table>
 
           <h4>Ролі та права доступу</h4>
           <table class="roles-table">
-            <tr><th>Дія</th><th>Майстер (admin)</th><th>Клієнт (user)</th></tr>
-            <tr><td>Перегляд автомобілів</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
-            <tr><td>Створення автомобілів</td><td>✅</td><td>✅</td></tr>
-            <tr><td>Редагування автомобілів</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
+            <tr><th>Дія</th><th>Менеджер (admin)</th><th>Покупець (user)</th></tr>
+            <tr><td>Перегляд автомобілів</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Створення/редагування автомобілів</td><td>✅</td><td>❌</td></tr>
             <tr><td>Видалення автомобілів</td><td>✅</td><td>❌</td></tr>
-            <tr><td>Перегляд заявок</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
-            <tr><td>Створення заявок</td><td>✅</td><td>✅</td></tr>
-            <tr><td>Зміна статусу заявок</td><td>✅</td><td>❌</td></tr>
-            <tr><td>Скасування заявок</td><td>✅ (будь-яку)</td><td>✅ (свої, new)</td></tr>
+            <tr><td>Перегляд замовлень</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
+            <tr><td>Створення замовлень</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Зміна статусу замовлень</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Скасування замовлень</td><td>✅ (будь-яке)</td><td>✅ (свої, new)</td></tr>
             <tr><td>Управління користувачами</td><td>✅</td><td>❌</td></tr>
           </table>
 
           <h4>Use Cases</h4>
           <ol class="use-cases">
-            <li>Клієнт реєструє свій автомобіль у системі</li>
-            <li>Клієнт створює заявку на обслуговування для свого авто</li>
-            <li>Майстер переглядає нові заявки</li>
-            <li>Майстер змінює статус заявки (new → in_progress → completed)</li>
-            <li>Клієнт скасовує заявку зі статусом "new"</li>
-            <li>Клієнт бачить тільки свої авто та заявки</li>
+            <li>Менеджер додає новий автомобіль до каталогу</li>
+            <li>Покупець переглядає автомобілі з фільтрацією за категорією</li>
+            <li>Покупець створює замовлення на покупку або тест-драйв</li>
+            <li>Менеджер підтверджує замовлення (new → confirmed)</li>
+            <li>Покупець скасовує замовлення зі статусом "new"</li>
+            <li>Менеджер переглядає всі замовлення</li>
           </ol>
         </div>
       </details>
@@ -587,6 +604,7 @@
             <tr><td><code>price</code></td><td>Number</td><td>Required, min: 0</td></tr>
             <tr><td><code>rooms</code></td><td>Number</td><td>Required, min: 1</td></tr>
             <tr><td><code>description</code></td><td>String</td><td>Max 1000 символів</td></tr>
+            <tr><td><code>isAvailable</code></td><td>Boolean</td><td>Default: true</td></tr>
           </table>
 
           <h4>CRUD Об'єкт #2: RentRequest (Заявка на оренду)</h4>
@@ -638,6 +656,7 @@
             <tr><td><code>capacity</code></td><td>Number</td><td>Required, min: 1</td></tr>
             <tr><td><code>location</code></td><td>String</td><td>Enum: main_hall, terrace, vip, bar</td></tr>
             <tr><td><code>description</code></td><td>String</td><td>Max 300 символів</td></tr>
+            <tr><td><code>pricePerHour</code></td><td>Number</td><td>Required, min: 0</td></tr>
             <tr><td><code>isAvailable</code></td><td>Boolean</td><td>Default: true</td></tr>
           </table>
 
@@ -691,6 +710,8 @@
             <tr><td><code>experience</code></td><td>Number</td><td>Min: 0 (роки)</td></tr>
             <tr><td><code>bio</code></td><td>String</td><td>Max 1000 символів</td></tr>
             <tr><td><code>phone</code></td><td>String</td><td>Max 20 символів</td></tr>
+            <tr><td><code>pricePerSession</code></td><td>Number</td><td>Required, min: 0</td></tr>
+            <tr><td><code>isAvailable</code></td><td>Boolean</td><td>Default: true</td></tr>
           </table>
 
           <h4>CRUD Об'єкт #2: Appointment (Запис на тренування)</h4>
@@ -742,6 +763,7 @@
             <tr><td><code>content</code></td><td>String</td><td>Required, max 5000 символів</td></tr>
             <tr><td><code>category</code></td><td>String</td><td>Enum: tech, lifestyle, travel, food, other</td></tr>
             <tr><td><code>tags</code></td><td>[String]</td><td>—</td></tr>
+            <tr><td><code>views</code></td><td>Number</td><td>Default: 0, min: 0</td></tr>
             <tr><td><code>isPublished</code></td><td>Boolean</td><td>Default: false</td></tr>
           </table>
 
@@ -949,6 +971,7 @@
             <tr><td><code>duration</code></td><td>Number</td><td>Required, min: 15 (хвилин)</td></tr>
             <tr><td><code>price</code></td><td>Number</td><td>Required, min: 0</td></tr>
             <tr><td><code>description</code></td><td>String</td><td>Max 1000 символів</td></tr>
+            <tr><td><code>isAvailable</code></td><td>Boolean</td><td>Default: true</td></tr>
           </table>
 
           <h4>CRUD Об'єкт #2: Appointment (Запис на процедуру)</h4>
@@ -1001,6 +1024,8 @@
             <tr><td><code>subject</code></td><td>String</td><td>Required, max 200 символів</td></tr>
             <tr><td><code>bio</code></td><td>String</td><td>Max 1000 символів</td></tr>
             <tr><td><code>email</code></td><td>String</td><td>Required, email формат</td></tr>
+            <tr><td><code>rating</code></td><td>Number</td><td>Min: 1, max: 5</td></tr>
+            <tr><td><code>isAvailable</code></td><td>Boolean</td><td>Default: true</td></tr>
           </table>
 
           <h4>CRUD Об'єкт #2: ConsultationRequest (Заявка на консультацію)</h4>
@@ -1053,6 +1078,8 @@
             <tr><td><code>duration</code></td><td>Number</td><td>Required, min: 15 (хвилин)</td></tr>
             <tr><td><code>price</code></td><td>Number</td><td>Required, min: 0</td></tr>
             <tr><td><code>maxParticipants</code></td><td>Number</td><td>Required, min: 1</td></tr>
+            <tr><td><code>category</code></td><td>String</td><td>Required, enum: permanent, temporary, interactive, guided, family</td></tr>
+            <tr><td><code>isAvailable</code></td><td>Boolean</td><td>Default: true</td></tr>
           </table>
 
           <h4>CRUD Об'єкт #2: TicketOrder (Замовлення квитків)</h4>
@@ -1106,7 +1133,7 @@
         const data = await response.json();
         const variantNames = {
           1: 'Бібліотека', 2: 'Інтернет-магазин', 3: 'Кінотеатр',
-          4: 'Проєкти та задачі', 5: 'Автосервіс', 6: 'Оренда житла',
+          4: 'Проєкти та задачі', 5: 'Автосалон', 6: 'Оренда житла',
           7: 'Ресторан (бронювання столів)', 8: 'Фітнес-зал', 9: 'Блог + коментарі',
           10: 'HR: вакансії та відгуки', 11: 'Паркінг / Автостоянка', 12: 'Готель',
           13: 'Спа-салон', 14: 'Консультації викладача', 15: 'Музей / Екскурсії'

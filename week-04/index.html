@@ -501,7 +501,7 @@ export default function SidebarToggle({ isOpen, onToggle }) {
   return (
     &lt;button
       onClick={onToggle}
-      className="text-gray-400 hover:text-white transition mb-4 cursor-pointer"
+      className="w-full text-center text-gray-400 hover:text-white transition mb-4 cursor-pointer"
       title={isOpen ? 'Згорнути меню' : 'Розгорнути меню'}
     &gt;
       {isOpen ? '&#x25C0; Згорнути' : '&#x25B6; Меню'}
@@ -522,7 +522,7 @@ export default function DashboardShell({ children }) {
 
   return (
     &lt;div className="flex min-h-[calc(100vh-130px)]"&gt;
-      &lt;aside className={`bg-gray-800 text-white p-6 transition-all ${sidebarOpen ? 'w-64' : 'w-16'}`}&gt;
+      &lt;aside className={`bg-gray-800 text-white transition-all ${sidebarOpen ? 'w-64 p-6' : 'w-16 p-2'}`}&gt;
         &lt;SidebarToggle isOpen={sidebarOpen} onToggle={() =&gt; setSidebarOpen(!sidebarOpen)} /&gt;
         {sidebarOpen &amp;&amp; (
           &lt;&gt;

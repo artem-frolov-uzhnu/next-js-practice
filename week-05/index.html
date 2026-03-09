@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Практика 5: Робота з даними та завантаження | Протокол заняття</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/practical.css">
+</head>
+<body>
+  <!-- Навігація -->
+  <nav class="lecture-nav">
+    <div class="container">
+      <div class="nav-title">Тиждень 5: Практичне заняття</div>
+      <div class="nav-links">
+        <a href="../" class="btn btn-outline">&larr; На головну</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Основний контент -->
+  <article class="lecture-content">
+    <!-- Заголовок -->
+    <header class="lecture-header">
+      <span class="lecture-number">Практика 5</span>
+      <h1>Робота з даними та завантаження</h1>
+      <div class="lecture-meta">
+        <span>&#x1F4C5; Тиждень 5</span>
+        <span>&#x1F4BB; Практичне заняття</span>
+      </div>
+    </header>
+
+    <!-- Зміст -->
+    <nav class="toc">
+      <h3>Зміст заняття</h3>
+      <ol>
+        <li><a href="#fetching">Fetching даних з API</a></li>
+        <li><a href="#loading">Loading States та Skeleton UI</a></li>
+        <li><a href="#errors">Error Handling та Suspense</a></li>
+        <li><a href="#result">Результат та домашнє завдання</a></li>
+      </ol>
+    </nav>
+
+    <!-- Вступ -->
+    <section class="lecture-section">
+      <h2>Мета заняття</h2>
+      <p>На цьому практичному занятті ви:</p>
+      <ul>
+        <li>Fetch даних з публічного API в Server Components</li>
+        <li>Створите loading.js та Skeleton UI компоненти</li>
+        <li>Реалізуєте error.js та not-found.js</li>
+        <li>Використаєте Suspense для streaming</li>
+      </ul>
+
+      <div class="info-box info">
+        <strong>Передумова:</strong> Ви маєте мати працюючий Next.js проект з тижня 4
+        (Server/Client Components, Context, композиція).
+        Ми продовжуємо працювати з тим самим проектом.
+      </div>
+
+      <div class="info-box warning">
+        <strong>Приклад викладача:</strong> Кав'ярня «Кофеїн». Ви маєте адаптувати код під свою тему з 15 варіантів.
+      </div>
+    </section>
+
+    <!-- Частина 1: Fetching даних з API -->
+    <section class="lecture-section" id="fetching">
+      <h2>1. Fetching даних з API</h2>
+      <p>
+        В Next.js Server Components можна використовувати <code>async/await</code> для fetching даних
+        безпосередньо в компоненті &mdash; без useState, useEffect чи бібліотек.
+        Це простіше, швидше та безпечніше.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Створити сторінку з постами від JSONPlaceholder</h4>
+        <p>Створіть файл <code>app/demo/posts/page.js</code> &mdash; сторінка, що отримує дані з публічного API:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/demo/posts/page.js</div>
+          <pre><code>export default async function PostsPage() {
+  const response = await fetch('https://jsonplaceholder.typicode.com/posts')
+  const posts = await response.json()
+
+  return (
+    &lt;div className="container mx-auto px-4 py-8"&gt;
+      &lt;h1 className="text-4xl font-bold mb-8"&gt;Пости з JSONPlaceholder&lt;/h1&gt;
+
+      &lt;div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"&gt;
+        {posts.slice(0, 9).map(post =&gt; (
+          &lt;article
+            key={post.id}
+            className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow"
+          &gt;
+            &lt;h2 className="text-xl font-bold mb-2 line-clamp-2"&gt;
+              {post.title}
+            &lt;/h2&gt;
+            &lt;p className="text-gray-600 line-clamp-3"&gt;
+              {post.body}
+            &lt;/p&gt;
+            &lt;div className="mt-4 text-sm text-gray-500"&gt;
+              Post #{post.id} by User {post.userId}
+            &lt;/div&gt;
+          &lt;/article&gt;
+        ))}
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Зверніть увагу:</strong> Компонент <code>async</code> &mdash; це Server Component.
+          Дані завантажуються на сервері, користувач отримує готовий HTML.
+          Жодного useState, useEffect, loading state &mdash; все простіше!
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Відкрийте <code>/demo/posts</code> &mdash; має відображатись 9 постів у сітці</li>
+          <li>Дані завантажені на сервері (перевірте View Source &mdash; контент є в HTML)</li>
+        </ul>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити сторінки з різними варіантами кешування</h4>
+        <p>Створіть три сторінки, щоб порівняти поведінку кешування в Next.js:</p>
+
+        <p><strong>1. З кешуванням (за замовчуванням):</strong></p>
+        <div class="code-block">
+          <div class="code-header">app/demo/cached/page.js</div>
+          <pre><code>export default async function CachedPage() {
+  const response = await fetch('https://jsonplaceholder.typicode.com/posts/1')
+  const post = await response.json()
+
+  return (
+    &lt;div className="container mx-auto px-4 py-8"&gt;
+      &lt;h1 className="text-3xl font-bold mb-4"&gt;Закешований пост&lt;/h1&gt;
+      &lt;div className="bg-blue-50 p-4 rounded mb-4"&gt;
+        &lt;p className="text-sm text-blue-800"&gt;
+          &lt;strong&gt;Production:&lt;/strong&gt; Цей пост закешований назавжди (після build). Timestamp не змінюється при оновленні.
+        &lt;/p&gt;
+        &lt;p className="text-sm text-blue-800 mt-1"&gt;
+          &lt;strong&gt;Dev-режим:&lt;/strong&gt; В &lt;code&gt;npm run dev&lt;/code&gt; кешування не працює &amp;mdash; час оновлюється при кожному запиті. Щоб побачити різницю, запустіть &lt;code&gt;npm run build &amp;amp;&amp;amp; npm start&lt;/code&gt;.
+        &lt;/p&gt;
+      &lt;/div&gt;
+
+      &lt;article className="bg-white rounded-lg shadow p-6"&gt;
+        &lt;h2 className="text-2xl font-bold mb-2"&gt;{post.title}&lt;/h2&gt;
+        &lt;p className="text-gray-700"&gt;{post.body}&lt;/p&gt;
+        &lt;p className="text-sm text-gray-500 mt-4"&gt;
+          Завантажено: {new Date().toLocaleTimeString()}
+        &lt;/p&gt;
+      &lt;/article&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+
+        <p><strong>2. З revalidation (кожні 10 секунд):</strong></p>
+        <div class="code-block">
+          <div class="code-header">app/demo/revalidated/page.js</div>
+          <pre><code>export const revalidate = 10
+
+export default async function RevalidatedPage() {
+  const response = await fetch('https://jsonplaceholder.typicode.com/posts/2')
+  const post = await response.json()
+
+  return (
+    &lt;div className="container mx-auto px-4 py-8"&gt;
+      &lt;h1 className="text-3xl font-bold mb-4"&gt;Revalidated пост&lt;/h1&gt;
+      &lt;div className="bg-green-50 p-4 rounded mb-4"&gt;
+        &lt;p className="text-sm text-green-800"&gt;
+          &lt;strong&gt;Production:&lt;/strong&gt; Цей пост оновлюється кожні 10 секунд. Почекайте 10+ секунд та оновіть &amp;mdash; timestamp зміниться.
+        &lt;/p&gt;
+        &lt;p className="text-sm text-green-800 mt-1"&gt;
+          &lt;strong&gt;Dev-режим:&lt;/strong&gt; В &lt;code&gt;npm run dev&lt;/code&gt; revalidation не працює &amp;mdash; час оновлюється при кожному запиті. Щоб побачити різницю, запустіть &lt;code&gt;npm run build &amp;amp;&amp;amp; npm start&lt;/code&gt;.
+        &lt;/p&gt;
+      &lt;/div&gt;
+
+      &lt;article className="bg-white rounded-lg shadow p-6"&gt;
+        &lt;h2 className="text-2xl font-bold mb-2"&gt;{post.title}&lt;/h2&gt;
+        &lt;p className="text-gray-700"&gt;{post.body}&lt;/p&gt;
+        &lt;p className="text-sm text-gray-500 mt-4"&gt;
+          Завантажено: {new Date().toLocaleTimeString()}
+        &lt;/p&gt;
+      &lt;/article&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+
+        <p><strong>3. Без кешування:</strong></p>
+        <div class="code-block">
+          <div class="code-header">app/demo/no-cache/page.js</div>
+          <pre><code>export default async function NoCachePage() {
+  const response = await fetch('https://jsonplaceholder.typicode.com/posts/3', {
+    cache: 'no-store'
+  })
+  const post = await response.json()
+
+  return (
+    &lt;div className="container mx-auto px-4 py-8"&gt;
+      &lt;h1 className="text-3xl font-bold mb-4"&gt;Пост без кешу&lt;/h1&gt;
+      &lt;div className="bg-red-50 p-4 rounded mb-4"&gt;
+        &lt;p className="text-sm text-red-800"&gt;
+          &lt;strong&gt;Production:&lt;/strong&gt; Цей пост НЕ кешується. Кожне оновлення &amp;mdash; новий запит до API, timestamp завжди новий.
+        &lt;/p&gt;
+        &lt;p className="text-sm text-red-800 mt-1"&gt;
+          &lt;strong&gt;Dev-режим:&lt;/strong&gt; В &lt;code&gt;npm run dev&lt;/code&gt; всі три варіанти поводяться однаково (час оновлюється завжди). Щоб побачити різницю, запустіть &lt;code&gt;npm run build &amp;amp;&amp;amp; npm start&lt;/code&gt;.
+        &lt;/p&gt;
+      &lt;/div&gt;
+
+      &lt;article className="bg-white rounded-lg shadow p-6"&gt;
+        &lt;h2 className="text-2xl font-bold mb-2"&gt;{post.title}&lt;/h2&gt;
+        &lt;p className="text-gray-700"&gt;{post.body}&lt;/p&gt;
+        &lt;p className="text-sm text-gray-500 mt-4"&gt;
+          Завантажено: {new Date().toLocaleTimeString()}
+        &lt;/p&gt;
+      &lt;/article&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Як тестувати:</strong> В dev-режимі (<code>npm run dev</code>) всі три сторінки поводяться однаково &mdash; timestamp оновлюється щоразу.
+          Щоб побачити різницю кешування, запустіть production-збірку: <code>npm run build &amp;&amp; npm start</code>.
+          Тоді для cached timestamp буде заморожений, для revalidated &mdash; змінюється після 10+ секунд,
+          а для no-cache &mdash; змінюється при кожному оновленні.
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li><code>/demo/cached</code>, <code>/demo/revalidated</code>, <code>/demo/no-cache</code> &mdash; всі три сторінки відкриваються та показують пост з timestamp</li>
+          <li>В dev-режимі timestamp оновлюється на всіх трьох &mdash; це нормально</li>
+          <li>Різницю видно в production (<code>npm run build &amp;&amp; npm start</code>): cached &mdash; заморожений, revalidated &mdash; після 10+ сек, no-cache &mdash; завжди новий</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 2: Loading States та Skeleton UI -->
+    <section class="lecture-section" id="loading">
+      <h2>2. Loading States та Skeleton UI</h2>
+
+      <p>
+        Next.js автоматично показує <code>loading.js</code> при навігації на сторінку,
+        поки <code>page.js</code> завантажує дані. Це працює без жодного клієнтського коду &mdash;
+        просто створіть файл <code>loading.js</code> поруч з <code>page.js</code>.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Додати loading для сторінки постів</h4>
+        <p>Створіть <code>app/demo/posts/loading.js</code> &mdash; skeleton, що повторює структуру сітки постів:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/demo/posts/loading.js</div>
+          <pre><code>export default function Loading() {
+  return (
+    &lt;div className="container mx-auto px-4 py-8"&gt;
+      &lt;div className="h-10 bg-gray-200 rounded w-64 mb-8 animate-pulse"&gt;&lt;/div&gt;
+
+      &lt;div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"&gt;
+        {[...Array(9)].map((_, i) =&gt; (
+          &lt;div key={i} className="bg-white rounded-lg shadow p-6"&gt;
+            &lt;div className="h-6 bg-gray-200 rounded w-3/4 mb-2 animate-pulse"&gt;&lt;/div&gt;
+            &lt;div className="h-4 bg-gray-200 rounded w-full mb-1 animate-pulse"&gt;&lt;/div&gt;
+            &lt;div className="h-4 bg-gray-200 rounded w-5/6 mb-1 animate-pulse"&gt;&lt;/div&gt;
+            &lt;div className="h-4 bg-gray-200 rounded w-4/5 animate-pulse"&gt;&lt;/div&gt;
+            &lt;div className="h-3 bg-gray-200 rounded w-32 mt-4 animate-pulse"&gt;&lt;/div&gt;
+          &lt;/div&gt;
+        ))}
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Принцип:</strong> Skeleton має повторювати структуру реального контенту.
+          9 карток у сітці 3 колонки &mdash; як і на реальній сторінці.
+          Клас <code>animate-pulse</code> додає плавну анімацію мерехтіння.
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити повільну сторінку зі спіннером</h4>
+        <p>Створіть <code>app/demo/slow/page.js</code> із штучною затримкою 3 секунди та <code>app/demo/slow/loading.js</code> зі спіннером:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/demo/slow/page.js</div>
+          <pre><code>export default async function SlowPage() {
+  await new Promise(resolve =&gt; setTimeout(resolve, 3000))
+
+  const response = await fetch('https://jsonplaceholder.typicode.com/posts')
+  const posts = await response.json()
+
+  return (
+    &lt;div className="container mx-auto px-4 py-8"&gt;
+      &lt;h1 className="text-4xl font-bold mb-8"&gt;Повільна сторінка (3 сек)&lt;/h1&gt;
+      &lt;div className="bg-yellow-50 p-4 rounded mb-6"&gt;
+        &lt;p className="text-yellow-800"&gt;
+          Ця сторінка завантажується 3 секунди. При навігації ви побачите loading.js
+        &lt;/p&gt;
+      &lt;/div&gt;
+
+      &lt;div className="grid grid-cols-1 md:grid-cols-3 gap-6"&gt;
+        {posts.slice(0, 6).map(post =&gt; (
+          &lt;article key={post.id} className="bg-white rounded-lg shadow p-6"&gt;
+            &lt;h2 className="text-xl font-bold mb-2"&gt;{post.title}&lt;/h2&gt;
+            &lt;p className="text-gray-600"&gt;{post.body}&lt;/p&gt;
+          &lt;/article&gt;
+        ))}
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header">app/demo/slow/loading.js</div>
+          <pre><code>export default function Loading() {
+  return (
+    &lt;div className="flex items-center justify-center min-h-screen"&gt;
+      &lt;div className="text-center"&gt;
+        &lt;div className="animate-spin rounded-full h-32 w-32 border-b-4 border-blue-600 mx-auto mb-4"&gt;&lt;/div&gt;
+        &lt;p className="text-xl text-gray-600"&gt;Завантаження...&lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Перейдіть на <code>/demo/slow</code> &mdash; побачите спіннер протягом 3 секунд</li>
+          <li>Після завантаження з'являються пости</li>
+          <li>При переході на <code>/demo/posts</code> з іншої сторінки видно skeleton</li>
+        </ul>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити компоненти Skeleton для повторного використання</h4>
+        <p>Створіть файл <code>components/skeletons/PostSkeleton.jsx</code> з трьома компонентами skeleton:</p>
+
+        <div class="code-block">
+          <div class="code-header">components/skeletons/PostSkeleton.jsx</div>
+          <pre><code>export function PostSkeleton() {
+  return (
+    &lt;div className="bg-white rounded-lg shadow p-6 animate-pulse"&gt;
+      &lt;div className="h-6 bg-gray-200 rounded w-3/4 mb-3"&gt;&lt;/div&gt;
+      &lt;div className="space-y-2"&gt;
+        &lt;div className="h-4 bg-gray-200 rounded"&gt;&lt;/div&gt;
+        &lt;div className="h-4 bg-gray-200 rounded"&gt;&lt;/div&gt;
+        &lt;div className="h-4 bg-gray-200 rounded w-5/6"&gt;&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;div className="h-3 bg-gray-200 rounded w-32 mt-4"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  )
+}
+
+export function StatSkeleton() {
+  return (
+    &lt;div className="bg-white rounded-lg shadow p-6 animate-pulse"&gt;
+      &lt;div className="h-4 bg-gray-200 rounded w-24 mb-2"&gt;&lt;/div&gt;
+      &lt;div className="h-10 bg-gray-200 rounded w-16"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  )
+}
+
+export function TableSkeleton({ rows = 5 }) {
+  return (
+    &lt;div className="bg-white rounded-lg shadow overflow-hidden"&gt;
+      &lt;table className="w-full"&gt;
+        &lt;thead className="bg-gray-50"&gt;
+          &lt;tr&gt;
+            {[...Array(5)].map((_, i) =&gt; (
+              &lt;th key={i} className="px-6 py-3"&gt;
+                &lt;div className="h-4 bg-gray-200 rounded w-20 animate-pulse"&gt;&lt;/div&gt;
+              &lt;/th&gt;
+            ))}
+          &lt;/tr&gt;
+        &lt;/thead&gt;
+        &lt;tbody&gt;
+          {[...Array(rows)].map((_, i) =&gt; (
+            &lt;tr key={i} className="border-t"&gt;
+              {[...Array(5)].map((_, j) =&gt; (
+                &lt;td key={j} className="px-6 py-4"&gt;
+                  &lt;div className="h-4 bg-gray-200 rounded animate-pulse"&gt;&lt;/div&gt;
+                &lt;/td&gt;
+              ))}
+            &lt;/tr&gt;
+          ))}
+        &lt;/tbody&gt;
+      &lt;/table&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Зверніть увагу:</strong>
+          <code>StatSkeleton</code> повторює структуру <code>StatsCard</code> (заголовок + велике число).
+          <code>TableSkeleton</code> має 5 колонок &mdash; як таблиця напоїв у dashboard
+          (назва, категорія, ціна, наявність, дії).
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Як побачити loading для dashboard?</strong> Dashboard сторінки використовують синхронні дані з <code>lib/drinks.js</code>,
+        тому загружаються миттєво. Щоб побачити skeleton, додайте штучну затримку в <code>app/dashboard/page.js</code> та <code>app/dashboard/drinks/page.js</code>:
+        <pre><code>export default async function DashboardPage() {
+  await new Promise(resolve =&gt; setTimeout(resolve, 1000));
+  // ... решта коду
+}</code></pre>
+        Зробіть функцію <code>async</code> та додайте <code>await</code> з затримкою 1 секунду на початку. Тепер при навігації через Link буде видно loading skeleton.
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Додати loading для dashboard</h4>
+        <p>Створіть <code>app/dashboard/loading.js</code>, використовуючи <code>StatSkeleton</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/dashboard/loading.js</div>
+          <pre><code>import { StatSkeleton } from '@/components/skeletons/PostSkeleton'
+
+export default function Loading() {
+  return (
+    &lt;div&gt;
+      &lt;div className="h-10 bg-gray-200 rounded w-32 mb-6 animate-pulse"&gt;&lt;/div&gt;
+      &lt;div className="grid grid-cols-1 md:grid-cols-3 gap-6"&gt;
+        &lt;StatSkeleton /&gt;
+        &lt;StatSkeleton /&gt;
+        &lt;StatSkeleton /&gt;
+      &lt;/div&gt;
+      &lt;div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6"&gt;
+        &lt;StatSkeleton /&gt;
+        &lt;StatSkeleton /&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Додати loading для списку напоїв</h4>
+        <p>Створіть <code>app/dashboard/drinks/loading.js</code>, використовуючи <code>TableSkeleton</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/dashboard/drinks/loading.js</div>
+          <pre><code>import { TableSkeleton } from '@/components/skeletons/PostSkeleton'
+
+export default function Loading() {
+  return (
+    &lt;div&gt;
+      &lt;div className="flex justify-between items-center mb-6"&gt;
+        &lt;div className="h-10 bg-gray-200 rounded w-32 animate-pulse"&gt;&lt;/div&gt;
+        &lt;div className="h-10 bg-gray-200 rounded w-40 animate-pulse"&gt;&lt;/div&gt;
+      &lt;/div&gt;
+      &lt;TableSkeleton rows={10} /&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>При навігації на <code>/dashboard</code> видно skeleton з 3 картками статистики</li>
+          <li>При навігації на <code>/dashboard/drinks</code> видно skeleton таблиці з 5 колонками</li>
+          <li>Skeleton коректно повторює структуру реальних сторінок</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 3: Error Handling та Suspense -->
+    <section class="lecture-section" id="errors">
+      <h2>3. Error Handling та Suspense</h2>
+
+      <div class="task-box">
+        <h4>Завдання: Створити сторінку з випадковою помилкою</h4>
+        <p>Створіть <code>app/demo/error-test/page.js</code> та <code>app/demo/error-test/error.js</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/demo/error-test/page.js</div>
+          <pre><code>export default async function ErrorTestPage() {
+  const shouldFail = Math.random() &gt; 0.5
+
+  if (shouldFail) {
+    throw new Error('Випадкова помилка для тестування error.js')
+  }
+
+  return (
+    &lt;div className="container mx-auto px-4 py-8"&gt;
+      &lt;div className="bg-green-100 border border-green-400 p-4 rounded"&gt;
+        &lt;h1 className="text-2xl font-bold text-green-800"&gt;
+          Успіх! Помилки не сталося
+        &lt;/h1&gt;
+        &lt;p className="text-green-700 mt-2"&gt;
+          Оновіть сторінку - є 50% шанс помилки
+        &lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header">app/demo/error-test/error.js</div>
+          <pre><code>'use client'
+
+import { useEffect } from 'react'
+
+export default function Error({ error, reset }) {
+  useEffect(() =&gt; {
+    console.error('Error caught:', error)
+  }, [error])
+
+  return (
+    &lt;div className="min-h-screen flex items-center justify-center bg-red-50"&gt;
+      &lt;div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8"&gt;
+        &lt;div className="text-center"&gt;
+          &lt;div className="text-6xl mb-4"&gt;&amp;#x26A0;&amp;#xFE0F;&lt;/div&gt;
+          &lt;h2 className="text-2xl font-bold text-red-600 mb-2"&gt;
+            Виникла помилка
+          &lt;/h2&gt;
+          &lt;p className="text-gray-600 mb-6"&gt;
+            {error.message}
+          &lt;/p&gt;
+          &lt;button
+            onClick={reset}
+            className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700 font-bold"
+          &gt;
+            Спробувати знову
+          &lt;/button&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="error-box">
+        <h5>&#x26A0;&#xFE0F; Важливо: error.js ОБОВ'ЯЗКОВО має 'use client'</h5>
+        <p>
+          Файл <code>error.js</code> завжди має бути Client Component з директивою <code>'use client'</code>
+          на початку файлу. Це вимога Next.js, тому що error boundary використовує React hooks
+          (<code>useEffect</code>) та інтерактивні елементи (кнопка <code>reset</code>).
+          Без цієї директиви ви отримаєте помилку.
+        </p>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити сторінку користувача з notFound()</h4>
+        <p>Створіть <code>app/demo/users/[id]/page.js</code> та <code>app/demo/users/[id]/not-found.js</code>:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/demo/users/[id]/page.js</div>
+          <pre><code>import { notFound } from 'next/navigation'
+
+const users = {
+  '1': { id: 1, name: 'John Doe' },
+  '2': { id: 2, name: 'Jane Smith' },
+  '3': { id: 3, name: 'Bob Johnson' }
+}
+
+export default async function UserPage({ params }) {
+  const { id } = await params
+  const user = users[id]
+
+  if (!user) {
+    notFound()
+  }
+
+  return (
+    &lt;div className="container mx-auto px-4 py-8"&gt;
+      &lt;h1 className="text-3xl font-bold"&gt;Користувач: {user.name}&lt;/h1&gt;
+      &lt;p className="text-gray-600"&gt;ID: {user.id}&lt;/p&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header">app/demo/users/[id]/not-found.js</div>
+          <pre><code>import Link from 'next/link'
+
+export default function NotFound() {
+  return (
+    &lt;div className="min-h-screen flex items-center justify-center"&gt;
+      &lt;div className="text-center"&gt;
+        &lt;h1 className="text-6xl font-bold text-gray-800 mb-4"&gt;404&lt;/h1&gt;
+        &lt;h2 className="text-2xl font-bold text-gray-600 mb-6"&gt;
+          Користувача не знайдено
+        &lt;/h2&gt;
+        &lt;p className="text-gray-500 mb-8"&gt;
+          Користувач з таким ID не існує
+        &lt;/p&gt;
+        &lt;Link
+          href="/demo/users/1"
+          className="bg-blue-600 text-white px-6 py-3 rounded hover:bg-blue-700"
+        &gt;
+          До користувача #1
+        &lt;/Link&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Як це працює:</strong> Функція <code>notFound()</code> з <code>next/navigation</code>
+          показує найближчий <code>not-found.js</code>. Існують лише користувачі з ID 1, 2, 3 &mdash;
+          будь-який інший ID покаже кастомну 404 сторінку.
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li><code>/demo/users/1</code> &mdash; показує &laquo;John Doe&raquo;</li>
+          <li><code>/demo/users/999</code> &mdash; показує кастомну 404 сторінку</li>
+          <li><code>/demo/error-test</code> &mdash; з 50% шансом показує помилку з кнопкою &laquo;Спробувати знову&raquo;</li>
+        </ul>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити Streaming з Suspense</h4>
+        <p>Створіть <code>app/demo/streaming/page.js</code> &mdash; сторінка з двома секціями, що завантажуються з різною швидкістю:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/demo/streaming/page.js</div>
+          <pre><code>import { Suspense } from 'react'
+import { PostSkeleton, StatSkeleton } from '@/components/skeletons/PostSkeleton'
+
+async function FastStats() {
+  await new Promise(resolve =&gt; setTimeout(resolve, 500))
+  return (
+    &lt;div className="grid grid-cols-3 gap-4 mb-8"&gt;
+      &lt;div className="bg-white rounded-lg shadow p-6"&gt;
+        &lt;h3 className="text-gray-500 text-sm"&gt;Швидка стата 1&lt;/h3&gt;
+        &lt;p className="text-3xl font-bold text-blue-600"&gt;123&lt;/p&gt;
+      &lt;/div&gt;
+      &lt;div className="bg-white rounded-lg shadow p-6"&gt;
+        &lt;h3 className="text-gray-500 text-sm"&gt;Швидка стата 2&lt;/h3&gt;
+        &lt;p className="text-3xl font-bold text-green-600"&gt;456&lt;/p&gt;
+      &lt;/div&gt;
+      &lt;div className="bg-white rounded-lg shadow p-6"&gt;
+        &lt;h3 className="text-gray-500 text-sm"&gt;Швидка стата 3&lt;/h3&gt;
+        &lt;p className="text-3xl font-bold text-red-600"&gt;789&lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}
+
+async function SlowPosts() {
+  await new Promise(resolve =&gt; setTimeout(resolve, 3000))
+  const response = await fetch('https://jsonplaceholder.typicode.com/posts?_limit=3')
+  const posts = await response.json()
+
+  return (
+    &lt;div className="space-y-4"&gt;
+      &lt;h2 className="text-2xl font-bold"&gt;Повільні пости (3 сек)&lt;/h2&gt;
+      {posts.map(post =&gt; (
+        &lt;article key={post.id} className="bg-white rounded-lg shadow p-6"&gt;
+          &lt;h3 className="text-xl font-bold mb-2"&gt;{post.title}&lt;/h3&gt;
+          &lt;p className="text-gray-600"&gt;{post.body}&lt;/p&gt;
+        &lt;/article&gt;
+      ))}
+    &lt;/div&gt;
+  )
+}
+
+export default function StreamingPage() {
+  return (
+    &lt;div className="container mx-auto px-4 py-8"&gt;
+      &lt;h1 className="text-4xl font-bold mb-8"&gt;Streaming Demo&lt;/h1&gt;
+      &lt;div className="bg-blue-50 p-4 rounded mb-8"&gt;
+        &lt;p className="text-blue-800"&gt;
+          Швидкі стати з'являться через 0.5 сек, повільні пости через 3 сек.
+          Дивіться як контент стрімиться поступово!
+        &lt;/p&gt;
+      &lt;/div&gt;
+
+      {/* Швидкий контент */}
+      &lt;Suspense fallback={
+        &lt;div className="grid grid-cols-3 gap-4 mb-8"&gt;
+          &lt;StatSkeleton /&gt;
+          &lt;StatSkeleton /&gt;
+          &lt;StatSkeleton /&gt;
+        &lt;/div&gt;
+      }&gt;
+        &lt;FastStats /&gt;
+      &lt;/Suspense&gt;
+
+      {/* Повільний контент */}
+      &lt;Suspense fallback={
+        &lt;div className="space-y-4"&gt;
+          &lt;div className="h-8 bg-gray-200 rounded w-48 animate-pulse mb-4"&gt;&lt;/div&gt;
+          &lt;PostSkeleton /&gt;
+          &lt;PostSkeleton /&gt;
+          &lt;PostSkeleton /&gt;
+        &lt;/div&gt;
+      }&gt;
+        &lt;SlowPosts /&gt;
+      &lt;/Suspense&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Як працює Streaming:</strong>
+          Next.js відправляє HTML частинами.
+          Спочатку заголовок та skeleton &mdash; через 0.5 сек FastStats замінює свій skeleton &mdash;
+          через 3 сек SlowPosts замінює свій. Кожна секція <code>Suspense</code> незалежна!
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Додати error.js для dashboard</h4>
+        <p>Створіть <code>app/dashboard/error.js</code> з кнопкою reset та посиланням на головну:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/dashboard/error.js</div>
+          <pre><code>'use client'
+
+import { useEffect } from 'react'
+import Link from 'next/link'
+
+export default function Error({ error, reset }) {
+  useEffect(() =&gt; {
+    console.error('Dashboard error:', error)
+  }, [error])
+
+  return (
+    &lt;div className="max-w-md mx-auto mt-12 bg-red-50 border border-red-200 rounded-lg p-6"&gt;
+      &lt;h2 className="text-2xl font-bold text-red-600 mb-4"&gt;
+        Помилка в dashboard
+      &lt;/h2&gt;
+      &lt;p className="text-gray-700 mb-6"&gt;{error.message}&lt;/p&gt;
+      &lt;div className="flex gap-4"&gt;
+        &lt;button
+          onClick={reset}
+          className="bg-amber-700 text-white px-4 py-2 rounded hover:bg-amber-800"
+        &gt;
+          Спробувати знову
+        &lt;/button&gt;
+        &lt;Link
+          href="/"
+          className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+        &gt;
+          На головну
+        &lt;/Link&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li><code>/demo/streaming</code> &mdash; стати з'являються через 0.5 сек, пости через 3 сек</li>
+          <li>Skeleton для кожної секції показується незалежно</li>
+          <li><code>app/dashboard/error.js</code> створено з кнопкою reset</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 4: Результат -->
+    <section class="lecture-section" id="result">
+      <h2>4. Результат та домашнє завдання</h2>
+
+      <div class="task-box">
+        <h4>Завдання: Зробити коміт</h4>
+        <div class="code-block">
+          <div class="code-header">Terminal (в папці проекту)</div>
+          <pre><code>git add .
+git commit -m "Week 5: Data fetching, loading, error handling, streaming"</code></pre>
+        </div>
+      </div>
+
+      <div class="final-result">
+        <h4>Що має бути створено</h4>
+        <ul>
+          <li><code>app/demo/posts/page.js</code> &mdash; fetching постів з JSONPlaceholder</li>
+          <li><code>app/demo/posts/loading.js</code> &mdash; skeleton grid для постів</li>
+          <li><code>app/demo/cached/page.js</code> &mdash; кешований запит</li>
+          <li><code>app/demo/revalidated/page.js</code> &mdash; запит з revalidation</li>
+          <li><code>app/demo/no-cache/page.js</code> &mdash; запит без кешу</li>
+          <li><code>app/demo/slow/page.js</code> &mdash; повільна сторінка (3 сек)</li>
+          <li><code>app/demo/slow/loading.js</code> &mdash; спіннер</li>
+          <li><code>components/skeletons/PostSkeleton.jsx</code> &mdash; PostSkeleton, StatSkeleton, TableSkeleton</li>
+          <li><code>app/dashboard/loading.js</code> &mdash; skeleton для dashboard</li>
+          <li><code>app/dashboard/drinks/loading.js</code> &mdash; skeleton таблиці</li>
+          <li><code>app/demo/error-test/page.js</code> &mdash; 50% помилка</li>
+          <li><code>app/demo/error-test/error.js</code> &mdash; error boundary</li>
+          <li><code>app/demo/users/[id]/page.js</code> &mdash; з notFound()</li>
+          <li><code>app/demo/users/[id]/not-found.js</code> &mdash; кастомна 404</li>
+          <li><code>app/demo/streaming/page.js</code> &mdash; Suspense з FastStats та SlowPosts</li>
+          <li><code>app/dashboard/error.js</code> &mdash; error boundary для dashboard</li>
+        </ul>
+      </div>
+
+      <h3>Домашнє завдання</h3>
+
+      <h4>Обов'язково:</h4>
+      <ol>
+        <li><strong>Адаптувати loading.js та skeleton</strong> під свою тему &mdash; створити loading для dashboard, списку сутностей та сторінки деталей</li>
+        <li><strong>Адаптувати TableSkeleton</strong> під свою сутність &mdash; кількість колонок має відповідати вашій таблиці</li>
+        <li><strong>Додати loading для сторінки деталей</strong> окремої сутності (наприклад, <code>app/dashboard/books/[id]/loading.js</code>)</li>
+        <li><strong>Створити error.js</strong> для dashboard з кнопкою reset та посиланням на головну</li>
+        <li><strong>Завантажити на GitHub</strong></li>
+      </ol>
+
+      <h4>Додатково (для вищого балу):</h4>
+      <ul>
+        <li>Додати <strong>Suspense</strong> на сторінку dashboard для незалежного завантаження секцій</li>
+        <li>Реалізувати <strong>пошук з URL параметрами</strong> та streaming результатів</li>
+        <li>Створити skeleton, що <strong>точно повторює</strong> макет реальної сторінки (розміри, відступи, кількість елементів)</li>
+      </ul>
+
+      <div class="final-result">
+        <h4>Критерії успішного виконання практичного заняття</h4>
+        <ul class="criteria-list">
+          <li>loading.js для dashboard показує StatSkeleton</li>
+          <li>loading.js для списку сутностей показує TableSkeleton</li>
+          <li>Skeleton UI компоненти створені та використовуються</li>
+          <li>error.js для dashboard з кнопкою reset</li>
+          <li>error.js має директиву 'use client'</li>
+          <li>Demo-сторінки працюють (/demo/posts, /demo/cached, /demo/revalidated, /demo/no-cache, /demo/slow)</li>
+          <li>Demo error-test показує помилку або успіх з 50% шансом</li>
+          <li>Streaming demo з Suspense працює (/demo/streaming)</li>
+          <li>not-found.js для /demo/users/[id] працює</li>
+          <li>Код адаптовано під свою тему</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Футер -->
+    <footer class="lecture-footer">
+      <p>Курс "Основи обробки та передачі інформації" | Next.js Full-Stack Development</p>
+      <p>Кібербезпека та захист інформації, 3 курс</p>
+
+      <div class="nav-buttons">
+        <a href="../" class="btn btn-outline">&larr; На головну</a>
+      </div>
+    </footer>
+  </article>
+  <script>
+    (function () {
+      var weekNum = parseInt(document.querySelector('.lecture-number').textContent.replace(/\D/g, ''), 10);
+      fetch('../data/config.json')
+        .then(function (res) { return res.json(); })
+        .then(function (config) {
+          var week = config.weeks.find(function (w) { return w.id === weekNum; });
+          if (week && !week.visible) {
+            document.querySelector('article.lecture-content').style.display = 'none';
+            var msg = document.createElement('div');
+            msg.style.cssText = 'text-align:center;padding:4rem 1rem;';
+            msg.innerHTML = '<h1 style="font-size:1.5rem;color:#333;margin-bottom:1rem;">Це заняття ще не доступне</h1>' +
+              '<a href="../" style="color:var(--primary,#2563eb);">← На головну</a>';
+            document.body.insertBefore(msg, document.querySelector('article.lecture-content'));
+          }
+        });
+    })();
+  </script>
+</body>
+</html>
