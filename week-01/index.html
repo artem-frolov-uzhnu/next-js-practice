@@ -37,7 +37,8 @@
         <li><a href="#preparation">Підготовка середовища</a></li>
         <li><a href="#create-project">Створення Next.js проекту</a></li>
         <li><a href="#landing-page">Створення Landing Page</a></li>
-        <li><a href="#result">Перевірка результату</a></li>
+        <li><a href="#about">Створення сторінки /about</a></li>
+        <li><a href="#git">Збереження та завантаження на GitHub</a></li>
       </ol>
     </nav>
 
@@ -701,28 +702,95 @@ description: "Система бронювання номерів"</code></pre>
       </div>
     </section>
 
-    <!-- Частина 4: Перевірка результату -->
-    <section class="lecture-section" id="result">
-      <h2>4. Перевірка результату</h2>
+    <!-- Частина 4: Сторінка /about -->
+    <section class="lecture-section" id="about">
+      <h2>4. Створення сторінки /about</h2>
+      <p>
+        Тепер створіть другу сторінку для вашого проекту — сторінку "Про нас" / "Про проект".
+        В Next.js кожна папка всередині <code>app/</code> з файлом <code>page.js</code> стає окремим маршрутом.
+      </p>
+
       <div class="task-box">
-        <h4>Завдання: Ініціалізувати Git репозиторій</h4>
+        <h4>Завдання: Створити сторінку /about</h4>
+        <ol>
+          <li>Створіть папку <code>app/about/</code></li>
+          <li>Всередині створіть файл <code>page.js</code></li>
+          <li>Додайте контент про ваш проект:</li>
+        </ol>
 
-        <p>Якщо Git репозиторій не був створений автоматично:</p>
         <div class="code-block">
-          <div class="code-header">Terminal (в папці проекту)</div>
-          <pre><code># Ініціалізувати репозиторій
-git init
+          <div class="code-header">app/about/page.js</div>
+          <pre><code>export default function AboutPage() {
+  return (
+    &lt;div className="min-h-screen py-16"&gt;
+      &lt;div className="container mx-auto px-4"&gt;
+        &lt;h1 className="text-4xl font-bold mb-6 text-gray-900"&gt;
+          Про проект
+        &lt;/h1&gt;
+        &lt;p className="text-lg text-gray-700 mb-4"&gt;
+          Опишіть ваш проект — що це за система, для кого вона призначена,
+          які проблеми вирішує.
+        &lt;/p&gt;
+        &lt;p className="text-lg text-gray-700"&gt;
+          Додайте інформацію про технології, команду або будь-що
+          релевантне до вашої теми.
+        &lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
 
-# Додати всі файли
-git add .
-
-# Створити перший коміт
-git commit -m "Initial commit: create Next.js landing page"</code></pre>
+        <div class="info-box info">
+          <strong>Адаптація:</strong> Змініть заголовок та тексти відповідно до вашої теми.
+          Наприклад, для бібліотеки — "Про бібліотеку", для кінотеатру — "Про кінотеатр".
         </div>
       </div>
 
+      <div class="checkpoint">
+        <h5>✅ Контрольна точка</h5>
+        <ul>
+          <li>Сторінка <code>/about</code> відкривається в браузері</li>
+          <li>Має заголовок та абзац з реальним контентом</li>
+          <li>Контент відповідає вашій темі</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 5: Git -->
+    <section class="lecture-section" id="git">
+      <h2>5. Збереження та завантаження на GitHub</h2>
+
+      <div class="task-box">
+        <h4>Завдання: Створити гілку та зробити коміт</h4>
+        <div class="code-block">
+          <div class="code-header">Terminal (в папці проекту)</div>
+          <pre><code>git checkout -b LR1
+git add .
+git commit -m "LR1: create Next.js project with landing page and about"
+git push -u origin LR1</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Якщо ви ще не створили репозиторій на GitHub:</strong>
+        <ol>
+          <li>Створіть новий репозиторій на <a href="https://github.com/new" target="_blank">github.com/new</a></li>
+          <li>Додайте remote: <code>git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git</code></li>
+          <li>Після цього виконайте <code>git push -u origin LR1</code></li>
+        </ol>
+      </div>
+
+      <h3>Зупинка сервера</h3>
+      <p>Щоб зупинити dev сервер, натисніть <kbd>Ctrl + C</kbd> в терміналі.</p>
+      <p>Щоб запустити знову: <code>npm run dev</code></p>
+    </section>
+
+    <!-- Підсумок -->
+    <section class="lecture-section">
+      <h2>Підсумок</h2>
       <div class="final-result">
-        <h4>Критерії успішного виконання практичного заняття</h4>
+        <h4>Критерії успішного виконання</h4>
         <ul class="criteria-list">
           <li>Node.js та npm встановлені і працюють</li>
           <li>VS Code встановлений з рекомендованими розширеннями</li>
@@ -731,20 +799,18 @@ git commit -m "Initial commit: create Next.js landing page"</code></pre>
           <li>Landing page відображається коректно</li>
           <li>Контент адаптований під обрану тему</li>
           <li>Hot Reload працює (зміни застосовуються автоматично)</li>
-          <li>Git репозиторій ініціалізований</li>
+          <li>Сторінка /about створена з контентом відповідно до теми</li>
         </ul>
       </div>
+    </section>
 
-      <h3>Зупинка сервера</h3>
-      <p>Щоб зупинити dev сервер, натисніть <kbd>Ctrl + C</kbd> в терміналі.</p>
-      <p>Щоб запустити знову: <code>npm run dev</code></p>
-
-      <h3>Домашнє завдання</h3>
+    <!-- Бонусні завдання -->
+    <section class="lecture-section">
+      <h2>Бонусні завдання</h2>
+      <p>Ці завдання не є обов'язковими і не впливають на наступні практичні роботи.</p>
       <ul>
-        <li>Удосконалити landing page: додати більше секцій</li>
-        <li>Створити сторінку <code>/about</code> (папка <code>app/about/page.js</code>)</li>
-        <li>Експериментувати з Tailwind CSS класами</li>
-        <li>Створити репозиторій на GitHub та завантажити код</li>
+        <li>Удосконалити landing page — додати більше секцій</li>
+        <li>Експериментувати з Tailwind CSS класами (кольори, відступи, анімації)</li>
       </ul>
     </section>
 

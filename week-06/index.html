@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Практика 6: API Routes в Next.js | Протокол заняття</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/practical.css">
+</head>
+<body>
+  <!-- Навігація -->
+  <nav class="lecture-nav">
+    <div class="container">
+      <div class="nav-title">Тиждень 6: Практичне заняття</div>
+      <div class="nav-links">
+        <a href="../" class="btn btn-outline">&larr; На головну</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Основний контент -->
+  <article class="lecture-content">
+    <!-- Заголовок -->
+    <header class="lecture-header">
+      <span class="lecture-number">Практика 6</span>
+      <h1>API Routes в Next.js</h1>
+      <div class="lecture-meta">
+        <span>&#x1F4C5; Тиждень 6</span>
+        <span>&#x1F4BB; Практичне заняття</span>
+      </div>
+    </header>
+
+    <!-- Зміст -->
+    <nav class="toc">
+      <h3>Зміст заняття</h3>
+      <ol>
+        <li><a href="#test-route">Перший API Route</a></li>
+        <li><a href="#drinks-list">API для списку напоїв</a></li>
+        <li><a href="#drink-detail">API для одного напою</a></li>
+        <li><a href="#create">Створення напою через API</a></li>
+        <li><a href="#update-delete">Оновлення та видалення</a></li>
+        <li><a href="#dashboard-api">Підключення dashboard до API</a></li>
+        <li><a href="#git">Збереження та завантаження на GitHub</a></li>
+      </ol>
+    </nav>
+
+    <!-- Вступ -->
+    <section class="lecture-section">
+      <h2>Мета заняття</h2>
+      <p>На цьому практичному занятті ви:</p>
+      <ul>
+        <li>Створите перший API Route (Route Handler)</li>
+        <li>Реалізуєте повний CRUD API для вашої сутності</li>
+        <li>Навчитесь працювати з HTTP методами (GET, POST, PUT, DELETE)</li>
+        <li>Підключите dashboard до API через fetch</li>
+      </ul>
+
+      <div class="info-box info">
+        <strong>Передумова:</strong> Ви маєте мати працюючий Next.js проект з тижня 5
+        (data fetching, loading states, error handling).
+        Ми продовжуємо працювати з тим самим проектом.
+      </div>
+
+      <div class="info-box warning">
+        <strong>Приклад викладача:</strong> Кав'ярня &laquo;Кофеїн&raquo;. Ви маєте адаптувати код під свою тему з 15 варіантів.
+      </div>
+    </section>
+
+    <!-- Частина 1: Перший API Route -->
+    <section class="lecture-section" id="test-route">
+      <h2>1. Перший API Route</h2>
+      <p>
+        В Next.js App Router API створюються через файл <code>route.js</code> в папці <code>app/api/</code>.
+        Кожен файл <code>route.js</code> &mdash; це Route Handler, який обробляє HTTP-запити.
+        На відміну від <code>page.js</code>, який рендерить UI, <code>route.js</code> повертає дані (зазвичай JSON).
+      </p>
+
+      <div class="info-box info">
+        <strong>Конвенція:</strong> Файл має називатись саме <code>route.js</code> (не <code>api.js</code>, не <code>handler.js</code>).
+        Next.js автоматично маршрутизує запити на основі структури папок:
+        <code>app/api/test/route.js</code> &rarr; <code>/api/test</code>.
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити тестовий API Route</h4>
+        <p>Створіть файл <code>app/api/test/route.js</code> &mdash; простий ендпоінт, що повертає JSON:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/api/test/route.js</div>
+          <pre><code>import { NextResponse } from 'next/server'
+
+export async function GET() {
+  return NextResponse.json({
+    message: 'API працює! Кав\'ярня Кофеїн',
+    timestamp: new Date().toISOString()
+  })
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Зверніть увагу:</strong>
+          <ul>
+            <li><code>NextResponse.json()</code> &mdash; зручний метод для повернення JSON-відповіді</li>
+            <li>Функція називається <code>GET</code> &mdash; це обробник HTTP GET-запитів</li>
+            <li>Функція <code>async</code> &mdash; Route Handlers завжди асинхронні</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Відкрийте <code>http://localhost:3000/api/test</code> в браузері</li>
+          <li>Має відображатись JSON: <code>{"message": "API працює! ...", "timestamp": "..."}</code></li>
+          <li>При кожному оновленні <code>timestamp</code> змінюється</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 2: API для списку напоїв -->
+    <section class="lecture-section" id="drinks-list">
+      <h2>2. API для списку напоїв</h2>
+      <p>
+        Зараз дані напоїв зберігаються в <code>lib/drinks.js</code> як константний масив.
+        Щоб API міг додавати, оновлювати та видаляти напої, потрібно зробити масив змінюваним
+        та додати допоміжні функції.
+      </p>
+
+      <div class="error-box">
+        <h5>&#x26A0;&#xFE0F; Важливо: In-memory дані</h5>
+        <p>
+          Дані зберігаються в пам'яті сервера. При перезапуску <code>npm run dev</code> всі зміни зникнуть.
+          Це нормально для навчання &mdash; на тижні 7-8 ми підключимо MongoDB для постійного зберігання.
+        </p>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Оновити lib/drinks.js &mdash; додати CRUD функції</h4>
+        <p>Замініть вміст <code>lib/drinks.js</code> на наступний код. Зверніть увагу: <code>const</code> змінено на <code>let</code>,
+        додано лічильник <code>nextId</code> та функції для створення, оновлення та видалення:</p>
+
+        <div class="code-block">
+          <div class="code-header">lib/drinks.js</div>
+          <pre><code>// Спільні дані меню кав'ярні
+// Тиждень 6: додано CRUD функції для API
+
+let drinks = [
+  { id: 1, name: "Еспресо", description: "Класичний італійський еспресо з насиченим смаком та ароматом.", price: 45, emoji: "&#x2615;", category: "Кава", available: true },
+  { id: 2, name: "Капучино", description: "Еспресо з ніжною молочною пінкою та корицею за бажанням.", price: 65, emoji: "&#x1F95B;", category: "Кава", available: true },
+  { id: 3, name: "Латте", description: "М'який смак кави з великою кількістю теплого молока.", price: 70, emoji: "&#x1F375;", category: "Кава", available: true },
+  { id: 4, name: "Американо", description: "Еспресо розбавлений гарячою водою. Легкий та освіжаючий.", price: 50, emoji: "&#x2615;", category: "Кава", available: true },
+  { id: 5, name: "Раф", description: "Вершковий кавовий напій з ванільним сиропом.", price: 75, emoji: "&#x1F368;", category: "Кава", available: false },
+  { id: 6, name: "Круасан", description: "Свіжий французький круасан з маслом.", price: 55, emoji: "&#x1F950;", category: "Їжа", available: true },
+  { id: 7, name: "Чізкейк", description: "Ніжний чізкейк Нью-Йорк з ягідним соусом.", price: 95, emoji: "&#x1F370;", category: "Їжа", available: true },
+  { id: 8, name: "Зелений чай", description: "Японський зелений чай Сенча. Свіжий та тонізуючий.", price: 55, emoji: "&#x1F343;", category: "Чай", available: true },
+  { id: 9, name: "Матча латте", description: "Японський чай матча з молоком.", price: 80, emoji: "&#x1F375;", category: "Чай", available: true },
+  { id: 10, name: "Какао", description: "Гарячий шоколадний напій з маршмелоу.", price: 60, emoji: "&#x1F36B;", category: "Інше", available: true },
+]
+
+let nextId = 11
+
+export { drinks }
+
+export function getDrinkById(id) {
+  return drinks.find((drink) =&gt; drink.id === Number(id))
+}
+
+export function getCategories() {
+  return ["Всі", ...new Set(drinks.map((item) =&gt; item.category))]
+}
+
+export function addDrink(data) {
+  const newDrink = {
+    id: nextId++,
+    name: data.name,
+    description: data.description || '',
+    price: Number(data.price),
+    emoji: data.emoji || '&#x2615;',
+    category: data.category || 'Інше',
+    available: data.available !== undefined ? data.available : true
+  }
+  drinks.push(newDrink)
+  return newDrink
+}
+
+export function updateDrink(id, data) {
+  const index = drinks.findIndex((drink) =&gt; drink.id === Number(id))
+  if (index === -1) return null
+
+  drinks[index] = {
+    ...drinks[index],
+    ...data,
+    id: drinks[index].id // ID не змінюється
+  }
+  return drinks[index]
+}
+
+export function deleteDrink(id) {
+  const index = drinks.findIndex((drink) =&gt; drink.id === Number(id))
+  if (index === -1) return null
+
+  const deleted = drinks[index]
+  drinks.splice(index, 1)
+  return deleted
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Що змінилось:</strong>
+          <ul>
+            <li><code>const drinks</code> &rarr; <code>let drinks</code> &mdash; масив тепер змінюваний</li>
+            <li><code>let nextId = 11</code> &mdash; лічильник для нових ID (наступний після останнього)</li>
+            <li><code>addDrink(data)</code> &mdash; створює новий напій та додає в масив</li>
+            <li><code>updateDrink(id, data)</code> &mdash; оновлює напій за ID, повертає <code>null</code> якщо не знайдено</li>
+            <li><code>deleteDrink(id)</code> &mdash; видаляє напій за ID, повертає видалений об'єкт або <code>null</code></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити API Route для списку напоїв</h4>
+        <p>Створіть файл <code>app/api/drinks/route.js</code> &mdash; ендпоінт з GET (список з фільтрацією) та POST (створення):</p>
+
+        <div class="code-block">
+          <div class="code-header">app/api/drinks/route.js</div>
+          <pre><code>import { NextResponse } from 'next/server'
+import { drinks, addDrink } from '@/lib/drinks'
+
+// GET /api/drinks — список напоїв з фільтрацією
+export async function GET(request) {
+  const { searchParams } = new URL(request.url)
+  const category = searchParams.get('category')
+  const search = searchParams.get('search')
+
+  let result = [...drinks]
+
+  // Фільтрація за категорією
+  if (category &amp;&amp; category !== 'Всі') {
+    result = result.filter(drink =&gt; drink.category === category)
+  }
+
+  // Пошук за назвою
+  if (search) {
+    result = result.filter(drink =&gt;
+      drink.name.toLowerCase().includes(search.toLowerCase())
+    )
+  }
+
+  return NextResponse.json(result)
+}
+
+// POST /api/drinks — створення нового напою
+export async function POST(request) {
+  try {
+    const body = await request.json()
+
+    // Валідація обов'язкових полів
+    if (!body.name || !body.category || !body.price) {
+      return NextResponse.json(
+        { error: 'Поля name, category та price є обов\'язковими' },
+        { status: 400 }
+      )
+    }
+
+    if (typeof body.price !== 'number' || body.price &lt;= 0) {
+      return NextResponse.json(
+        { error: 'Ціна має бути додатнім числом' },
+        { status: 400 }
+      )
+    }
+
+    const newDrink = addDrink(body)
+    return NextResponse.json(newDrink, { status: 201 })
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Невалідний JSON' },
+      { status: 400 }
+    )
+  }
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Параметри запиту (Query Parameters):</strong>
+          Об'єкт <code>request</code> &mdash; це стандартний Web API <code>Request</code>.
+          Для отримання query-параметрів використовуємо <code>new URL(request.url).searchParams</code>.
+          Наприклад, для URL <code>/api/drinks?category=Кава</code> отримаємо <code>searchParams.get('category')</code> &rarr; <code>"Кава"</code>.
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li><code>/api/drinks</code> &mdash; повертає масив з 10 напоїв</li>
+          <li><code>/api/drinks?category=Кава</code> &mdash; повертає лише напої категорії &laquo;Кава&raquo;</li>
+          <li><code>/api/drinks?search=лат</code> &mdash; повертає &laquo;Латте&raquo; та &laquo;Матча латте&raquo;</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 3: API для одного напою -->
+    <section class="lecture-section" id="drink-detail">
+      <h2>3. API для одного напою</h2>
+      <p>
+        Для отримання одного напою за ID використовуємо динамічний сегмент <code>[id]</code> &mdash;
+        так само як і для сторінок. Файл <code>app/api/drinks/[id]/route.js</code> буде обробляти
+        запити до <code>/api/drinks/1</code>, <code>/api/drinks/2</code> тощо.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Створити API Route для одного напою</h4>
+        <p>Створіть файл <code>app/api/drinks/[id]/route.js</code> &mdash; GET ендпоінт з обробкою 404:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/api/drinks/[id]/route.js</div>
+          <pre><code>import { NextResponse } from 'next/server'
+import { getDrinkById } from '@/lib/drinks'
+
+// GET /api/drinks/[id] — один напій за ID
+export async function GET(request, { params }) {
+  const { id } = await params
+
+  const drink = getDrinkById(id)
+
+  if (!drink) {
+    return NextResponse.json(
+      { error: 'Напій не знайдено' },
+      { status: 404 }
+    )
+  }
+
+  return NextResponse.json(drink)
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Зверніть увагу на <code>await params</code>:</strong>
+          В Next.js 15 параметри маршруту (<code>params</code>) є асинхронними &mdash; їх потрібно &laquo;розпакувати&raquo;
+          через <code>await</code>. Це стосується як <code>page.js</code>, так і <code>route.js</code>.
+          Деструктуризація <code>{ params }</code> відбувається з другого аргументу функції-обробника.
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li><code>/api/drinks/1</code> &mdash; повертає JSON з даними Еспресо</li>
+          <li><code>/api/drinks/3</code> &mdash; повертає JSON з даними Латте</li>
+          <li><code>/api/drinks/999</code> &mdash; повертає <code>{"error": "Напій не знайдено"}</code> зі статусом 404</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 4: Створення напою через API -->
+    <section class="lecture-section" id="create">
+      <h2>4. Створення напою через API</h2>
+      <p>
+        POST-обробник вже створено в кроці 2 (файл <code>app/api/drinks/route.js</code>).
+        Тепер протестуємо його &mdash; для цього потрібен інструмент для відправки HTTP-запитів,
+        адже браузер при відкритті URL завжди відправляє GET.
+      </p>
+
+      <div class="info-box info">
+        <strong>Інструменти для тестування API:</strong>
+        <ul>
+          <li><strong>Thunder Client</strong> &mdash; розширення VS Code (рекомендовано)</li>
+          <li><strong>Postman</strong> &mdash; окремий додаток</li>
+          <li><strong>curl</strong> &mdash; командний рядок (вбудований в macOS/Linux, доступний у Git Bash на Windows)</li>
+        </ul>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Протестувати POST запит</h4>
+        <p>Відправте POST-запит для створення нового напою. Використайте curl або Thunder Client:</p>
+
+        <div class="code-block">
+          <div class="code-header">Terminal</div>
+          <pre><code>curl -X POST http://localhost:3000/api/drinks \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Мокко", "category": "Кава", "price": 85}'</code></pre>
+        </div>
+
+        <p>Очікувана відповідь (статус 201):</p>
+        <div class="code-block">
+          <div class="code-header">Відповідь</div>
+          <pre><code>{
+  "id": 11,
+  "name": "Мокко",
+  "description": "",
+  "price": 85,
+  "emoji": "&#x2615;",
+  "category": "Кава",
+  "available": true
+}</code></pre>
+        </div>
+
+        <p>Тепер протестуйте валідацію &mdash; відправте запит без обов'язкового поля:</p>
+
+        <div class="code-block">
+          <div class="code-header">Terminal</div>
+          <pre><code>curl -X POST http://localhost:3000/api/drinks \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Без ціни", "category": "Кава"}'</code></pre>
+        </div>
+
+        <p>Очікувана відповідь (статус 400):</p>
+        <div class="code-block">
+          <div class="code-header">Відповідь</div>
+          <pre><code>{"error": "Поля name, category та price є обов'язковими"}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Thunder Client у VS Code:</strong>
+          <ol>
+            <li>Встановіть розширення &laquo;Thunder Client&raquo;</li>
+            <li>Натисніть іконку блискавки в бічній панелі</li>
+            <li>Створіть New Request &rarr; метод POST &rarr; URL: <code>http://localhost:3000/api/drinks</code></li>
+            <li>Вкладка Body &rarr; JSON &rarr; вставте <code>{"name": "Мокко", "category": "Кава", "price": 85}</code></li>
+            <li>Натисніть Send</li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>POST з валідними даними створює напій та повертає його з ID (статус 201)</li>
+          <li>GET <code>/api/drinks</code> тепер показує 11 напоїв (включно з новим)</li>
+          <li>POST без обов'язкових полів повертає помилку (статус 400)</li>
+          <li>POST з від'ємною ціною повертає помилку валідації</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 5: Оновлення та видалення -->
+    <section class="lecture-section" id="update-delete">
+      <h2>5. Оновлення та видалення</h2>
+      <p>
+        Додамо PUT та DELETE обробники до файлу <code>app/api/drinks/[id]/route.js</code>.
+        PUT &mdash; повне оновлення напою, DELETE &mdash; видалення.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Додати PUT та DELETE обробники</h4>
+        <p>Оновіть файл <code>app/api/drinks/[id]/route.js</code> &mdash; додайте обробники PUT та DELETE до вже існуючого GET:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/api/drinks/[id]/route.js</div>
+          <pre><code>import { NextResponse } from 'next/server'
+import { getDrinkById, updateDrink, deleteDrink } from '@/lib/drinks'
+
+// GET /api/drinks/[id] — один напій за ID
+export async function GET(request, { params }) {
+  const { id } = await params
+
+  const drink = getDrinkById(id)
+
+  if (!drink) {
+    return NextResponse.json(
+      { error: 'Напій не знайдено' },
+      { status: 404 }
+    )
+  }
+
+  return NextResponse.json(drink)
+}
+
+// PUT /api/drinks/[id] — оновлення напою
+export async function PUT(request, { params }) {
+  const { id } = await params
+
+  try {
+    const body = await request.json()
+
+    // Валідація
+    if (!body.name || !body.category || !body.price) {
+      return NextResponse.json(
+        { error: 'Поля name, category та price є обов\'язковими' },
+        { status: 400 }
+      )
+    }
+
+    const updated = updateDrink(id, body)
+
+    if (!updated) {
+      return NextResponse.json(
+        { error: 'Напій не знайдено' },
+        { status: 404 }
+      )
+    }
+
+    return NextResponse.json(updated)
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Невалідний JSON' },
+      { status: 400 }
+    )
+  }
+}
+
+// DELETE /api/drinks/[id] — видалення напою
+export async function DELETE(request, { params }) {
+  const { id } = await params
+
+  const deleted = deleteDrink(id)
+
+  if (!deleted) {
+    return NextResponse.json(
+      { error: 'Напій не знайдено' },
+      { status: 404 }
+    )
+  }
+
+  return NextResponse.json({
+    message: `Напій "${deleted.name}" видалено`,
+    deleted
+  })
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Протестувати PUT та DELETE</h4>
+        <p>Використайте curl або Thunder Client для тестування:</p>
+
+        <p><strong>Оновлення напою (PUT):</strong></p>
+        <div class="code-block">
+          <div class="code-header">Terminal</div>
+          <pre><code>curl -X PUT http://localhost:3000/api/drinks/1 \
+  -H "Content-Type: application/json" \
+  -d '{"name": "Еспресо Доппіо", "category": "Кава", "price": 55, "description": "Подвійний еспресо"}'</code></pre>
+        </div>
+
+        <p>Очікувана відповідь:</p>
+        <div class="code-block">
+          <div class="code-header">Відповідь</div>
+          <pre><code>{
+  "id": 1,
+  "name": "Еспресо Доппіо",
+  "description": "Подвійний еспресо",
+  "price": 55,
+  "emoji": "&#x2615;",
+  "category": "Кава",
+  "available": true
+}</code></pre>
+        </div>
+
+        <p><strong>Видалення напою (DELETE):</strong></p>
+        <div class="code-block">
+          <div class="code-header">Terminal</div>
+          <pre><code>curl -X DELETE http://localhost:3000/api/drinks/10</code></pre>
+        </div>
+
+        <p>Очікувана відповідь:</p>
+        <div class="code-block">
+          <div class="code-header">Відповідь</div>
+          <pre><code>{
+  "message": "Напій \"Какао\" видалено",
+  "deleted": { "id": 10, "name": "Какао", ... }
+}</code></pre>
+        </div>
+
+        <p><strong>Спроба видалити неіснуючий напій:</strong></p>
+        <div class="code-block">
+          <div class="code-header">Terminal</div>
+          <pre><code>curl -X DELETE http://localhost:3000/api/drinks/999</code></pre>
+        </div>
+
+        <p>Очікувана відповідь (статус 404):</p>
+        <div class="code-block">
+          <div class="code-header">Відповідь</div>
+          <pre><code>{"error": "Напій не знайдено"}</code></pre>
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>PUT <code>/api/drinks/1</code> з валідними даними оновлює напій та повертає оновлений об'єкт</li>
+          <li>PUT <code>/api/drinks/999</code> повертає 404</li>
+          <li>DELETE <code>/api/drinks/10</code> видаляє напій та повертає повідомлення</li>
+          <li>DELETE <code>/api/drinks/999</code> повертає 404</li>
+          <li>GET <code>/api/drinks</code> після видалення показує менше напоїв</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 6: Підключення dashboard до API -->
+    <section class="lecture-section" id="dashboard-api">
+      <h2>6. Підключення dashboard до API</h2>
+      <p>
+        Тепер, коли API готовий, підключимо до нього dashboard.
+        Сторінки, що отримують та змінюють дані, стануть Client Components з використанням
+        <code>useState</code>, <code>useEffect</code> та <code>fetch</code>.
+      </p>
+
+      <div class="info-box info">
+        <strong>Чому dashboard/page.js (статистика) залишається Server Component?</strong>
+        Сторінка статистики (<code>app/dashboard/page.js</code>) тільки читає дані та не потребує інтерактивності.
+        Вона може напряму імпортувати дані з <code>lib/drinks.js</code> &mdash; це працює, бо Server Components
+        виконуються на сервері. Не все потрібно робити через API &mdash; серверний код може працювати з даними напряму.
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Конвертувати список напоїв на Client Component з fetch</h4>
+        <p>Оновіть <code>app/dashboard/drinks/page.js</code> &mdash; замість прямого імпорту даних,
+        отримуйте їх з API через fetch:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/dashboard/drinks/page.js</div>
+          <pre><code>'use client'
+
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import DrinkActions from '@/components/DrinkActions'
+
+export default function DrinksPage() {
+  const [drinks, setDrinks] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  async function fetchDrinks() {
+    try {
+      setLoading(true)
+      const response = await fetch('/api/drinks')
+      if (!response.ok) throw new Error('Помилка завантаження')
+      const data = await response.json()
+      setDrinks(data)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() =&gt; {
+    fetchDrinks()
+  }, [])
+
+  async function handleDelete(id) {
+    if (!confirm('Видалити цей напій?')) return
+
+    try {
+      const response = await fetch(`/api/drinks/${id}`, {
+        method: 'DELETE'
+      })
+      if (!response.ok) throw new Error('Помилка видалення')
+      // Оновлюємо список після видалення
+      fetchDrinks()
+    } catch (err) {
+      alert(err.message)
+    }
+  }
+
+  if (loading) {
+    return (
+      &lt;div className="flex justify-center items-center py-12"&gt;
+        &lt;div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-700"&gt;&lt;/div&gt;
+      &lt;/div&gt;
+    )
+  }
+
+  if (error) {
+    return (
+      &lt;div className="bg-red-50 border border-red-200 rounded p-4"&gt;
+        &lt;p className="text-red-600"&gt;{error}&lt;/p&gt;
+        &lt;button onClick={fetchDrinks} className="mt-2 text-blue-600 underline"&gt;
+          Спробувати знову
+        &lt;/button&gt;
+      &lt;/div&gt;
+    )
+  }
+
+  return (
+    &lt;div&gt;
+      &lt;div className="flex justify-between items-center mb-6"&gt;
+        &lt;h1 className="text-3xl font-bold"&gt;Напої ({drinks.length})&lt;/h1&gt;
+        &lt;Link
+          href="/dashboard/drinks/new"
+          className="bg-amber-700 text-white px-4 py-2 rounded hover:bg-amber-800"
+        &gt;
+          + Додати напій
+        &lt;/Link&gt;
+      &lt;/div&gt;
+
+      &lt;div className="bg-white rounded-lg shadow overflow-hidden"&gt;
+        &lt;table className="w-full"&gt;
+          &lt;thead className="bg-gray-50"&gt;
+            &lt;tr&gt;
+              &lt;th className="px-6 py-3 text-left text-sm font-medium text-gray-500"&gt;Назва&lt;/th&gt;
+              &lt;th className="px-6 py-3 text-left text-sm font-medium text-gray-500"&gt;Категорія&lt;/th&gt;
+              &lt;th className="px-6 py-3 text-left text-sm font-medium text-gray-500"&gt;Ціна&lt;/th&gt;
+              &lt;th className="px-6 py-3 text-left text-sm font-medium text-gray-500"&gt;Наявність&lt;/th&gt;
+              &lt;th className="px-6 py-3 text-left text-sm font-medium text-gray-500"&gt;Дії&lt;/th&gt;
+            &lt;/tr&gt;
+          &lt;/thead&gt;
+          &lt;tbody&gt;
+            {drinks.map(drink =&gt; (
+              &lt;tr key={drink.id} className="border-t hover:bg-gray-50"&gt;
+                &lt;td className="px-6 py-4"&gt;
+                  &lt;Link href={`/dashboard/drinks/${drink.id}`} className="text-blue-600 hover:underline"&gt;
+                    {drink.emoji} {drink.name}
+                  &lt;/Link&gt;
+                &lt;/td&gt;
+                &lt;td className="px-6 py-4 text-gray-600"&gt;{drink.category}&lt;/td&gt;
+                &lt;td className="px-6 py-4 text-gray-600"&gt;{drink.price} грн&lt;/td&gt;
+                &lt;td className="px-6 py-4"&gt;
+                  &lt;span className={`px-2 py-1 rounded text-sm ${
+                    drink.available
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-red-100 text-red-800'
+                  }`}&gt;
+                    {drink.available ? 'В наявності' : 'Немає'}
+                  &lt;/span&gt;
+                &lt;/td&gt;
+                &lt;td className="px-6 py-4"&gt;
+                  &lt;button
+                    onClick={() =&gt; handleDelete(drink.id)}
+                    className="text-red-600 hover:text-red-800"
+                  &gt;
+                    Видалити
+                  &lt;/button&gt;
+                &lt;/td&gt;
+              &lt;/tr&gt;
+            ))}
+          &lt;/tbody&gt;
+        &lt;/table&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Ключові зміни:</strong>
+          <ul>
+            <li><code>'use client'</code> &mdash; сторінка тепер Client Component</li>
+            <li><code>useState</code> для <code>drinks</code>, <code>loading</code>, <code>error</code></li>
+            <li><code>useEffect</code> з <code>fetchDrinks()</code> &mdash; завантаження при монтуванні</li>
+            <li><code>handleDelete</code> &mdash; видалення через API та перезавантаження списку</li>
+            <li>Стани loading та error обробляються в UI</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Конвертувати сторінку деталей на Client Component</h4>
+        <p>Оновіть <code>app/dashboard/drinks/[id]/page.js</code> &mdash; завантажуйте дані напою з API:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/dashboard/drinks/[id]/page.js</div>
+          <pre><code>'use client'
+
+import { useState, useEffect, use } from 'react'
+import Link from 'next/link'
+
+export default function DrinkDetailPage({ params }) {
+  const { id } = use(params)
+  const [drink, setDrink] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() =&gt; {
+    async function fetchDrink() {
+      try {
+        const response = await fetch(`/api/drinks/${id}`)
+        if (!response.ok) {
+          if (response.status === 404) {
+            throw new Error('Напій не знайдено')
+          }
+          throw new Error('Помилка завантаження')
+        }
+        const data = await response.json()
+        setDrink(data)
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchDrink()
+  }, [id])
+
+  if (loading) {
+    return (
+      &lt;div className="flex justify-center items-center py-12"&gt;
+        &lt;div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-700"&gt;&lt;/div&gt;
+      &lt;/div&gt;
+    )
+  }
+
+  if (error) {
+    return (
+      &lt;div className="text-center py-12"&gt;
+        &lt;h1 className="text-4xl font-bold text-gray-400 mb-4"&gt;404&lt;/h1&gt;
+        &lt;p className="text-gray-600 mb-4"&gt;{error}&lt;/p&gt;
+        &lt;Link href="/dashboard/drinks" className="text-blue-600 hover:underline"&gt;
+          &amp;larr; До списку напоїв
+        &lt;/Link&gt;
+      &lt;/div&gt;
+    )
+  }
+
+  return (
+    &lt;div&gt;
+      &lt;Link href="/dashboard/drinks" className="text-blue-600 hover:underline"&gt;
+        &amp;larr; Назад до списку
+      &lt;/Link&gt;
+
+      &lt;div className="bg-white rounded-lg shadow p-8 mt-4"&gt;
+        &lt;div className="flex justify-between items-start mb-6"&gt;
+          &lt;div className="flex items-center gap-4"&gt;
+            &lt;span className="text-4xl"&gt;{drink.emoji}&lt;/span&gt;
+            &lt;h1 className="text-3xl font-bold"&gt;{drink.name}&lt;/h1&gt;
+          &lt;/div&gt;
+          &lt;span className={`px-3 py-1 rounded text-sm ${
+            drink.available
+              ? 'bg-green-100 text-green-800'
+              : 'bg-red-100 text-red-800'
+          }`}&gt;
+            {drink.available ? 'В наявності' : 'Немає'}
+          &lt;/span&gt;
+        &lt;/div&gt;
+
+        &lt;div className="grid grid-cols-2 gap-6 mb-6"&gt;
+          &lt;div&gt;
+            &lt;p className="text-sm text-gray-500"&gt;Категорія&lt;/p&gt;
+            &lt;p className="text-lg font-medium"&gt;{drink.category}&lt;/p&gt;
+          &lt;/div&gt;
+          &lt;div&gt;
+            &lt;p className="text-sm text-gray-500"&gt;Ціна&lt;/p&gt;
+            &lt;p className="text-lg font-medium"&gt;{drink.price} грн&lt;/p&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        {drink.description &amp;&amp; (
+          &lt;div&gt;
+            &lt;p className="text-sm text-gray-500 mb-1"&gt;Опис&lt;/p&gt;
+            &lt;p className="text-gray-700"&gt;{drink.description}&lt;/p&gt;
+          &lt;/div&gt;
+        )}
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Зверніть увагу на <code>use(params)</code>:</strong>
+          В Client Component не можна використовувати <code>await</code> для розпакування <code>params</code>
+          (бо компонент не <code>async</code>). Замість цього використовуємо React хук <code>use()</code>,
+          який &laquo;розгортає&raquo; Promise синхронно під час рендеру.
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Оновити форму створення напою</h4>
+        <p>Оновіть <code>app/dashboard/drinks/new/page.js</code> &mdash; відправляйте дані через POST запит до API:</p>
+
+        <div class="code-block">
+          <div class="code-header">app/dashboard/drinks/new/page.js</div>
+          <pre><code>'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+
+export default function NewDrinkPage() {
+  const router = useRouter()
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState(null)
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    setSaving(true)
+    setError(null)
+
+    const formData = new FormData(e.target)
+    const data = {
+      name: formData.get('name'),
+      category: formData.get('category'),
+      price: Number(formData.get('price')),
+      description: formData.get('description'),
+      emoji: formData.get('emoji') || '&#x2615;',
+      available: formData.get('available') === 'on'
+    }
+
+    try {
+      const response = await fetch('/api/drinks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      })
+
+      if (!response.ok) {
+        const result = await response.json()
+        throw new Error(result.error || 'Помилка створення')
+      }
+
+      router.push('/dashboard/drinks')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  return (
+    &lt;div&gt;
+      &lt;Link href="/dashboard/drinks" className="text-blue-600 hover:underline"&gt;
+        &amp;larr; Назад до списку
+      &lt;/Link&gt;
+
+      &lt;h1 className="text-3xl font-bold mt-4 mb-6"&gt;Додати напій&lt;/h1&gt;
+
+      {error &amp;&amp; (
+        &lt;div className="bg-red-50 border border-red-200 rounded p-4 mb-4"&gt;
+          &lt;p className="text-red-600"&gt;{error}&lt;/p&gt;
+        &lt;/div&gt;
+      )}
+
+      &lt;form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-6 max-w-lg"&gt;
+        &lt;div className="mb-4"&gt;
+          &lt;label className="block text-sm font-medium text-gray-700 mb-1"&gt;Назва *&lt;/label&gt;
+          &lt;input
+            type="text"
+            name="name"
+            required
+            className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+          /&gt;
+        &lt;/div&gt;
+
+        &lt;div className="mb-4"&gt;
+          &lt;label className="block text-sm font-medium text-gray-700 mb-1"&gt;Категорія *&lt;/label&gt;
+          &lt;select
+            name="category"
+            required
+            className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+          &gt;
+            &lt;option value="Кава"&gt;Кава&lt;/option&gt;
+            &lt;option value="Чай"&gt;Чай&lt;/option&gt;
+            &lt;option value="Їжа"&gt;Їжа&lt;/option&gt;
+            &lt;option value="Інше"&gt;Інше&lt;/option&gt;
+          &lt;/select&gt;
+        &lt;/div&gt;
+
+        &lt;div className="mb-4"&gt;
+          &lt;label className="block text-sm font-medium text-gray-700 mb-1"&gt;Ціна (грн) *&lt;/label&gt;
+          &lt;input
+            type="number"
+            name="price"
+            min="1"
+            required
+            className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+          /&gt;
+        &lt;/div&gt;
+
+        &lt;div className="mb-4"&gt;
+          &lt;label className="block text-sm font-medium text-gray-700 mb-1"&gt;Emoji&lt;/label&gt;
+          &lt;input
+            type="text"
+            name="emoji"
+            placeholder="&#x2615;"
+            className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+          /&gt;
+        &lt;/div&gt;
+
+        &lt;div className="mb-4"&gt;
+          &lt;label className="block text-sm font-medium text-gray-700 mb-1"&gt;Опис&lt;/label&gt;
+          &lt;textarea
+            name="description"
+            rows="3"
+            className="w-full border rounded px-3 py-2 focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+          &gt;&lt;/textarea&gt;
+        &lt;/div&gt;
+
+        &lt;div className="mb-6"&gt;
+          &lt;label className="flex items-center gap-2"&gt;
+            &lt;input type="checkbox" name="available" defaultChecked /&gt;
+            &lt;span className="text-sm text-gray-700"&gt;В наявності&lt;/span&gt;
+          &lt;/label&gt;
+        &lt;/div&gt;
+
+        &lt;button
+          type="submit"
+          disabled={saving}
+          className="bg-amber-700 text-white px-6 py-2 rounded hover:bg-amber-800 disabled:opacity-50"
+        &gt;
+          {saving ? 'Збереження...' : 'Створити напій'}
+        &lt;/button&gt;
+      &lt;/form&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Ключові моменти форми:</strong>
+          <ul>
+            <li><code>e.preventDefault()</code> &mdash; запобігаємо стандартній відправці форми</li>
+            <li><code>FormData</code> &mdash; збираємо дані з усіх полів форми</li>
+            <li><code>fetch('/api/drinks', { method: 'POST', ... })</code> &mdash; відправляємо JSON на API</li>
+            <li><code>router.push('/dashboard/drinks')</code> &mdash; перенаправлення після успішного створення</li>
+            <li>Стан <code>saving</code> блокує кнопку під час відправки</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Оновити компонент DrinkActions</h4>
+        <p>Якщо у вас є окремий компонент <code>components/DrinkActions.jsx</code> з кнопкою видалення,
+        оновіть його для роботи через API:</p>
+
+        <div class="code-block">
+          <div class="code-header">components/DrinkActions.jsx</div>
+          <pre><code>'use client'
+
+import { useRouter } from 'next/navigation'
+
+export default function DrinkActions({ drinkId, drinkName }) {
+  const router = useRouter()
+
+  async function handleDelete() {
+    if (!confirm(`Видалити "${drinkName}"?`)) return
+
+    try {
+      const response = await fetch(`/api/drinks/${drinkId}`, {
+        method: 'DELETE'
+      })
+
+      if (!response.ok) {
+        throw new Error('Помилка видалення')
+      }
+
+      router.push('/dashboard/drinks')
+      router.refresh()
+    } catch (err) {
+      alert(err.message)
+    }
+  }
+
+  return (
+    &lt;div className="flex gap-2"&gt;
+      &lt;button
+        onClick={handleDelete}
+        className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+      &gt;
+        Видалити
+      &lt;/button&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Зверніть увагу:</strong> <code>router.refresh()</code> після <code>router.push()</code>
+          примусово оновлює кеш сторінки. Без нього Next.js може показати застарілі дані з кешу навігації.
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li><code>/dashboard/drinks</code> &mdash; показує список напоїв, завантажених з API</li>
+          <li><code>/dashboard/drinks/1</code> &mdash; показує деталі напою з API</li>
+          <li><code>/dashboard/drinks/999</code> &mdash; показує повідомлення &laquo;Напій не знайдено&raquo;</li>
+          <li><code>/dashboard/drinks/new</code> &mdash; форма створює напій через POST, перенаправляє до списку</li>
+          <li>Кнопка &laquo;Видалити&raquo; в таблиці та на сторінці деталей працює через DELETE API</li>
+          <li>Loading-спіннер показується під час завантаження даних</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 7: Git -->
+    <section class="lecture-section" id="git">
+      <h2>7. Збереження та завантаження на GitHub</h2>
+
+      <div class="task-box">
+        <h4>Завдання: Створити гілку та зробити коміт</h4>
+        <div class="code-block">
+          <div class="code-header">Terminal (в папці проекту)</div>
+          <pre><code>git checkout -b LR6
+git add .
+git commit -m "LR6: API Routes, CRUD endpoints, dashboard fetch integration"
+git push -u origin LR6</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Якщо ви ще не створили репозиторій на GitHub:</strong>
+        <ol>
+          <li>Створіть новий репозиторій на <a href="https://github.com/new" target="_blank">github.com/new</a></li>
+          <li>Додайте remote: <code>git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git</code></li>
+          <li>Після цього виконайте <code>git push -u origin LR6</code></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Підсумок -->
+    <section class="lecture-section">
+      <h2>Підсумок</h2>
+      <div class="final-result">
+        <h4>Критерії успішного виконання</h4>
+        <ul class="criteria-list">
+          <li>GET /api/test повертає JSON з message та timestamp</li>
+          <li>GET /api/drinks повертає список напоїв</li>
+          <li>Фільтрація за категорією (?category=) працює</li>
+          <li>Пошук (?search=) працює</li>
+          <li>GET /api/drinks/[id] повертає один напій</li>
+          <li>Неіснуючий ID повертає 404 з повідомленням</li>
+          <li>POST /api/drinks створює напій з валідацією</li>
+          <li>PUT /api/drinks/[id] оновлює напій</li>
+          <li>DELETE /api/drinks/[id] видаляє напій</li>
+          <li>Dashboard /dashboard/drinks отримує дані з API</li>
+          <li>Сторінка деталей /dashboard/drinks/[id] працює через API</li>
+          <li>Форма створення /dashboard/drinks/new відправляє POST</li>
+          <li>Кнопка видалення виконує DELETE через API</li>
+          <li>Код адаптовано під тему свого варіанту</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Бонусні завдання -->
+    <section class="lecture-section">
+      <h2>Бонусні завдання</h2>
+      <p>Ці завдання не є обов'язковими і не впливають на наступні практичні роботи.</p>
+      <ul>
+        <li>Реалізувати <strong>PATCH</strong> ендпоінт для часткового оновлення (без обов'язкових полів)</li>
+        <li>Додати <strong>сортування</strong> через query-параметри (<code>?sort=price&amp;order=asc</code>)</li>
+        <li>Реалізувати <strong>пагінацію</strong> (<code>?page=1&amp;limit=5</code>) з meta-інформацією (total, pages)</li>
+        <li>Створити <strong>API для другої сутності</strong> вашого проекту (наприклад, категорії, замовлення тощо)</li>
+      </ul>
+    </section>
+
+    <!-- Футер -->
+    <footer class="lecture-footer">
+      <p>Курс "Основи обробки та передачі інформації" | Next.js Full-Stack Development</p>
+      <p>Кібербезпека та захист інформації, 3 курс</p>
+
+      <div class="nav-buttons">
+        <a href="../" class="btn btn-outline">&larr; На головну</a>
+      </div>
+    </footer>
+  </article>
+  <script>
+    (function () {
+      var weekNum = parseInt(document.querySelector('.lecture-number').textContent.replace(/\D/g, ''), 10);
+      fetch('../data/config.json')
+        .then(function (res) { return res.json(); })
+        .then(function (config) {
+          var week = config.weeks.find(function (w) { return w.id === weekNum; });
+          if (week && !week.visible) {
+            document.querySelector('article.lecture-content').style.display = 'none';
+            var msg = document.createElement('div');
+            msg.style.cssText = 'text-align:center;padding:4rem 1rem;';
+            msg.innerHTML = '<h1 style="font-size:1.5rem;color:#333;margin-bottom:1rem;">Це заняття ще не доступне</h1>' +
+              '<a href="../" style="color:var(--primary,#2563eb);">← На головну</a>';
+            document.body.insertBefore(msg, document.querySelector('article.lecture-content'));
+          }
+        });
+    })();
+  </script>
+</body>
+</html>

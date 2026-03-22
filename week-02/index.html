@@ -37,7 +37,7 @@
         <li><a href="#components">Виділення компонентів Header та Footer</a></li>
         <li><a href="#props">Компонент з props — картка товару</a></li>
         <li><a href="#state">Інтерактивність зі useState — фільтрація меню</a></li>
-        <li><a href="#result">Перевірка результату та домашнє завдання</a></li>
+        <li><a href="#git">Збереження та завантаження на GitHub</a></li>
       </ol>
     </nav>
 
@@ -559,20 +559,36 @@ const rooms = [
       </div>
     </section>
 
-    <!-- Частина 4: Результат -->
-    <section class="lecture-section" id="result">
-      <h2>4. Перевірка результату та домашнє завдання</h2>
+    <!-- Частина 4: Git -->
+    <section class="lecture-section" id="git">
+      <h2>4. Збереження та завантаження на GitHub</h2>
+
       <div class="task-box">
-        <h4>Завдання: Зробити коміт</h4>
+        <h4>Завдання: Створити гілку та зробити коміт</h4>
         <div class="code-block">
           <div class="code-header">Terminal (в папці проекту)</div>
-          <pre><code>git add .
-git commit -m "Week 2: add components, props, useState, menu page"</code></pre>
+          <pre><code>git checkout -b LR2
+git add .
+git commit -m "LR2: components, props, useState, menu page"
+git push -u origin LR2</code></pre>
         </div>
       </div>
 
+      <div class="info-box info">
+        <strong>Якщо ви ще не створили репозиторій на GitHub:</strong>
+        <ol>
+          <li>Створіть новий репозиторій на <a href="https://github.com/new" target="_blank">github.com/new</a></li>
+          <li>Додайте remote: <code>git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git</code></li>
+          <li>Після цього виконайте <code>git push -u origin LR2</code></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Підсумок -->
+    <section class="lecture-section">
+      <h2>Підсумок</h2>
       <div class="final-result">
-        <h4>Критерії успішного виконання практичного заняття</h4>
+        <h4>Критерії успішного виконання</h4>
         <ul class="criteria-list">
           <li>Header та Footer виділені в компоненти</li>
           <li>Header/Footer підключені в layout.js</li>
@@ -584,17 +600,12 @@ git commit -m "Week 2: add components, props, useState, menu page"</code></pre>
           <li>Дані адаптовані під обрану тему</li>
         </ul>
       </div>
+    </section>
 
-      <h3>Домашнє завдання</h3>
-
-      <h4>Обов'язково:</h4>
-      <ol>
-        <li><strong>Мінімум 8 позицій</strong> у масиві menuItems, 3+ категорії</li>
-        <li><strong>Адаптувати всі тексти</strong> під свою тему</li>
-        <li><strong>Завантажити на GitHub</strong></li>
-      </ol>
-
-      <h4>Додатково (для вищого балу):</h4>
+    <!-- Бонусні завдання -->
+    <section class="lecture-section">
+      <h2>Бонусні завдання</h2>
+      <p>Ці завдання не є обов'язковими і не впливають на наступні практичні роботи.</p>
       <ul>
         <li>Додати <strong>сортування</strong> (за ціною, за назвою)</li>
         <li>Створити компонент <strong>форми</strong> для додавання нової позиції (з useState)</li>

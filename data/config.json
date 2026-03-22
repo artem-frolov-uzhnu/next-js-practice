@@ -29,6 +29,12 @@
       "visible": true,
       "title": "Робота з даними та завантаження",
       "description": "Data fetching, loading.js, error.js, Suspense, streaming"
+    },
+    {
+      "id": 6,
+      "visible": true,
+      "title": "API Routes в Next.js",
+      "description": "Route Handlers, HTTP методи, CRUD API, валідація, fetch з клієнта"
     }
   ]
 }

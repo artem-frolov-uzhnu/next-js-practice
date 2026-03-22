@@ -537,39 +537,39 @@
 
       <!-- Variant 5 -->
       <details class="variant-card" id="variant-5">
-        <summary><span class="variant-badge">5</span> Автосалон</summary>
+        <summary><span class="variant-badge">5</span> Автосервіс</summary>
         <div class="variant-body">
-          <div class="variant-desc">Система автосалону. Менеджер керує каталогом автомобілів, покупець може переглядати автомобілі та створювати замовлення (покупка або тест-драйв).</div>
+          <div class="variant-desc">Система автосервісу. Майстер (admin) керує каталогом послуг, клієнт може переглядати послуги та створювати замовлення на обслуговування.</div>
 
-          <h4>CRUD Об'єкт #1: Car (Автомобіль)</h4>
+          <h4>CRUD Об'єкт #1: Service (Послуга)</h4>
           <table class="schema-table">
             <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
             <tr><td><code>name</code></td><td>String</td><td>Required, 2-200 символів, trim</td></tr>
-            <tr><td><code>brand</code></td><td>String</td><td>Required, max 50 символів</td></tr>
-            <tr><td><code>year</code></td><td>Number</td><td>Required, min: 1900</td></tr>
-            <tr><td><code>price</code></td><td>Number</td><td>Required, min: 0</td></tr>
-            <tr><td><code>category</code></td><td>String</td><td>Required, enum: sedan, suv, hatchback, coupe, minivan, truck</td></tr>
             <tr><td><code>description</code></td><td>String</td><td>Max 1000 символів</td></tr>
+            <tr><td><code>price</code></td><td>Number</td><td>Required, min: 0 (грн)</td></tr>
+            <tr><td><code>category</code></td><td>String</td><td>Required, enum: maintenance, diagnostics, brakes, suspension, wheels, comfort, electrical, detailing</td></tr>
+            <tr><td><code>duration</code></td><td>Number</td><td>Required, min: 15 (хвилин)</td></tr>
             <tr><td><code>available</code></td><td>Boolean</td><td>Default: true</td></tr>
           </table>
 
-          <h4>CRUD Об'єкт #2: Order (Замовлення)</h4>
+          <h4>CRUD Об'єкт #2: ServiceOrder (Замовлення послуги)</h4>
           <table class="schema-table">
             <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
-            <tr><td><code>car</code></td><td>ObjectId</td><td>Required, ref: Car</td></tr>
+            <tr><td><code>service</code></td><td>ObjectId</td><td>Required, ref: Service</td></tr>
             <tr><td><code>user</code></td><td>ObjectId</td><td>Required, ref: User</td></tr>
-            <tr><td><code>status</code></td><td>String</td><td>Required, enum: new, confirmed, test_drive, completed, cancelled. Default: new</td></tr>
-            <tr><td><code>type</code></td><td>String</td><td>Required, enum: purchase, test_drive</td></tr>
-            <tr><td><code>message</code></td><td>String</td><td>Max 1000 символів</td></tr>
+            <tr><td><code>status</code></td><td>String</td><td>Required, enum: new, confirmed, in_progress, completed, cancelled. Default: new</td></tr>
+            <tr><td><code>carModel</code></td><td>String</td><td>Required, max 100 символів</td></tr>
+            <tr><td><code>vinCode</code></td><td>String</td><td>Max 17 символів</td></tr>
             <tr><td><code>preferredDate</code></td><td>Date</td><td>—</td></tr>
+            <tr><td><code>message</code></td><td>String</td><td>Max 1000 символів</td></tr>
           </table>
 
           <h4>Ролі та права доступу</h4>
           <table class="roles-table">
-            <tr><th>Дія</th><th>Менеджер (admin)</th><th>Покупець (user)</th></tr>
-            <tr><td>Перегляд автомобілів</td><td>✅</td><td>✅</td></tr>
-            <tr><td>Створення/редагування автомобілів</td><td>✅</td><td>❌</td></tr>
-            <tr><td>Видалення автомобілів</td><td>✅</td><td>❌</td></tr>
+            <tr><th>Дія</th><th>Майстер (admin)</th><th>Клієнт (user)</th></tr>
+            <tr><td>Перегляд послуг</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Створення/редагування послуг</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Видалення послуг</td><td>✅</td><td>❌</td></tr>
             <tr><td>Перегляд замовлень</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
             <tr><td>Створення замовлень</td><td>✅</td><td>✅</td></tr>
             <tr><td>Зміна статусу замовлень</td><td>✅</td><td>❌</td></tr>
@@ -579,12 +579,12 @@
 
           <h4>Use Cases</h4>
           <ol class="use-cases">
-            <li>Менеджер додає новий автомобіль до каталогу</li>
-            <li>Покупець переглядає автомобілі з фільтрацією за категорією</li>
-            <li>Покупець створює замовлення на покупку або тест-драйв</li>
-            <li>Менеджер підтверджує замовлення (new → confirmed)</li>
-            <li>Покупець скасовує замовлення зі статусом "new"</li>
-            <li>Менеджер переглядає всі замовлення</li>
+            <li>Майстер додає нову послугу до каталогу</li>
+            <li>Клієнт переглядає послуги з фільтрацією за категорією</li>
+            <li>Клієнт створює замовлення на обслуговування</li>
+            <li>Майстер підтверджує замовлення (new → confirmed)</li>
+            <li>Клієнт скасовує замовлення зі статусом "new"</li>
+            <li>Майстер переглядає всі замовлення</li>
           </ol>
         </div>
       </details>
@@ -1118,6 +1118,60 @@
         </div>
       </details>
 
+      <!-- Variant 16 -->
+      <details class="variant-card" id="variant-16">
+        <summary><span class="variant-badge">16</span> Автосалон</summary>
+        <div class="variant-body">
+          <div class="variant-desc">Система автосалону. Менеджер керує каталогом автомобілів, покупець може переглядати автомобілі та створювати замовлення (покупка або тест-драйв).</div>
+
+          <h4>CRUD Об'єкт #1: Car (Автомобіль)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>name</code></td><td>String</td><td>Required, 2-200 символів, trim</td></tr>
+            <tr><td><code>brand</code></td><td>String</td><td>Required, max 50 символів</td></tr>
+            <tr><td><code>year</code></td><td>Number</td><td>Required, min: 1900</td></tr>
+            <tr><td><code>price</code></td><td>Number</td><td>Required, min: 0</td></tr>
+            <tr><td><code>category</code></td><td>String</td><td>Required, enum: sedan, suv, hatchback, coupe, minivan, truck</td></tr>
+            <tr><td><code>description</code></td><td>String</td><td>Max 1000 символів</td></tr>
+            <tr><td><code>available</code></td><td>Boolean</td><td>Default: true</td></tr>
+          </table>
+
+          <h4>CRUD Об'єкт #2: Order (Замовлення)</h4>
+          <table class="schema-table">
+            <tr><th>Поле</th><th>Тип</th><th>Валідація</th></tr>
+            <tr><td><code>car</code></td><td>ObjectId</td><td>Required, ref: Car</td></tr>
+            <tr><td><code>user</code></td><td>ObjectId</td><td>Required, ref: User</td></tr>
+            <tr><td><code>status</code></td><td>String</td><td>Required, enum: new, confirmed, test_drive, completed, cancelled. Default: new</td></tr>
+            <tr><td><code>type</code></td><td>String</td><td>Required, enum: purchase, test_drive</td></tr>
+            <tr><td><code>message</code></td><td>String</td><td>Max 1000 символів</td></tr>
+            <tr><td><code>preferredDate</code></td><td>Date</td><td>—</td></tr>
+          </table>
+
+          <h4>Ролі та права доступу</h4>
+          <table class="roles-table">
+            <tr><th>Дія</th><th>Менеджер (admin)</th><th>Покупець (user)</th></tr>
+            <tr><td>Перегляд автомобілів</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Створення/редагування автомобілів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Видалення автомобілів</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Перегляд замовлень</td><td>✅ (всі)</td><td>✅ (свої)</td></tr>
+            <tr><td>Створення замовлень</td><td>✅</td><td>✅</td></tr>
+            <tr><td>Зміна статусу замовлень</td><td>✅</td><td>❌</td></tr>
+            <tr><td>Скасування замовлень</td><td>✅ (будь-яке)</td><td>✅ (свої, new)</td></tr>
+            <tr><td>Управління користувачами</td><td>✅</td><td>❌</td></tr>
+          </table>
+
+          <h4>Use Cases</h4>
+          <ol class="use-cases">
+            <li>Менеджер додає новий автомобіль до каталогу</li>
+            <li>Покупець переглядає автомобілі з фільтрацією за категорією</li>
+            <li>Покупець створює замовлення на покупку або тест-драйв</li>
+            <li>Менеджер підтверджує замовлення (new → confirmed)</li>
+            <li>Покупець скасовує замовлення зі статусом "new"</li>
+            <li>Менеджер переглядає всі замовлення</li>
+          </ol>
+        </div>
+      </details>
+
     </section>
 
     <footer class="lecture-footer">
@@ -1133,10 +1187,11 @@
         const data = await response.json();
         const variantNames = {
           1: 'Бібліотека', 2: 'Інтернет-магазин', 3: 'Кінотеатр',
-          4: 'Проєкти та задачі', 5: 'Автосалон', 6: 'Оренда житла',
+          4: 'Проєкти та задачі', 5: 'Автосервіс', 6: 'Оренда житла',
           7: 'Ресторан (бронювання столів)', 8: 'Фітнес-зал', 9: 'Блог + коментарі',
           10: 'HR: вакансії та відгуки', 11: 'Паркінг / Автостоянка', 12: 'Готель',
-          13: 'Спа-салон', 14: 'Консультації викладача', 15: 'Музей / Екскурсії'
+          13: 'Спа-салон', 14: 'Консультації викладача', 15: 'Музей / Екскурсії',
+          16: 'Автосалон'
         };
 
         let html = '<div class="groups-grid">';

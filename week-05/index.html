@@ -37,7 +37,8 @@
         <li><a href="#fetching">Fetching даних з API</a></li>
         <li><a href="#loading">Loading States та Skeleton UI</a></li>
         <li><a href="#errors">Error Handling та Suspense</a></li>
-        <li><a href="#result">Результат та домашнє завдання</a></li>
+        <li><a href="#detail-loading">Loading для сторінки деталей</a></li>
+        <li><a href="#git">Збереження та завантаження на GitHub</a></li>
       </ol>
     </nav>
 
@@ -491,7 +492,9 @@ export default function Loading() {
 
         <div class="code-block">
           <div class="code-header">app/demo/error-test/page.js</div>
-          <pre><code>export default async function ErrorTestPage() {
+          <pre><code>export const dynamic = 'force-dynamic'
+
+export default async function ErrorTestPage() {
   const shouldFail = Math.random() &gt; 0.5
 
   if (shouldFail) {
@@ -778,61 +781,109 @@ export default function Error({ error, reset }) {
       </div>
     </section>
 
-    <!-- Частина 4: Результат -->
-    <section class="lecture-section" id="result">
-      <h2>4. Результат та домашнє завдання</h2>
+    <!-- Частина 4: Loading для деталей -->
+    <section class="lecture-section" id="detail-loading">
+      <h2>4. Loading для сторінки деталей</h2>
+      <p>
+        Зараз loading.js є для dashboard та списку сутностей. Додайте loading
+        для сторінки деталей окремої сутності (наприклад, <code>app/dashboard/drinks/[id]/loading.js</code>).
+      </p>
 
       <div class="task-box">
-        <h4>Завдання: Зробити коміт</h4>
+        <h4>Завдання: Додати loading для деталей напою</h4>
+        <p>Створіть <code>app/dashboard/drinks/[id]/loading.js</code>:</p>
+
         <div class="code-block">
-          <div class="code-header">Terminal (в папці проекту)</div>
-          <pre><code>git add .
-git commit -m "Week 5: Data fetching, loading, error handling, streaming"</code></pre>
+          <div class="code-header">app/dashboard/drinks/[id]/loading.js</div>
+          <pre><code>export default function Loading() {
+  return (
+    &lt;div&gt;
+      &lt;div className="h-4 bg-gray-200 rounded w-32 mb-4 animate-pulse"&gt;&lt;/div&gt;
+
+      &lt;div className="bg-white rounded-lg shadow p-8"&gt;
+        &lt;div className="flex justify-between items-start mb-6"&gt;
+          &lt;div className="flex items-center gap-4"&gt;
+            &lt;div className="w-12 h-12 bg-gray-200 rounded animate-pulse"&gt;&lt;/div&gt;
+            &lt;div className="h-8 bg-gray-200 rounded w-48 animate-pulse"&gt;&lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div className="flex gap-2"&gt;
+            &lt;div className="h-10 bg-gray-200 rounded w-28 animate-pulse"&gt;&lt;/div&gt;
+            &lt;div className="h-10 bg-gray-200 rounded w-24 animate-pulse"&gt;&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div className="grid grid-cols-2 gap-6"&gt;
+          &lt;div&gt;
+            &lt;div className="h-4 bg-gray-200 rounded w-20 mb-2 animate-pulse"&gt;&lt;/div&gt;
+            &lt;div className="h-6 bg-gray-200 rounded w-32 animate-pulse"&gt;&lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div&gt;
+            &lt;div className="h-4 bg-gray-200 rounded w-20 mb-2 animate-pulse"&gt;&lt;/div&gt;
+            &lt;div className="h-6 bg-gray-200 rounded w-24 animate-pulse"&gt;&lt;/div&gt;
+          &lt;/div&gt;
+          &lt;div&gt;
+            &lt;div className="h-4 bg-gray-200 rounded w-20 mb-2 animate-pulse"&gt;&lt;/div&gt;
+            &lt;div className="h-6 bg-gray-200 rounded w-28 animate-pulse"&gt;&lt;/div&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div className="mt-6"&gt;
+          &lt;div className="h-4 bg-gray-200 rounded w-16 mb-2 animate-pulse"&gt;&lt;/div&gt;
+          &lt;div className="h-4 bg-gray-200 rounded w-full mb-1 animate-pulse"&gt;&lt;/div&gt;
+          &lt;div className="h-4 bg-gray-200 rounded w-5/6 animate-pulse"&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Принцип:</strong> Skeleton має повторювати структуру реальної сторінки деталей &mdash;
+          кнопка "Назад", блок з emoji та назвою, кнопки дій, сітка характеристик, опис.
+          Адаптуйте під вашу сутність (кількість полів може відрізнятись).
         </div>
       </div>
 
-      <div class="final-result">
-        <h4>Що має бути створено</h4>
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
         <ul>
-          <li><code>app/demo/posts/page.js</code> &mdash; fetching постів з JSONPlaceholder</li>
-          <li><code>app/demo/posts/loading.js</code> &mdash; skeleton grid для постів</li>
-          <li><code>app/demo/cached/page.js</code> &mdash; кешований запит</li>
-          <li><code>app/demo/revalidated/page.js</code> &mdash; запит з revalidation</li>
-          <li><code>app/demo/no-cache/page.js</code> &mdash; запит без кешу</li>
-          <li><code>app/demo/slow/page.js</code> &mdash; повільна сторінка (3 сек)</li>
-          <li><code>app/demo/slow/loading.js</code> &mdash; спіннер</li>
-          <li><code>components/skeletons/PostSkeleton.jsx</code> &mdash; PostSkeleton, StatSkeleton, TableSkeleton</li>
-          <li><code>app/dashboard/loading.js</code> &mdash; skeleton для dashboard</li>
-          <li><code>app/dashboard/drinks/loading.js</code> &mdash; skeleton таблиці</li>
-          <li><code>app/demo/error-test/page.js</code> &mdash; 50% помилка</li>
-          <li><code>app/demo/error-test/error.js</code> &mdash; error boundary</li>
-          <li><code>app/demo/users/[id]/page.js</code> &mdash; з notFound()</li>
-          <li><code>app/demo/users/[id]/not-found.js</code> &mdash; кастомна 404</li>
-          <li><code>app/demo/streaming/page.js</code> &mdash; Suspense з FastStats та SlowPosts</li>
-          <li><code>app/dashboard/error.js</code> &mdash; error boundary для dashboard</li>
+          <li>При навігації на <code>/dashboard/drinks/1</code> видно skeleton</li>
+          <li>Skeleton повторює структуру реальної сторінки деталей</li>
         </ul>
       </div>
+    </section>
 
-      <h3>Домашнє завдання</h3>
+    <!-- Частина 5: Git -->
+    <section class="lecture-section" id="git">
+      <h2>5. Збереження та завантаження на GitHub</h2>
 
-      <h4>Обов'язково:</h4>
-      <ol>
-        <li><strong>Адаптувати loading.js та skeleton</strong> під свою тему &mdash; створити loading для dashboard, списку сутностей та сторінки деталей</li>
-        <li><strong>Адаптувати TableSkeleton</strong> під свою сутність &mdash; кількість колонок має відповідати вашій таблиці</li>
-        <li><strong>Додати loading для сторінки деталей</strong> окремої сутності (наприклад, <code>app/dashboard/books/[id]/loading.js</code>)</li>
-        <li><strong>Створити error.js</strong> для dashboard з кнопкою reset та посиланням на головну</li>
-        <li><strong>Завантажити на GitHub</strong></li>
-      </ol>
+      <div class="task-box">
+        <h4>Завдання: Створити гілку та зробити коміт</h4>
+        <div class="code-block">
+          <div class="code-header">Terminal (в папці проекту)</div>
+          <pre><code>git checkout -b LR5
+git add .
+git commit -m "LR5: Data fetching, loading, error handling, streaming"
+git push -u origin LR5</code></pre>
+        </div>
+      </div>
 
-      <h4>Додатково (для вищого балу):</h4>
-      <ul>
-        <li>Додати <strong>Suspense</strong> на сторінку dashboard для незалежного завантаження секцій</li>
-        <li>Реалізувати <strong>пошук з URL параметрами</strong> та streaming результатів</li>
-        <li>Створити skeleton, що <strong>точно повторює</strong> макет реальної сторінки (розміри, відступи, кількість елементів)</li>
-      </ul>
+      <div class="info-box info">
+        <strong>Якщо ви ще не створили репозиторій на GitHub:</strong>
+        <ol>
+          <li>Створіть новий репозиторій на <a href="https://github.com/new" target="_blank">github.com/new</a></li>
+          <li>Додайте remote: <code>git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git</code></li>
+          <li>Після цього виконайте <code>git push -u origin LR5</code></li>
+        </ol>
+      </div>
+    </section>
 
+    <!-- Підсумок -->
+    <section class="lecture-section">
+      <h2>Підсумок</h2>
       <div class="final-result">
-        <h4>Критерії успішного виконання практичного заняття</h4>
+        <h4>Критерії успішного виконання</h4>
         <ul class="criteria-list">
           <li>loading.js для dashboard показує StatSkeleton</li>
           <li>loading.js для списку сутностей показує TableSkeleton</li>
@@ -843,9 +894,21 @@ git commit -m "Week 5: Data fetching, loading, error handling, streaming"</code>
           <li>Demo error-test показує помилку або успіх з 50% шансом</li>
           <li>Streaming demo з Suspense працює (/demo/streaming)</li>
           <li>not-found.js для /demo/users/[id] працює</li>
+          <li>Loading для сторінки деталей сутності створено</li>
           <li>Код адаптовано під свою тему</li>
         </ul>
       </div>
+    </section>
+
+    <!-- Бонусні завдання -->
+    <section class="lecture-section">
+      <h2>Бонусні завдання</h2>
+      <p>Ці завдання не є обов'язковими і не впливають на наступні практичні роботи.</p>
+      <ul>
+        <li>Додати <strong>Suspense</strong> на сторінку dashboard для незалежного завантаження секцій</li>
+        <li>Реалізувати <strong>пошук з URL параметрами</strong> та streaming результатів</li>
+        <li>Створити skeleton, що <strong>точно повторює</strong> макет реальної сторінки (розміри, відступи, кількість елементів)</li>
+      </ul>
     </section>
 
     <!-- Футер -->

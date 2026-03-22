@@ -37,7 +37,8 @@
         <li><a href="#structure">Планування та створення структури маршрутів</a></li>
         <li><a href="#navigation">Навігація з активними лінками</a></li>
         <li><a href="#dynamic">Динамічні маршрути для напоїв</a></li>
-        <li><a href="#result">Перевірка результату та домашнє завдання</a></li>
+        <li><a href="#second-entity">Друга сутність у Dashboard</a></li>
+        <li><a href="#git">Збереження та завантаження на GitHub</a></li>
       </ol>
     </nav>
 
@@ -885,11 +886,6 @@ export default function NewDrinkPage() {
           <li>Dashboard: форма "Додати напій" працює, після submit — повернення до списку</li>
         </ul>
       </div>
-    </section>
-
-    <!-- Частина 4: Результат -->
-    <section class="lecture-section" id="result">
-      <h2>4. Перевірка результату та домашнє завдання</h2>
 
       <div class="task-box">
         <h4>Завдання: Оновити metadata в layout.js</h4>
@@ -905,18 +901,132 @@ export default function NewDrinkPage() {
 };</code></pre>
         </div>
       </div>
+    </section>
+
+    <!-- Частина 4: Друга сутність -->
+    <section class="lecture-section" id="second-entity">
+      <h2>4. Друга сутність у Dashboard</h2>
+      <p>
+        Додайте другу сутність до вашого dashboard. Наприклад, для кав'ярні це можуть бути замовлення,
+        для бібліотеки — читачі, для кінотеатру — сеанси.
+      </p>
 
       <div class="task-box">
-        <h4>Завдання: Зробити коміт</h4>
+        <h4>Завдання: Додати другу сутність до dashboard</h4>
+        <ol>
+          <li>Оновіть <code>DashboardNav</code> — додайте посилання на нову сутність</li>
+          <li>Створіть папку <code>app/dashboard/orders/</code> (замініть <code>orders</code> на вашу другу сутність)</li>
+          <li>Створіть <code>page.js</code> зі списком елементів другої сутності</li>
+        </ol>
+
         <div class="code-block">
-          <div class="code-header">Terminal (в папці проекту)</div>
-          <pre><code>git add .
-git commit -m "Week 3: routing, navigation, dynamic routes, dashboard"</code></pre>
+          <div class="code-header">components/DashboardNav.jsx — додайте посилання</div>
+          <pre><code>const links = [
+  { href: "/dashboard", label: "Огляд" },
+  { href: "/dashboard/drinks", label: "Напої" },
+  { href: "/dashboard/orders", label: "Замовлення" },  // нова сутність
+];</code></pre>
+        </div>
+
+        <div class="code-block">
+          <div class="code-header">app/dashboard/orders/page.js — приклад</div>
+          <pre><code>import Link from "next/link";
+
+const orders = [
+  { id: 1, customer: "Іван Петренко", total: 185, status: "Виконано", date: "2024-01-15" },
+  { id: 2, customer: "Марія Коваль", total: 240, status: "В процесі", date: "2024-01-15" },
+  { id: 3, customer: "Олег Сидоренко", total: 95, status: "Новий", date: "2024-01-14" },
+];
+
+export const metadata = {
+  title: "Замовлення",
+};
+
+export default function OrdersPage() {
+  return (
+    &lt;div&gt;
+      &lt;h1 className="text-3xl font-bold mb-6 text-gray-900"&gt;Замовлення&lt;/h1&gt;
+      &lt;div className="bg-white rounded-lg shadow overflow-hidden"&gt;
+        &lt;table className="w-full"&gt;
+          &lt;thead className="bg-gray-50"&gt;
+            &lt;tr&gt;
+              &lt;th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;Клієнт&lt;/th&gt;
+              &lt;th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;Сума&lt;/th&gt;
+              &lt;th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;Статус&lt;/th&gt;
+              &lt;th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;Дата&lt;/th&gt;
+            &lt;/tr&gt;
+          &lt;/thead&gt;
+          &lt;tbody className="divide-y divide-gray-200"&gt;
+            {orders.map((order) =&gt; (
+              &lt;tr key={order.id} className="hover:bg-gray-50"&gt;
+                &lt;td className="px-6 py-4 font-medium text-gray-900"&gt;{order.customer}&lt;/td&gt;
+                &lt;td className="px-6 py-4 text-gray-700"&gt;{order.total} грн&lt;/td&gt;
+                &lt;td className="px-6 py-4"&gt;
+                  &lt;span className={`text-xs px-2 py-1 rounded ${
+                    order.status === "Виконано" ? "bg-green-100 text-green-700" :
+                    order.status === "В процесі" ? "bg-yellow-100 text-yellow-700" :
+                    "bg-blue-100 text-blue-700"
+                  }`}&gt;
+                    {order.status}
+                  &lt;/span&gt;
+                &lt;/td&gt;
+                &lt;td className="px-6 py-4 text-gray-700"&gt;{order.date}&lt;/td&gt;
+              &lt;/tr&gt;
+            ))}
+          &lt;/tbody&gt;
+        &lt;/table&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Адаптація:</strong> Замініть "замовлення" на вашу другу сутність.
+          Наприклад: читачі (бібліотека), сеанси (кінотеатр), бронювання (готель), клієнти (ресторан).
         </div>
       </div>
 
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Навігація dashboard показує нове посилання</li>
+          <li>Сторінка другої сутності відкривається</li>
+          <li>Таблиця з даними відображається</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 5: Git -->
+    <section class="lecture-section" id="git">
+      <h2>5. Збереження та завантаження на GitHub</h2>
+
+      <div class="task-box">
+        <h4>Завдання: Створити гілку та зробити коміт</h4>
+        <div class="code-block">
+          <div class="code-header">Terminal (в папці проекту)</div>
+          <pre><code>git checkout -b LR3
+git add .
+git commit -m "LR3: routing, navigation, dynamic routes, dashboard"
+git push -u origin LR3</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Якщо ви ще не створили репозиторій на GitHub:</strong>
+        <ol>
+          <li>Створіть новий репозиторій на <a href="https://github.com/new" target="_blank">github.com/new</a></li>
+          <li>Додайте remote: <code>git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git</code></li>
+          <li>Після цього виконайте <code>git push -u origin LR3</code></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Підсумок -->
+    <section class="lecture-section">
+      <h2>Підсумок</h2>
       <div class="final-result">
-        <h4>Критерії успішного виконання практичного заняття</h4>
+        <h4>Критерії успішного виконання</h4>
         <ul class="criteria-list">
           <li>Створена сторінка /contact</li>
           <li>Глобальна 404 сторінка працює</li>
@@ -929,20 +1039,15 @@ git commit -m "Week 3: routing, navigation, dynamic routes, dashboard"</code></p
           <li>Таблиця напоїв у dashboard</li>
           <li>Форма додавання з програмною навігацією (useRouter)</li>
           <li>Metadata з шаблоном title</li>
+          <li>Друга сутність у dashboard створена</li>
         </ul>
       </div>
+    </section>
 
-      <h3>Домашнє завдання</h3>
-
-      <h4>Обов'язково:</h4>
-      <ol>
-        <li><strong>Адаптувати всі маршрути</strong> під свою тему (замість drinks &mdash; ваша сутність)</li>
-        <li><strong>Мінімум 10 позицій</strong> у масиві даних</li>
-        <li><strong>Додати другу сутність</strong> до dashboard (наприклад, /dashboard/orders)</li>
-        <li><strong>Завантажити на GitHub</strong></li>
-      </ol>
-
-      <h4>Додатково (для вищого балу):</h4>
+    <!-- Бонусні завдання -->
+    <section class="lecture-section">
+      <h2>Бонусні завдання</h2>
+      <p>Ці завдання не є обов'язковими і не впливають на наступні практичні роботи.</p>
       <ul>
         <li>Створити <strong>Route Groups</strong> &mdash; (auth) з окремим layout для login/register</li>
         <li>Додати компонент <strong>Breadcrumbs</strong> (хлібні крихти)</li>
