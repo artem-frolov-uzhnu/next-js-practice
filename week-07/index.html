@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Практика 7: Підключення MongoDB | Протокол заняття</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/practical.css">
+</head>
+<body>
+  <!-- Навігація -->
+  <nav class="lecture-nav">
+    <div class="container">
+      <div class="nav-title">Тиждень 7: Практичне заняття</div>
+      <div class="nav-links">
+        <a href="../" class="btn btn-outline">&larr; На головну</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Основний контент -->
+  <article class="lecture-content">
+    <!-- Заголовок -->
+    <header class="lecture-header">
+      <span class="lecture-number">Практика 7</span>
+      <h1>Підключення MongoDB</h1>
+      <div class="lecture-meta">
+        <span>&#x1F4C5; Тиждень 7</span>
+        <span>&#x1F4BB; Практичне заняття</span>
+      </div>
+    </header>
+
+    <!-- Зміст -->
+    <nav class="toc">
+      <h3>Зміст заняття</h3>
+      <ol>
+        <li><a href="#atlas">Реєстрація та налаштування MongoDB Atlas</a></li>
+        <li><a href="#connect">Підключення MongoDB до Next.js</a></li>
+        <li><a href="#model">Створення Mongoose моделі</a></li>
+        <li><a href="#seed">Наповнення бази початковими даними</a></li>
+        <li><a href="#crud-api">Переведення API Routes на MongoDB</a></li>
+        <li><a href="#compass">Перевірка даних у MongoDB Compass</a></li>
+        <li><a href="#git">Збереження та завантаження на GitHub</a></li>
+      </ol>
+    </nav>
+
+    <!-- Вступ -->
+    <section class="lecture-section">
+      <h2>Мета заняття</h2>
+      <p>На цьому практичному занятті ви:</p>
+      <ul>
+        <li>Створите безплатний кластер на MongoDB Atlas</li>
+        <li>Підключите MongoDB до вашого Next.js проекту через Mongoose</li>
+        <li>Створите Mongoose модель з валідацією для вашої сутності</li>
+        <li>Замініте in-memory сховище на реальну базу даних</li>
+        <li>Перевірите дані через MongoDB Compass</li>
+      </ul>
+
+      <div class="info-box info">
+        <strong>Передумова:</strong> Ви маєте мати працюючий Next.js проект з тижня 6
+        (API Routes, CRUD ендпоінти, in-memory сховище в <code>lib/drinks.js</code>).
+        Ми продовжуємо працювати з тим самим проектом.
+      </div>
+
+      <div class="info-box warning">
+        <strong>Приклад викладача:</strong> Кав&rsquo;ярня &laquo;Кофеїн&raquo;. Ви маєте адаптувати код під свою тему з 15 варіантів.
+      </div>
+    </section>
+
+    <!-- Частина 1: MongoDB Atlas -->
+    <section class="lecture-section" id="atlas">
+      <h2>1. Реєстрація та налаштування MongoDB Atlas</h2>
+      <p>
+        MongoDB Atlas &mdash; це хмарний сервіс, який дозволяє створити базу даних MongoDB
+        без встановлення на локальний комп&rsquo;ютер. Безплатний рівень (M0 Free) надає 512 МБ &mdash;
+        більш ніж достатньо для нашого навчального проекту.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Створити акаунт та кластер на MongoDB Atlas</h4>
+        <ol>
+          <li>Перейдіть на <a href="https://www.mongodb.com/cloud/atlas/register" target="_blank">mongodb.com/cloud/atlas/register</a></li>
+          <li>Зареєструйтесь (можна через Google акаунт)</li>
+          <li>Створіть організацію та проєкт (назва &mdash; будь-яка, наприклад <code>nextjs-course</code>)</li>
+          <li>Натисніть <strong>Build a Database</strong> (або <strong>Create a Deployment</strong>)</li>
+          <li>Оберіть <strong>M0 FREE</strong></li>
+          <li>Оберіть провайдера (AWS) та найближчий регіон (наприклад, <code>eu-central-1</code> Frankfurt)</li>
+          <li>Натисніть <strong>Create Deployment</strong></li>
+        </ol>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Налаштувати доступ до бази</h4>
+        <p>Після створення кластеру Atlas запропонує налаштувати безпеку:</p>
+        <ol>
+          <li>
+            <strong>Database User</strong> &mdash; створіть користувача:
+            <ul>
+              <li>Username: наприклад, <code>student</code></li>
+              <li>Password: згенеруйте або придумайте надійний пароль</li>
+              <li>Збережіть логін та пароль &mdash; вони знадобляться для connection string</li>
+            </ul>
+          </li>
+          <li>
+            <strong>Network Access</strong> &mdash; додайте IP-адресу:
+            <ul>
+              <li>Натисніть <strong>Add My Current IP Address</strong> для додавання вашої IP</li>
+              <li>Або додайте <code>0.0.0.0/0</code> (доступ звідусіль &mdash; зручно для навчання)</li>
+            </ul>
+          </li>
+        </ol>
+      </div>
+
+      <div class="error-box">
+        <h5>&#x26A0;&#xFE0F; Безпека</h5>
+        <p>
+          <code>0.0.0.0/0</code> дозволяє підключення з будь-якої IP-адреси. Це прийнятно
+          для навчального проекту, але <strong>неприпустимо для продакшену</strong>.
+          В реальних проектах завжди обмежуйте доступ конкретними IP-адресами.
+        </p>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Отримати Connection String</h4>
+        <ol>
+          <li>У розділі <strong>Database</strong> натисніть <strong>Connect</strong> поруч із вашим кластером</li>
+          <li>Оберіть <strong>Drivers</strong></li>
+          <li>Скопіюйте connection string &mdash; він виглядає приблизно так:</li>
+        </ol>
+        <div class="code-block">
+          <div class="code-header">Connection String (приклад)</div>
+          <pre><code>mongodb+srv://student:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/?retryWrites=true&amp;w=majority</code></pre>
+        </div>
+        <p>Замініть <code>YOUR_PASSWORD</code> на ваш реальний пароль і додайте назву бази даних перед <code>?</code>:</p>
+        <div class="code-block">
+          <div class="code-header">Connection String з назвою бази</div>
+          <pre><code>mongodb+srv://student:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/coffein?retryWrites=true&amp;w=majority</code></pre>
+        </div>
+        <p>Назва бази (тут <code>coffein</code>) &mdash; MongoDB створить її автоматично при першому записі.</p>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Ви маєте акаунт на MongoDB Atlas</li>
+          <li>Кластер M0 FREE створено</li>
+          <li>Database User створено (збережіть логін/пароль)</li>
+          <li>Network Access налаштовано</li>
+          <li>Connection string скопійовано</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 2: Підключення MongoDB до Next.js -->
+    <section class="lecture-section" id="connect">
+      <h2>2. Підключення MongoDB до Next.js</h2>
+
+      <div class="task-box">
+        <h4>Завдання: Встановити Mongoose</h4>
+        <div class="code-block">
+          <div class="code-header">Terminal (в папці проекту)</div>
+          <pre><code>npm install mongoose</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити файл змінних середовища</h4>
+        <p>Створіть файл <code>.env.local</code> в корені проекту (поруч з <code>package.json</code>):</p>
+        <div class="code-block">
+          <div class="code-header">.env.local</div>
+          <pre><code>MONGODB_URI=mongodb+srv://student:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/coffein?retryWrites=true&amp;w=majority</code></pre>
+        </div>
+        <p>Замініть значення на ваш реальний connection string.</p>
+
+        <div class="info-box warning">
+          <strong>Важливо!</strong> Переконайтесь, що <code>.env.local</code> є в <code>.gitignore</code>.
+          Next.js додає його автоматично при створенні проекту через <code>create-next-app</code>.
+          Перевірте: відкрийте <code>.gitignore</code> і знайдіть рядок <code>.env*.local</code>.
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити утиліту підключення до БД</h4>
+        <p>Створіть файл <code>lib/db.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">lib/db.js</div>
+          <pre><code>import mongoose from 'mongoose'
+
+const MONGODB_URI = process.env.MONGODB_URI
+
+if (!MONGODB_URI) {
+  throw new Error(
+    'Будь ласка, додайте MONGODB_URI до файлу .env.local'
+  )
+}
+
+let cached = global.mongoose
+
+if (!cached) {
+  cached = global.mongoose = { conn: null, promise: null }
+}
+
+async function dbConnect() {
+  if (cached.conn) {
+    return cached.conn
+  }
+
+  if (!cached.promise) {
+    const opts = {
+      bufferCommands: false,
+    }
+
+    cached.promise = mongoose.connect(MONGODB_URI, opts)
+      .then((mongoose) =&gt; mongoose)
+  }
+
+  try {
+    cached.conn = await cached.promise
+  } catch (e) {
+    cached.promise = null
+    throw e
+  }
+
+  return cached.conn
+}
+
+export default dbConnect</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Навіщо <code>global.mongoose</code>?</strong>
+          В development-режимі Next.js перезавантажує модулі при кожній зміні коду (Hot Reload).
+          Без кешування кожен запит створюватиме нове з&rsquo;єднання з базою, що швидко
+          вичерпає ліміт. Об&rsquo;єкт <code>global</code> зберігається між перезавантаженнями.
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Перевірити підключення</h4>
+        <p>Створіть тимчасовий тестовий Route Handler для перевірки з&rsquo;єднання:</p>
+        <div class="code-block">
+          <div class="code-header">app/api/test/route.js (оновіть існуючий)</div>
+          <pre><code>import dbConnect from '@/lib/db'
+
+export async function GET() {
+  try {
+    await dbConnect()
+
+    return Response.json({
+      message: 'MongoDB підключено!',
+      status: 'ok',
+      timestamp: new Date().toISOString()
+    })
+  } catch (error) {
+    return Response.json({
+      message: 'Помилка підключення до MongoDB',
+      error: error.message,
+    }, { status: 500 })
+  }
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Запустіть сервер: <code>npm run dev</code></li>
+          <li>Відкрийте <code>http://localhost:3000/api/test</code></li>
+          <li>Ви маєте побачити JSON з <code>"message": "MongoDB підключено!"</code></li>
+          <li>Якщо бачите помилку &mdash; перевірте connection string в <code>.env.local</code> (перезапустіть сервер після зміни!)</li>
+        </ul>
+      </div>
+
+      <div class="error-box">
+        <h5>&#x26A0;&#xFE0F; Типова помилка: &laquo;MONGODB_URI is not defined&raquo;</h5>
+        <p>
+          Якщо ви бачите помилку про відсутність <code>MONGODB_URI</code>,
+          переконайтесь що: (1) файл називається саме <code>.env.local</code>,
+          (2) він у корені проекту, (3) ви <strong>перезапустили</strong> dev-сервер
+          (<code>Ctrl+C</code>, потім <code>npm run dev</code>). Next.js читає <code>.env.local</code>
+          тільки при запуску.
+        </p>
+      </div>
+    </section>
+
+    <!-- Частина 3: Створення Mongoose моделі -->
+    <section class="lecture-section" id="model">
+      <h2>3. Створення Mongoose моделі</h2>
+      <p>
+        Mongoose модель визначає структуру документа в MongoDB: які поля він має,
+        якого типу, які обов&rsquo;язкові, та які правила валідації.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Створити модель Drink</h4>
+        <p>Створіть файл <code>lib/models/Drink.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">lib/models/Drink.js</div>
+          <pre><code>import mongoose from 'mongoose'
+
+const drinkSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, 'Назва напою обов\'язкова'],
+    trim: true,
+    maxlength: [100, 'Назва не може бути довшою за 100 символів'],
+  },
+  description: {
+    type: String,
+    default: '',
+    trim: true,
+  },
+  price: {
+    type: Number,
+    required: [true, 'Ціна обов\'язкова'],
+    min: [0, 'Ціна не може бути від\'ємною'],
+  },
+  category: {
+    type: String,
+    enum: {
+      values: ['hot', 'cold'],
+      message: 'Категорія має бути: hot або cold',
+    },
+    default: 'hot',
+  },
+  available: {
+    type: Boolean,
+    default: true,
+  },
+}, {
+  timestamps: true,
+})
+
+export default mongoose.models.Drink || mongoose.model('Drink', drinkSchema)</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Зверніть увагу:</strong>
+          <ul>
+            <li><code>required: [true, 'повідомлення']</code> &mdash; поле обов&rsquo;язкове з кастомним повідомленням</li>
+            <li><code>trim: true</code> &mdash; автоматично видаляє пробіли на початку та в кінці</li>
+            <li><code>enum</code> &mdash; обмежує допустимі значення</li>
+            <li><code>timestamps: true</code> &mdash; автоматично додає <code>createdAt</code> і <code>updatedAt</code></li>
+            <li><code>mongoose.models.Drink || ...</code> &mdash; захист від помилки при Hot Reload</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="info-box warning">
+        <strong>Для свого варіанту:</strong> Адаптуйте поля моделі під вашу тему.
+        Наприклад, для &laquo;Онлайн-кінотеатру&raquo; це може бути <code>Movie</code>
+        з полями <code>title</code>, <code>genre</code>, <code>year</code>, <code>rating</code>.
+        Дивіться специфікацію свого варіанту в розділі &laquo;Варіанти проектів&raquo;.
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Файл <code>lib/models/Drink.js</code> створено</li>
+          <li>Схема має щонайменше 3-4 поля з валідацією</li>
+          <li>Використовується <code>timestamps: true</code></li>
+          <li>Є захист від Hot Reload (<code>mongoose.models.Drink || ...</code>)</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 4: Seed-скрипт -->
+    <section class="lecture-section" id="seed">
+      <h2>4. Наповнення бази початковими даними</h2>
+      <p>
+        Щоб не додавати дані вручну, створимо seed-ендпоінт, який заповнить базу
+        початковими даними. Це зручно для розробки та тестування.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Створити seed-ендпоінт</h4>
+        <p>Створіть файл <code>app/api/seed/route.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">app/api/seed/route.js</div>
+          <pre><code>import dbConnect from '@/lib/db'
+import Drink from '@/lib/models/Drink'
+
+const initialDrinks = [
+  {
+    name: 'Еспресо',
+    description: 'Класичний міцний кавовий напій',
+    price: 55,
+    category: 'hot',
+    available: true,
+  },
+  {
+    name: 'Капучіно',
+    description: 'Еспресо з молочною пінкою',
+    price: 75,
+    category: 'hot',
+    available: true,
+  },
+  {
+    name: 'Лате',
+    description: 'Еспресо з великою кількістю молока',
+    price: 80,
+    category: 'hot',
+    available: true,
+  },
+  {
+    name: 'Американо',
+    description: 'Еспресо розбавлений водою',
+    price: 60,
+    category: 'hot',
+    available: true,
+  },
+  {
+    name: 'Айс Лате',
+    description: 'Холодний лате з льодом',
+    price: 90,
+    category: 'cold',
+    available: true,
+  },
+  {
+    name: 'Фрапе',
+    description: 'Холодний кавовий коктейль',
+    price: 95,
+    category: 'cold',
+    available: false,
+  },
+]
+
+export async function GET() {
+  try {
+    await dbConnect()
+
+    // Видаляємо всі існуючі документи
+    await Drink.deleteMany({})
+
+    // Створюємо нові
+    const drinks = await Drink.create(initialDrinks)
+
+    return Response.json({
+      message: `Базу наповнено: ${drinks.length} напоїв`,
+      drinks,
+    })
+  } catch (error) {
+    return Response.json(
+      { error: error.message },
+      { status: 500 }
+    )
+  }
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Відкрийте <code>http://localhost:3000/api/seed</code> в браузері</li>
+          <li>Ви маєте побачити JSON з повідомленням та масивом створених документів</li>
+          <li>Кожен документ матиме <code>_id</code>, <code>createdAt</code>, <code>updatedAt</code></li>
+        </ul>
+      </div>
+
+      <div class="error-box">
+        <h5>&#x26A0;&#xFE0F; Увага: seed-ендпоінт видаляє дані!</h5>
+        <p>
+          Кожен виклик <code>/api/seed</code> спочатку видаляє <strong>всі</strong> документи
+          з колекції, а потім створює нові. Не викликайте його повторно, якщо ви вже додали
+          свої дані через API. В продакшені seed-ендпоінти зазвичай захищають або видаляють.
+        </p>
+      </div>
+    </section>
+
+    <!-- Частина 5: Переведення API Routes на MongoDB -->
+    <section class="lecture-section" id="crud-api">
+      <h2>5. Переведення API Routes на MongoDB</h2>
+      <p>
+        Тепер замінимо in-memory сховище (<code>lib/drinks.js</code>) на справжні
+        операції з MongoDB через Mongoose. Структура ендпоінтів залишається тією ж &mdash;
+        змінюється лише спосіб роботи з даними.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Оновити GET та POST для списку</h4>
+        <p>Оновіть файл <code>app/api/drinks/route.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">app/api/drinks/route.js</div>
+          <pre><code>import dbConnect from '@/lib/db'
+import Drink from '@/lib/models/Drink'
+
+// GET /api/drinks
+// GET /api/drinks?category=hot
+// GET /api/drinks?search=лате
+export async function GET(request) {
+  await dbConnect()
+
+  const { searchParams } = new URL(request.url)
+  const category = searchParams.get('category')
+  const search = searchParams.get('search')
+
+  // Будуємо фільтр
+  const filter = {}
+  if (category) {
+    filter.category = category
+  }
+  if (search) {
+    filter.name = { $regex: search, $options: 'i' }
+  }
+
+  const drinks = await Drink.find(filter).sort({ createdAt: -1 })
+
+  return Response.json({
+    count: drinks.length,
+    drinks,
+  })
+}
+
+// POST /api/drinks
+export async function POST(request) {
+  await dbConnect()
+
+  try {
+    const body = await request.json()
+    const drink = await Drink.create(body)
+
+    return Response.json(drink, { status: 201 })
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors)
+        .map(err =&gt; err.message)
+      return Response.json({ errors: messages }, { status: 400 })
+    }
+
+    return Response.json(
+      { error: 'Помилка сервера' },
+      { status: 500 }
+    )
+  }
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Що змінилось порівняно з тижнем 6:</strong>
+          <ul>
+            <li>Додано <code>await dbConnect()</code> на початку кожного обробника</li>
+            <li>Замість <code>getAllDrinks()</code> використовуємо <code>Drink.find(filter)</code></li>
+            <li>Пошук через <code>$regex</code> з опцією <code>i</code> (регістронезалежний)</li>
+            <li>Замість <code>createDrink()</code> використовуємо <code>Drink.create(body)</code></li>
+            <li>Валідація відбувається автоматично в Mongoose &mdash; обробляємо <code>ValidationError</code></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Оновити GET, PUT, DELETE для одного напою</h4>
+        <p>Оновіть файл <code>app/api/drinks/[id]/route.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">app/api/drinks/[id]/route.js</div>
+          <pre><code>import dbConnect from '@/lib/db'
+import Drink from '@/lib/models/Drink'
+
+// GET /api/drinks/:id
+export async function GET(request, { params }) {
+  await dbConnect()
+  const { id } = await params
+
+  try {
+    const drink = await Drink.findById(id)
+
+    if (!drink) {
+      return Response.json(
+        { error: 'Напій не знайдено' },
+        { status: 404 }
+      )
+    }
+
+    return Response.json(drink)
+  } catch (error) {
+    // Невалідний формат ObjectId
+    return Response.json(
+      { error: 'Невалідний ID' },
+      { status: 400 }
+    )
+  }
+}
+
+// PUT /api/drinks/:id
+export async function PUT(request, { params }) {
+  await dbConnect()
+  const { id } = await params
+
+  try {
+    const body = await request.json()
+    const drink = await Drink.findByIdAndUpdate(id, body, {
+      new: true,
+      runValidators: true,
+    })
+
+    if (!drink) {
+      return Response.json(
+        { error: 'Напій не знайдено' },
+        { status: 404 }
+      )
+    }
+
+    return Response.json(drink)
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors)
+        .map(err =&gt; err.message)
+      return Response.json({ errors: messages }, { status: 400 })
+    }
+
+    return Response.json(
+      { error: 'Помилка сервера' },
+      { status: 500 }
+    )
+  }
+}
+
+// DELETE /api/drinks/:id
+export async function DELETE(request, { params }) {
+  await dbConnect()
+  const { id } = await params
+
+  try {
+    const drink = await Drink.findByIdAndDelete(id)
+
+    if (!drink) {
+      return Response.json(
+        { error: 'Напій не знайдено' },
+        { status: 404 }
+      )
+    }
+
+    return Response.json({
+      message: `Напій "${drink.name}" видалено`
+    })
+  } catch (error) {
+    return Response.json(
+      { error: 'Невалідний ID' },
+      { status: 400 }
+    )
+  }
+}</code></pre>
+        </div>
+
+        <div class="info-box info">
+          <strong>Важливо:</strong> Зверніть увагу на <code>{ new: true, runValidators: true }</code>
+          в <code>findByIdAndUpdate()</code>:
+          <ul>
+            <li><code>new: true</code> &mdash; повертає оновлений документ (за замовчуванням повертається старий)</li>
+            <li><code>runValidators: true</code> &mdash; перевіряє валідацію при оновленні (за замовчуванням вимкнено!)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <p>Протестуйте всі ендпоінти (спочатку виконайте <code>/api/seed</code>, щоб наповнити базу):</p>
+        <ul>
+          <li><code>GET /api/drinks</code> &mdash; повертає список напоїв з MongoDB</li>
+          <li><code>GET /api/drinks?category=hot</code> &mdash; фільтрація працює</li>
+          <li><code>GET /api/drinks?search=лате</code> &mdash; пошук працює</li>
+          <li><code>GET /api/drinks/[id]</code> &mdash; повертає один напій (скопіюйте <code>_id</code> з попереднього результату)</li>
+          <li><code>POST /api/drinks</code> &mdash; створює новий напій (тестуйте через curl або DevTools)</li>
+          <li><code>PUT /api/drinks/[id]</code> &mdash; оновлює напій</li>
+          <li><code>DELETE /api/drinks/[id]</code> &mdash; видаляє напій</li>
+          <li>Дані зберігаються між перезапусками сервера!</li>
+        </ul>
+      </div>
+
+      <div class="info-box info">
+        <strong>Тестування POST через DevTools Console:</strong>
+        <div class="code-block">
+          <div class="code-header">DevTools Console (F12)</div>
+          <pre><code>// Створення нового напою
+const res = await fetch('/api/drinks', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    name: 'Мокко',
+    description: 'Кава з шоколадом',
+    price: 85,
+    category: 'hot'
+  })
+})
+const data = await res.json()
+console.log(data)</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Файл <code>lib/drinks.js</code></strong> більше не потрібен &mdash; можете його видалити
+        або залишити для порівняння. Всі дані тепер зберігаються в MongoDB.
+      </div>
+    </section>
+
+    <!-- Частина 6: MongoDB Compass -->
+    <section class="lecture-section" id="compass">
+      <h2>6. Перевірка даних у MongoDB Compass</h2>
+      <p>
+        MongoDB Compass &mdash; безплатний GUI-клієнт для візуальної роботи з MongoDB.
+        Він дозволяє переглядати, редагувати та аналізувати дані без написання коду.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Встановити та підключити MongoDB Compass</h4>
+        <ol>
+          <li>Завантажте MongoDB Compass з <a href="https://www.mongodb.com/try/download/compass" target="_blank">mongodb.com/try/download/compass</a></li>
+          <li>Встановіть та відкрийте програму</li>
+          <li>У полі &laquo;New Connection&raquo; вставте ваш connection string з <code>.env.local</code></li>
+          <li>Натисніть <strong>Connect</strong></li>
+          <li>Зліва ви побачите вашу базу даних (<code>coffein</code>) та колекцію (<code>drinks</code>)</li>
+          <li>Натисніть на колекцію &mdash; побачите всі документи з їх полями</li>
+        </ol>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>MongoDB Compass підключено до вашого кластеру</li>
+          <li>Ви бачите базу даних та колекцію</li>
+          <li>Документи відображаються з усіма полями, включаючи <code>_id</code>, <code>createdAt</code>, <code>updatedAt</code></li>
+          <li>Спробуйте створити/видалити напій через API та оновити вигляд у Compass</li>
+        </ul>
+      </div>
+
+      <div class="info-box info">
+        <strong>Альтернатива:</strong> Якщо не хочете встановлювати Compass, можна переглядати
+        дані безпосередньо в Atlas: <strong>Database</strong> &rarr; <strong>Browse Collections</strong>.
+      </div>
+    </section>
+
+    <!-- Частина 7: Git -->
+    <section class="lecture-section" id="git">
+      <h2>7. Збереження та завантаження на GitHub</h2>
+
+      <div class="task-box">
+        <h4>Завдання: Створити гілку та зробити коміт</h4>
+        <div class="code-block">
+          <div class="code-header">Terminal (в папці проекту)</div>
+          <pre><code>git checkout -b LR7
+git add .
+git commit -m "LR7: MongoDB connection, Mongoose model, CRUD with database"
+git push -u origin LR7</code></pre>
+        </div>
+      </div>
+
+      <div class="error-box">
+        <h5>&#x26A0;&#xFE0F; Перевірте перед комітом!</h5>
+        <p>
+          Переконайтесь, що <code>.env.local</code> <strong>не</strong> потрапляє в коміт!
+          Виконайте <code>git status</code> і перевірте, що файлу <code>.env.local</code> немає
+          у списку. Якщо він є &mdash; додайте <code>.env.local</code> до <code>.gitignore</code>.
+        </p>
+      </div>
+
+      <div class="info-box info">
+        <strong>Якщо ви ще не створили репозиторій на GitHub:</strong>
+        <ol>
+          <li>Створіть новий репозиторій на <a href="https://github.com/new" target="_blank">github.com/new</a></li>
+          <li>Додайте remote: <code>git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git</code></li>
+          <li>Після цього виконайте <code>git push -u origin LR7</code></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Підсумок -->
+    <section class="lecture-section">
+      <h2>Підсумок</h2>
+      <div class="final-result">
+        <h4>Критерії успішного виконання</h4>
+        <ul class="criteria-list">
+          <li>MongoDB Atlas: кластер створено, Database User та Network Access налаштовано</li>
+          <li>Mongoose встановлено (<code>npm install mongoose</code>)</li>
+          <li><code>.env.local</code> створено з MONGODB_URI (не в Git!)</li>
+          <li><code>lib/db.js</code>: утиліта підключення з кешуванням</li>
+          <li><code>lib/models/Drink.js</code>: модель зі схемою та валідацією</li>
+          <li>GET /api/seed наповнює базу початковими даними</li>
+          <li>GET /api/drinks повертає дані з MongoDB</li>
+          <li>GET /api/drinks?category= фільтрація працює</li>
+          <li>GET /api/drinks/[id] повертає один документ</li>
+          <li>POST /api/drinks створює з Mongoose валідацією</li>
+          <li>PUT /api/drinks/[id] оновлює з runValidators: true</li>
+          <li>DELETE /api/drinks/[id] видаляє документ</li>
+          <li>Дані зберігаються між перезапусками сервера</li>
+          <li>Код адаптовано під тему свого варіанту</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Бонусні завдання -->
+    <section class="lecture-section">
+      <h2>Бонусні завдання</h2>
+      <p>Ці завдання не є обов&rsquo;язковими і не впливають на наступні практичні роботи.</p>
+      <ul>
+        <li>Додати <strong>пагінацію</strong> до GET /api/drinks: <code>?page=1&amp;limit=5</code> з meta-інформацією (total, pages, currentPage)</li>
+        <li>Додати <strong>сортування</strong> через query-параметри: <code>?sort=price&amp;order=asc</code></li>
+        <li>Створити <strong>Mongoose модель для другої сутності</strong> вашого проекту (наприклад, категорії, замовлення) зі зв&rsquo;язком через <code>ObjectId</code></li>
+        <li>Додати <strong>кастомний валідатор</strong> до моделі (наприклад, ціна кратна 5, назва з великої літери)</li>
+        <li>Створити <strong>окремий seed-скрипт</strong> (<code>scripts/seed.js</code>) замість API-ендпоінту, який запускається через <code>node scripts/seed.js</code></li>
+      </ul>
+    </section>
+
+    <!-- Футер -->
+    <footer class="lecture-footer">
+      <p>Курс "Основи обробки та передачі інформації" | Next.js Full-Stack Development</p>
+      <p>Кібербезпека та захист інформації, 3 курс</p>
+
+      <div class="nav-buttons">
+        <a href="../" class="btn btn-outline">&larr; На головну</a>
+      </div>
+    </footer>
+  </article>
+  <script>
+    (function () {
+      var weekNum = parseInt(document.querySelector('.lecture-number').textContent.replace(/\D/g, ''), 10);
+      fetch('../data/config.json')
+        .then(function (res) { return res.json(); })
+        .then(function (config) {
+          var week = config.weeks.find(function (w) { return w.id === weekNum; });
+          if (week && !week.visible) {
+            document.querySelector('article.lecture-content').style.display = 'none';
+            var msg = document.createElement('div');
+            msg.style.cssText = 'text-align:center;padding:4rem 1rem;';
+            msg.innerHTML = '<h1 style="font-size:1.5rem;color:#333;margin-bottom:1rem;">Це заняття ще не доступне</h1>' +
+              '<a href="../" style="color:var(--primary,#2563eb);">← На головну</a>';
+            document.body.insertBefore(msg, document.querySelector('article.lecture-content'));
+          }
+        });
+    })();
+  </script>
+</body>
+</html>

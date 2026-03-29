@@ -35,6 +35,12 @@
       "visible": true,
       "title": "API Routes в Next.js",
       "description": "Route Handlers, HTTP методи, CRUD API, валідація, fetch з клієнта"
+    },
+    {
+      "id": 7,
+      "visible": true,
+      "title": "Підключення MongoDB",
+      "description": "MongoDB Atlas, Mongoose, схеми та моделі, CRUD з базою даних"
     }
   ]
 }
