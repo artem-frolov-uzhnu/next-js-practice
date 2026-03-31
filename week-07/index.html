@@ -40,6 +40,7 @@
         <li><a href="#seed">Наповнення бази початковими даними</a></li>
         <li><a href="#crud-api">Переведення API Routes на MongoDB</a></li>
         <li><a href="#compass">Перевірка даних у MongoDB Compass</a></li>
+        <li><a href="#edit-page">Сторінка редагування напою</a></li>
         <li><a href="#git">Збереження та завантаження на GitHub</a></li>
       </ol>
     </nav>
@@ -729,9 +730,341 @@ console.log(data)</code></pre>
       </div>
     </section>
 
-    <!-- Частина 7: Git -->
+    <!-- Частина 7: Сторінка редагування -->
+    <section class="lecture-section" id="edit-page">
+      <h2>7. Сторінка редагування напою</h2>
+      <p>
+        Наразі ми маємо сторінки для перегляду списку, деталей, створення та видалення напоїв.
+        Залишилося додати можливість <strong>редагування</strong> &mdash; щоб кнопка &laquo;Редагувати&raquo;
+        справді працювала. Для цього ми виділимо форму в окремий reusable компонент і використаємо
+        його як для створення, так і для редагування.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Створити reusable компонент DrinkForm</h4>
+        <p>Створіть файл <code>components/DrinkForm.jsx</code>:</p>
+        <div class="code-block">
+          <div class="code-header">components/DrinkForm.jsx</div>
+          <pre><code>'use client'
+
+import { useState } from 'react'
+import Link from 'next/link'
+
+const CATEGORIES = ['Кава', 'Чай', 'Їжа', 'Інше']
+
+export default function DrinkForm({
+  initialData, onSubmit, submitLabel = 'Зберегти',
+  isSubmitting, error
+}) {
+  const [formData, setFormData] = useState({
+    name: initialData?.name || '',
+    category: initialData?.category || '',
+    price: initialData?.price || '',
+    description: initialData?.description || '',
+  })
+
+  const handleChange = (e) =&gt; {
+    setFormData({ ...formData, [e.target.name]: e.target.value })
+  }
+
+  const handleSubmit = (e) =&gt; {
+    e.preventDefault()
+    onSubmit({ ...formData, price: Number(formData.price) })
+  }
+
+  return (
+    &lt;&gt;
+      {error &amp;&amp; (
+        &lt;div className="bg-red-50 border border-red-200
+          text-red-700 px-4 py-3 rounded mb-6"&gt;
+          {error}
+        &lt;/div&gt;
+      )}
+
+      &lt;form onSubmit={handleSubmit} className="space-y-6"&gt;
+        &lt;div className="grid grid-cols-1 md:grid-cols-2 gap-6"&gt;
+          &lt;div&gt;
+            &lt;label className="block text-gray-700 font-bold mb-2"&gt;
+              Назва *
+            &lt;/label&gt;
+            &lt;input type="text" name="name"
+              value={formData.name} onChange={handleChange}
+              required className="w-full px-4 py-2 border rounded
+              focus:outline-none focus:border-amber-500" /&gt;
+          &lt;/div&gt;
+          &lt;div&gt;
+            &lt;label className="block text-gray-700 font-bold mb-2"&gt;
+              Категорія *
+            &lt;/label&gt;
+            &lt;select name="category"
+              value={formData.category} onChange={handleChange}
+              required className="w-full px-4 py-2 border rounded
+              focus:outline-none focus:border-amber-500"&gt;
+              &lt;option value=""&gt;Оберіть категорію&lt;/option&gt;
+              {CATEGORIES.map((cat) =&gt; (
+                &lt;option key={cat} value={cat}&gt;{cat}&lt;/option&gt;
+              ))}
+            &lt;/select&gt;
+          &lt;/div&gt;
+          &lt;div&gt;
+            &lt;label className="block text-gray-700 font-bold mb-2"&gt;
+              Ціна (грн) *
+            &lt;/label&gt;
+            &lt;input type="number" name="price"
+              value={formData.price} onChange={handleChange}
+              required className="w-full px-4 py-2 border rounded
+              focus:outline-none focus:border-amber-500" /&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div&gt;
+          &lt;label className="block text-gray-700 font-bold mb-2"&gt;
+            Опис
+          &lt;/label&gt;
+          &lt;textarea name="description"
+            value={formData.description} onChange={handleChange}
+            rows="4" className="w-full px-4 py-2 border rounded
+            focus:outline-none focus:border-amber-500" /&gt;
+        &lt;/div&gt;
+
+        &lt;div className="flex gap-4"&gt;
+          &lt;button type="submit" disabled={isSubmitting}
+            className="bg-amber-700 text-white px-6 py-3 rounded
+            hover:bg-amber-800 font-bold disabled:opacity-50"&gt;
+            {isSubmitting ? 'Збереження...' : submitLabel}
+          &lt;/button&gt;
+          &lt;Link href="/dashboard/drinks"
+            className="bg-gray-300 text-gray-700 px-6 py-3
+            rounded hover:bg-gray-400 font-bold inline-block"&gt;
+            Скасувати
+          &lt;/Link&gt;
+        &lt;/div&gt;
+      &lt;/form&gt;
+    &lt;/&gt;
+  )
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Що таке reusable компонент?</strong> Замість копіювання однакової форми на двох сторінках
+        (створення і редагування), ми виносимо її в окремий компонент <code>DrinkForm</code>.
+        Він приймає <code>initialData</code> для редагування (або нічого для створення) і
+        <code>onSubmit</code> для обробки відправки. Зверніть увагу: категорія тепер &mdash;
+        <code>&lt;select&gt;</code> замість текстового поля, щоб відповідати enum у Mongoose-схемі.
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Оновити сторінку створення</h4>
+        <p>Спростіть <code>app/dashboard/drinks/new/page.js</code>, замінивши inline-форму на <code>DrinkForm</code>:</p>
+        <div class="code-block">
+          <div class="code-header">app/dashboard/drinks/new/page.js</div>
+          <pre><code>'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+import DrinkForm from '@/components/DrinkForm'
+
+export default function NewDrinkPage() {
+  const router = useRouter()
+  const [error, setError] = useState(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const handleSubmit = async (formData) =&gt; {
+    setError(null)
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch('/api/drinks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(
+          data.errors?.join(', ') || data.error || 'Помилка створення'
+        )
+      }
+
+      router.push('/dashboard/drinks')
+    } catch (err) {
+      setError(err.message)
+      setIsSubmitting(false)
+    }
+  }
+
+  return (
+    &lt;div&gt;
+      &lt;Link href="/dashboard/drinks"
+        className="text-amber-700 hover:underline mb-4 inline-block"&gt;
+        &amp;larr; Назад до списку
+      &lt;/Link&gt;
+
+      &lt;div className="bg-white rounded-lg shadow p-8"&gt;
+        &lt;h1 className="text-3xl font-bold mb-6 text-gray-900"&gt;
+          Додати новий напій
+        &lt;/h1&gt;
+        &lt;DrinkForm
+          onSubmit={handleSubmit}
+          submitLabel="Створити"
+          isSubmitting={isSubmitting}
+          error={error}
+        /&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити сторінку редагування</h4>
+        <p>Створіть файл <code>app/dashboard/drinks/[id]/edit/page.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">app/dashboard/drinks/[id]/edit/page.js</div>
+          <pre><code>'use client'
+
+import { useState, useEffect } from 'react'
+import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import DrinkForm from '@/components/DrinkForm'
+
+export default function EditDrinkPage() {
+  const { id } = useParams()
+  const router = useRouter()
+  const [drink, setDrink] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState(null)
+  const [submitError, setSubmitError] = useState(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  useEffect(() =&gt; {
+    fetch(`/api/drinks/${id}`)
+      .then((res) =&gt; {
+        if (!res.ok) throw new Error('Напій не знайдено')
+        return res.json()
+      })
+      .then((data) =&gt; {
+        setDrink(data)
+        setLoading(false)
+      })
+      .catch((err) =&gt; {
+        setLoadError(err.message)
+        setLoading(false)
+      })
+  }, [id])
+
+  const handleSubmit = async (formData) =&gt; {
+    setSubmitError(null)
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch(`/api/drinks/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(
+          data.errors?.join(', ') || data.error || 'Помилка оновлення'
+        )
+      }
+
+      router.push(`/dashboard/drinks/${id}`)
+    } catch (err) {
+      setSubmitError(err.message)
+      setIsSubmitting(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      &lt;div&gt;
+        &lt;div className="h-4 bg-gray-200 rounded w-32
+          mb-4 animate-pulse"&gt;&lt;/div&gt;
+        &lt;div className="bg-white rounded-lg shadow p-8"&gt;
+          &lt;div className="h-8 bg-gray-200 rounded w-48
+            animate-pulse"&gt;&lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    )
+  }
+
+  if (loadError) {
+    return (
+      &lt;div&gt;
+        &lt;Link href="/dashboard/drinks"
+          className="text-amber-700 hover:underline mb-4
+          inline-block"&gt;
+          &amp;larr; Назад до списку
+        &lt;/Link&gt;
+        &lt;div className="bg-red-50 border border-red-200
+          rounded-lg p-6 text-center"&gt;
+          &lt;h2 className="text-2xl font-bold text-red-600 mb-2"&gt;
+            Помилка
+          &lt;/h2&gt;
+          &lt;p className="text-gray-600"&gt;{loadError}&lt;/p&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    )
+  }
+
+  return (
+    &lt;div&gt;
+      &lt;Link href={`/dashboard/drinks/${id}`}
+        className="text-amber-700 hover:underline mb-4
+        inline-block"&gt;
+        &amp;larr; Назад до напою
+      &lt;/Link&gt;
+
+      &lt;div className="bg-white rounded-lg shadow p-8"&gt;
+        &lt;h1 className="text-3xl font-bold mb-6 text-gray-900"&gt;
+          Редагувати: {drink.name}
+        &lt;/h1&gt;
+        &lt;DrinkForm
+          initialData={drink}
+          onSubmit={handleSubmit}
+          submitLabel="Зберегти зміни"
+          isSubmitting={isSubmitting}
+          error={submitError}
+        /&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Підключити кнопку &laquo;Редагувати&raquo;</h4>
+        <p>Оновіть <code>components/DrinkActions.jsx</code> &mdash; замініть <code>console.log</code> на навігацію:</p>
+        <div class="code-block">
+          <div class="code-header">components/DrinkActions.jsx (змінити handleEdit)</div>
+          <pre><code>const handleEdit = () =&gt; {
+  router.push(`/dashboard/drinks/${drinkId}/edit`)
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Відкрийте деталі будь-якого напою та натисніть &laquo;Редагувати&raquo; &mdash; відкривається сторінка з заповненою формою</li>
+          <li>Змініть назву або ціну та натисніть &laquo;Зберегти зміни&raquo; &mdash; дані оновлюються</li>
+          <li>Перевірте, що створення нового напою все ще працює через <code>/dashboard/drinks/new</code></li>
+          <li>Перевірте, що категорія тепер обирається через &lt;select&gt; замість текстового поля</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 8: Git -->
     <section class="lecture-section" id="git">
-      <h2>7. Збереження та завантаження на GitHub</h2>
+      <h2>8. Збереження та завантаження на GitHub</h2>
 
       <div class="task-box">
         <h4>Завдання: Створити гілку та зробити коміт</h4>
@@ -782,6 +1115,9 @@ git push -u origin LR7</code></pre>
           <li>PUT /api/drinks/[id] оновлює з runValidators: true</li>
           <li>DELETE /api/drinks/[id] видаляє документ</li>
           <li>Дані зберігаються між перезапусками сервера</li>
+          <li><code>DrinkForm</code> &mdash; reusable компонент (використовується в create і edit)</li>
+          <li>Сторінка редагування <code>/dashboard/drinks/[id]/edit</code> працює</li>
+          <li>Кнопка &laquo;Редагувати&raquo; переходить на сторінку редагування</li>
           <li>Код адаптовано під тему свого варіанту</li>
         </ul>
       </div>
@@ -792,11 +1128,12 @@ git push -u origin LR7</code></pre>
       <h2>Бонусні завдання</h2>
       <p>Ці завдання не є обов&rsquo;язковими і не впливають на наступні практичні роботи.</p>
       <ul>
+        <li>Додати <strong>пошук та фільтр</strong> в UI списку напоїв: поле пошуку та dropdown категорій, які передають <code>?search=</code> та <code>?category=</code> до API</li>
+        <li>Додати поля <strong>emoji</strong> та <strong>available</strong> до форми DrinkForm (текстове поле або emoji picker, checkbox для наявності)</li>
         <li>Додати <strong>пагінацію</strong> до GET /api/drinks: <code>?page=1&amp;limit=5</code> з meta-інформацією (total, pages, currentPage)</li>
         <li>Додати <strong>сортування</strong> через query-параметри: <code>?sort=price&amp;order=asc</code></li>
         <li>Створити <strong>Mongoose модель для другої сутності</strong> вашого проекту (наприклад, категорії, замовлення) зі зв&rsquo;язком через <code>ObjectId</code></li>
         <li>Додати <strong>кастомний валідатор</strong> до моделі (наприклад, ціна кратна 5, назва з великої літери)</li>
-        <li>Створити <strong>окремий seed-скрипт</strong> (<code>scripts/seed.js</code>) замість API-ендпоінту, який запускається через <code>node scripts/seed.js</code></li>
       </ul>
     </section>
 
