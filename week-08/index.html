@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Практика 8: Автентифікація з NextAuth.js | Протокол заняття</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/practical.css">
+</head>
+<body>
+  <!-- Навігація -->
+  <nav class="lecture-nav">
+    <div class="container">
+      <div class="nav-title">Тиждень 8: Практичне заняття</div>
+      <div class="nav-links">
+        <a href="../" class="btn btn-outline">&larr; На головну</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Основний контент -->
+  <article class="lecture-content">
+    <!-- Заголовок -->
+    <header class="lecture-header">
+      <span class="lecture-number">Практика 8</span>
+      <h1>Автентифікація з NextAuth.js</h1>
+      <div class="lecture-meta">
+        <span>&#x1F4C5; Тиждень 8</span>
+        <span>&#x1F4BB; Практичне заняття</span>
+      </div>
+    </header>
+
+    <!-- Зміст -->
+    <nav class="toc">
+      <h3>Зміст заняття</h3>
+      <ol>
+        <li><a href="#preparation">Підготовка проєкту</a></li>
+        <li><a href="#user-model">Модель User</a></li>
+        <li><a href="#nextauth-config">Налаштування NextAuth.js</a></li>
+        <li><a href="#register-api">API реєстрації</a></li>
+        <li><a href="#auth-pages">Сторінки входу та реєстрації</a></li>
+        <li><a href="#session-ui">Відображення сесії в інтерфейсі</a></li>
+        <li><a href="#git">Збереження та завантаження на GitHub</a></li>
+      </ol>
+    </nav>
+
+    <!-- Вступ -->
+    <section class="lecture-section">
+      <h2>Мета заняття</h2>
+      <p>На цьому практичному занятті ви:</p>
+      <ul>
+        <li>Встановите та налаштуєте NextAuth.js для автентифікації</li>
+        <li>Створите Mongoose модель User з хешуванням пароля</li>
+        <li>Реалізуєте вхід за допомогою Credentials Provider (email + пароль)</li>
+        <li>Створите API-ендпоінт реєстрації нових користувачів</li>
+        <li>Побудуєте сторінки входу та реєстрації</li>
+        <li>Відобразите інформацію про сесію в Header</li>
+      </ul>
+
+      <div class="info-box info">
+        <strong>Передумова:</strong> Ви маєте мати працюючий Next.js проект з тижня 7
+        (MongoDB Atlas, Mongoose моделі, CRUD API з базою даних).
+        Ми продовжуємо працювати з тим самим проектом.
+      </div>
+
+      <div class="info-box warning">
+        <strong>Приклад викладача:</strong> Кав&rsquo;ярня &laquo;Кофеїн&raquo;. Ви маєте адаптувати код під свою тему з 15 варіантів.
+      </div>
+    </section>
+
+    <!-- Частина 1: Підготовка проєкту -->
+    <section class="lecture-section" id="preparation">
+      <h2>1. Підготовка проєкту</h2>
+
+      <div class="task-box">
+        <h4>Завдання: Встановити залежності</h4>
+        <p>Встановіть NextAuth.js та бібліотеку для хешування паролів:</p>
+        <div class="code-block">
+          <div class="code-header">Terminal (в папці проекту)</div>
+          <pre><code>npm install next-auth bcryptjs</code></pre>
+        </div>
+        <div class="info-box info">
+          <strong>Що ми встановлюємо:</strong>
+          <ul>
+            <li><code>next-auth</code> &mdash; бібліотека автентифікації для Next.js (підтримує OAuth, Credentials, JWT тощо)</li>
+            <li><code>bcryptjs</code> &mdash; хешування паролів (JavaScript-реалізація bcrypt, не потребує компіляції C++)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Налаштувати змінні середовища</h4>
+        <p>Додайте нові змінні до файлу <code>.env.local</code>:</p>
+        <div class="code-block">
+          <div class="code-header">.env.local (додати до існуючого)</div>
+          <pre><code># ... існуючий MONGODB_URI ...
+
+# NextAuth.js
+NEXTAUTH_SECRET=ваш_секретний_ключ_тут
+NEXTAUTH_URL=http://localhost:3000</code></pre>
+        </div>
+
+        <p>Для генерації надійного секретного ключа виконайте команду в терміналі:</p>
+        <div class="os-tabs">
+          <div class="tab-buttons">
+            <button class="tab-btn active" data-os="windows">Windows</button>
+            <button class="tab-btn" data-os="macos">macOS</button>
+            <button class="tab-btn" data-os="linux">Linux</button>
+          </div>
+          <div class="tab-content active" data-os="windows">
+            <div class="code-block">
+              <div class="code-header">PowerShell</div>
+              <pre><code>[Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }) -as [byte[]])</code></pre>
+            </div>
+            <p>Або якщо встановлено OpenSSL (наприклад, через Git Bash):</p>
+            <div class="code-block">
+              <div class="code-header">Git Bash</div>
+              <pre><code>openssl rand -base64 32</code></pre>
+            </div>
+          </div>
+          <div class="tab-content" data-os="macos">
+            <div class="code-block">
+              <div class="code-header">Terminal</div>
+              <pre><code>openssl rand -base64 32</code></pre>
+            </div>
+          </div>
+          <div class="tab-content" data-os="linux">
+            <div class="code-block">
+              <div class="code-header">Terminal</div>
+              <pre><code>openssl rand -base64 32</code></pre>
+            </div>
+          </div>
+        </div>
+
+        <p>Скопіюйте згенерований рядок і вставте замість <code>ваш_секретний_ключ_тут</code>.</p>
+      </div>
+
+      <div class="info-box info">
+        <strong>Навіщо <code>NEXTAUTH_SECRET</code>?</strong>
+        Цей ключ використовується для шифрування JWT-токенів та cookies сесії.
+        Без нього NextAuth.js не зможе безпечно зберігати стан автентифікації.
+        <strong>Ніколи не комітьте цей ключ у Git!</strong>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li><code>next-auth</code> та <code>bcryptjs</code> встановлено (перевірте в <code>package.json</code>)</li>
+          <li><code>.env.local</code> містить <code>NEXTAUTH_SECRET</code> та <code>NEXTAUTH_URL</code></li>
+          <li><code>NEXTAUTH_SECRET</code> &mdash; це довгий випадковий рядок (не &laquo;ваш_секретний_ключ_тут&raquo;!)</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 2: Модель User -->
+    <section class="lecture-section" id="user-model">
+      <h2>2. Модель User</h2>
+      <p>
+        Модель User зберігатиме інформацію про зареєстрованих користувачів: ім&rsquo;я,
+        email, хешований пароль та роль (user або admin).
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Створити модель User</h4>
+        <p>Створіть файл <code>lib/models/User.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">lib/models/User.js</div>
+          <pre><code>import mongoose from 'mongoose'
+
+const userSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, "Ім'я обов'язкове"],
+    trim: true,
+    maxlength: [50, "Ім'я не може бути довшим за 50 символів"],
+  },
+  email: {
+    type: String,
+    required: [true, 'Email обов\'язковий'],
+    unique: true,
+    lowercase: true,
+    trim: true,
+    match: [/^\S+@\S+\.\S+$/, 'Невалідний формат email'],
+  },
+  password: {
+    type: String,
+    required: [true, 'Пароль обов\'язковий'],
+    minlength: [6, 'Пароль має містити щонайменше 6 символів'],
+    select: false,
+  },
+  role: {
+    type: String,
+    enum: {
+      values: ['user', 'admin'],
+      message: 'Роль має бути: user або admin',
+    },
+    default: 'user',
+  },
+}, {
+  timestamps: true,
+})
+
+export default mongoose.models.User || mongoose.model('User', userSchema)</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Ключові особливості моделі:</strong>
+        <ul>
+          <li><code>email: { unique: true }</code> &mdash; MongoDB створить унікальний індекс, два користувачі з однаковим email неможливі</li>
+          <li><code>password: { select: false }</code> &mdash; пароль <strong>не повертається</strong> у запитах за замовчуванням. Це важливо для безпеки: навіть якщо ви випадково повернете користувача в API, хеш пароля не потрапить у відповідь</li>
+          <li><code>role: enum ['user', 'admin']</code> &mdash; підготовка до RBAC (розмежування ролей), яке ми реалізуємо на наступному тижні</li>
+          <li><code>lowercase: true</code> &mdash; email автоматично приводиться до нижнього регістру</li>
+        </ul>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Файл <code>lib/models/User.js</code> створено</li>
+          <li>Схема має поля: <code>name</code>, <code>email</code> (unique), <code>password</code> (select: false), <code>role</code> (enum)</li>
+          <li>Є валідація з кастомними повідомленнями</li>
+          <li>Використовується <code>timestamps: true</code></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 3: Налаштування NextAuth.js -->
+    <section class="lecture-section" id="nextauth-config">
+      <h2>3. Налаштування NextAuth.js</h2>
+      <p>
+        NextAuth.js потребує конфігурації: який провайдер автентифікації використовувати,
+        як створювати та перевіряти сесії, та які дані зберігати в токені.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Створити конфігурацію NextAuth</h4>
+        <p>Створіть файл <code>lib/auth.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">lib/auth.js</div>
+          <pre><code>import CredentialsProvider from 'next-auth/providers/credentials'
+import bcrypt from 'bcryptjs'
+import dbConnect from '@/lib/db'
+import User from '@/lib/models/User'
+
+export const authOptions = {
+  providers: [
+    CredentialsProvider({
+      name: 'credentials',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Пароль', type: 'password' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error('Введіть email та пароль')
+        }
+
+        await dbConnect()
+
+        // Знаходимо користувача і явно запитуємо пароль
+        const user = await User.findOne({
+          email: credentials.email
+        }).select('+password')
+
+        if (!user) {
+          throw new Error('Невірний email або пароль')
+        }
+
+        // Порівнюємо паролі
+        const isPasswordCorrect = await bcrypt.compare(
+          credentials.password,
+          user.password
+        )
+
+        if (!isPasswordCorrect) {
+          throw new Error('Невірний email або пароль')
+        }
+
+        // Повертаємо об'єкт користувача (без пароля)
+        return {
+          id: user._id.toString(),
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        }
+      },
+    }),
+  ],
+
+  session: {
+    strategy: 'jwt',
+  },
+
+  callbacks: {
+    async jwt({ token, user }) {
+      // При першому вході додаємо дані в токен
+      if (user) {
+        token.role = user.role
+        token.id = user.id
+      }
+      return token
+    },
+
+    async session({ session, token }) {
+      // Додаємо дані з токена в сесію
+      if (session.user) {
+        session.user.role = token.role
+        session.user.id = token.id
+      }
+      return session
+    },
+  },
+
+  pages: {
+    signIn: '/auth/login',
+  },
+
+  secret: process.env.NEXTAUTH_SECRET,
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Як працює CredentialsProvider:</strong>
+        <ol>
+          <li>Користувач вводить email та пароль на сторінці входу</li>
+          <li>NextAuth викликає функцію <code>authorize()</code> з цими даними</li>
+          <li>Ми шукаємо користувача в MongoDB та перевіряємо пароль через <code>bcrypt.compare()</code></li>
+          <li>Якщо все вірно &mdash; повертаємо об&rsquo;єкт користувача (NextAuth створить JWT-токен)</li>
+          <li>Якщо ні &mdash; кидаємо помилку (NextAuth покаже повідомлення)</li>
+        </ol>
+      </div>
+
+      <div class="info-box info">
+        <strong>Навіщо callbacks?</strong>
+        За замовчуванням JWT-токен та сесія містять тільки <code>name</code>, <code>email</code>, <code>image</code>.
+        Щоб додати <code>role</code> та <code>id</code>, ми використовуємо callbacks:
+        <ul>
+          <li><code>jwt</code> &mdash; додає дані в токен при його створенні</li>
+          <li><code>session</code> &mdash; копіює дані з токена в об&rsquo;єкт сесії, доступний на клієнті</li>
+        </ul>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити API Route для NextAuth</h4>
+        <p>Створіть файл <code>app/api/auth/[...nextauth]/route.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">app/api/auth/[...nextauth]/route.js</div>
+          <pre><code>import NextAuth from 'next-auth'
+import { authOptions } from '@/lib/auth'
+
+const handler = NextAuth(authOptions)
+
+export { handler as GET, handler as POST }</code></pre>
+        </div>
+        <p>
+          Цей catch-all route обробляє всі запити NextAuth: <code>/api/auth/signin</code>,
+          <code>/api/auth/signout</code>, <code>/api/auth/session</code> тощо.
+        </p>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити AuthProvider</h4>
+        <p>
+          NextAuth потребує <code>SessionProvider</code> для роботи хука <code>useSession()</code> на клієнті.
+          Створіть файл <code>components/AuthProvider.jsx</code>:
+        </p>
+        <div class="code-block">
+          <div class="code-header">components/AuthProvider.jsx</div>
+          <pre><code>'use client'
+
+import { SessionProvider } from 'next-auth/react'
+
+export default function AuthProvider({ children }) {
+  return (
+    &lt;SessionProvider&gt;
+      {children}
+    &lt;/SessionProvider&gt;
+  )
+}</code></pre>
+        </div>
+        <div class="info-box info">
+          <strong>Чому окремий компонент?</strong> <code>SessionProvider</code> &mdash; це Client Component
+          (використовує React Context). Файл <code>layout.js</code> за замовчуванням &mdash; Server Component.
+          Щоб не робити весь layout клієнтським, ми обгортаємо тільки <code>SessionProvider</code>
+          в окремий Client Component.
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Підключити AuthProvider до layout</h4>
+        <p>Оновіть <code>app/layout.js</code> &mdash; обгорніть <code>{children}</code> в <code>AuthProvider</code>:</p>
+        <div class="code-block">
+          <div class="code-header">app/layout.js (оновлений)</div>
+          <pre><code>import { Inter } from 'next/font/google'
+import './globals.css'
+import AuthProvider from '@/components/AuthProvider'
+
+const inter = Inter({ subsets: ['latin', 'cyrillic'] })
+
+export const metadata = {
+  title: 'Кофеїн | Кав\'ярня',
+  description: 'Найкраща кава у місті',
+}
+
+export default function RootLayout({ children }) {
+  return (
+    &lt;html lang="uk"&gt;
+      &lt;body className={inter.className}&gt;
+        &lt;AuthProvider&gt;
+          {children}
+        &lt;/AuthProvider&gt;
+      &lt;/body&gt;
+    &lt;/html&gt;
+  )
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li><code>lib/auth.js</code> створено з CredentialsProvider та callbacks</li>
+          <li><code>app/api/auth/[...nextauth]/route.js</code> створено</li>
+          <li><code>components/AuthProvider.jsx</code> створено</li>
+          <li><code>app/layout.js</code> оновлено &mdash; <code>AuthProvider</code> обгортає <code>{children}</code></li>
+          <li>Запустіть <code>npm run dev</code> &mdash; проект компілюється без помилок</li>
+        </ul>
+      </div>
+
+      <div class="error-box">
+        <h5>&#x26A0;&#xFE0F; Типова помилка: &laquo;[next-auth] NEXTAUTH_SECRET is not set&raquo;</h5>
+        <p>
+          Якщо бачите цю помилку, переконайтесь, що:
+          (1) <code>NEXTAUTH_SECRET</code> додано до <code>.env.local</code>,
+          (2) значення &mdash; це реальний згенерований рядок, а не плейсхолдер,
+          (3) ви <strong>перезапустили</strong> dev-сервер після зміни <code>.env.local</code>.
+        </p>
+      </div>
+    </section>
+
+    <!-- Частина 4: API реєстрації -->
+    <section class="lecture-section" id="register-api">
+      <h2>4. API реєстрації</h2>
+      <p>
+        NextAuth.js не має вбудованого механізму реєстрації &mdash; тільки вхід.
+        Ми створимо окремий API-ендпоінт, який прийматиме дані нового користувача,
+        валідуватиме їх, хешуватиме пароль і зберігатиме в базі.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Створити API endpoint реєстрації</h4>
+        <p>Створіть файл <code>app/api/auth/register/route.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">app/api/auth/register/route.js</div>
+          <pre><code>import bcrypt from 'bcryptjs'
+import dbConnect from '@/lib/db'
+import User from '@/lib/models/User'
+
+export async function POST(request) {
+  try {
+    const { name, email, password } = await request.json()
+
+    // Валідація
+    if (!name || !email || !password) {
+      return Response.json(
+        { error: "Всі поля обов'язкові" },
+        { status: 400 }
+      )
+    }
+
+    if (password.length &lt; 6) {
+      return Response.json(
+        { error: 'Пароль має містити щонайменше 6 символів' },
+        { status: 400 }
+      )
+    }
+
+    await dbConnect()
+
+    // Перевірка чи email вже зайнятий
+    const existingUser = await User.findOne({ email })
+
+    if (existingUser) {
+      return Response.json(
+        { error: 'Користувач з таким email вже існує' },
+        { status: 409 }
+      )
+    }
+
+    // Хешуємо пароль
+    const hashedPassword = await bcrypt.hash(password, 12)
+
+    // Створюємо користувача
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+    })
+
+    return Response.json(
+      {
+        message: 'Реєстрація успішна',
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+      },
+      { status: 201 }
+    )
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors)
+        .map((err) =&gt; err.message)
+      return Response.json(
+        { error: messages.join(', ') },
+        { status: 400 }
+      )
+    }
+
+    return Response.json(
+      { error: 'Помилка сервера' },
+      { status: 500 }
+    )
+  }
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Як працює хешування паролів:</strong>
+        <ul>
+          <li><code>bcrypt.hash(password, 12)</code> &mdash; хешує пароль з &laquo;сіллю&raquo; (12 раундів). Кожен раз генерується унікальний хеш, навіть для однакових паролів</li>
+          <li><code>bcrypt.compare(password, hash)</code> &mdash; перевіряє, чи пароль відповідає хешу. Використовується в <code>authorize()</code> при вході</li>
+          <li>Ми <strong>ніколи не зберігаємо</strong> пароль у відкритому вигляді &mdash; тільки хеш</li>
+        </ul>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <p>Протестуйте реєстрацію через DevTools Console (F12):</p>
+        <div class="code-block">
+          <div class="code-header">DevTools Console</div>
+          <pre><code>const res = await fetch('/api/auth/register', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    name: 'Test User',
+    email: 'test@example.com',
+    password: 'password123'
+  })
+})
+const data = await res.json()
+console.log(data)</code></pre>
+        </div>
+        <ul>
+          <li>Ви маєте отримати <code>201</code> з повідомленням &laquo;Реєстрація успішна&raquo;</li>
+          <li>Повторний запит з тим самим email &mdash; <code>409</code> &laquo;Користувач з таким email вже існує&raquo;</li>
+          <li>Перевірте в MongoDB Compass: колекція <code>users</code> має новий документ з хешованим паролем</li>
+        </ul>
+      </div>
+
+      <div class="error-box">
+        <h5>&#x26A0;&#xFE0F; Безпека: чому 409 а не загальна помилка?</h5>
+        <p>
+          У навчальному проекті ми повертаємо конкретне повідомлення &laquo;email вже існує&raquo; для зручності.
+          У реальних production-додатках це може бути вразливістю (атакуючий може перевіряти, чи зареєстрований
+          певний email). Тоді використовують загальне повідомлення: &laquo;Не вдалося створити акаунт&raquo;.
+        </p>
+      </div>
+    </section>
+
+    <!-- Частина 5: Сторінки входу та реєстрації -->
+    <section class="lecture-section" id="auth-pages">
+      <h2>5. Сторінки входу та реєстрації</h2>
+      <p>
+        Використаємо <strong>Route Group</strong> <code>(auth)</code> для сторінок автентифікації.
+        Route Group дозволяє організувати файли в папку без впливу на URL:
+        <code>app/(auth)/auth/login/page.js</code> матиме URL <code>/auth/login</code>.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Створити компонент LoginForm</h4>
+        <p>Створіть файл <code>components/LoginForm.jsx</code>:</p>
+        <div class="code-block">
+          <div class="code-header">components/LoginForm.jsx</div>
+          <pre><code>'use client'
+
+import { useState } from 'react'
+import { signIn } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+
+export default function LoginForm() {
+  const router = useRouter()
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  })
+  const [error, setError] = useState(null)
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleChange = (e) =&gt; {
+    setFormData({ ...formData, [e.target.name]: e.target.value })
+  }
+
+  const handleSubmit = async (e) =&gt; {
+    e.preventDefault()
+    setError(null)
+    setIsLoading(true)
+
+    try {
+      const result = await signIn('credentials', {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        setError('Невірний email або пароль')
+        setIsLoading(false)
+        return
+      }
+
+      router.push('/dashboard')
+      router.refresh()
+    } catch {
+      setError('Щось пішло не так')
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    &lt;div className="max-w-md mx-auto mt-10"&gt;
+      &lt;div className="bg-white rounded-lg shadow p-8"&gt;
+        &lt;h1 className="text-2xl font-bold text-center mb-6"&gt;
+          Вхід
+        &lt;/h1&gt;
+
+        {error &amp;&amp; (
+          &lt;div className="bg-red-50 border border-red-200
+            text-red-700 px-4 py-3 rounded mb-4"&gt;
+            {error}
+          &lt;/div&gt;
+        )}
+
+        &lt;form onSubmit={handleSubmit} className="space-y-4"&gt;
+          &lt;div&gt;
+            &lt;label className="block text-gray-700
+              font-bold mb-2"&gt;
+              Email
+            &lt;/label&gt;
+            &lt;input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2 border rounded
+                focus:outline-none focus:border-amber-500"
+            /&gt;
+          &lt;/div&gt;
+
+          &lt;div&gt;
+            &lt;label className="block text-gray-700
+              font-bold mb-2"&gt;
+              Пароль
+            &lt;/label&gt;
+            &lt;input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2 border rounded
+                focus:outline-none focus:border-amber-500"
+            /&gt;
+          &lt;/div&gt;
+
+          &lt;button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-amber-700 text-white py-2
+              rounded hover:bg-amber-800 font-bold
+              disabled:opacity-50"
+          &gt;
+            {isLoading ? 'Вхід...' : 'Увійти'}
+          &lt;/button&gt;
+        &lt;/form&gt;
+
+        &lt;p className="text-center mt-4 text-gray-600"&gt;
+          Немає акаунту?{' '}
+          &lt;Link href="/auth/register"
+            className="text-amber-700 hover:underline"&gt;
+            Зареєструватися
+          &lt;/Link&gt;
+        &lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Як працює <code>signIn('credentials', { redirect: false })</code>:</strong>
+        <ul>
+          <li><code>signIn</code> &mdash; функція NextAuth, яка ініціює процес входу</li>
+          <li><code>'credentials'</code> &mdash; ім&rsquo;я провайдера (ми вказали його в <code>lib/auth.js</code>)</li>
+          <li><code>redirect: false</code> &mdash; не перенаправляти автоматично, ми обробимо результат самі</li>
+          <li>Якщо <code>result.error</code> &mdash; вхід невдалий, показуємо повідомлення</li>
+          <li>Якщо вхід успішний &mdash; перенаправляємо на <code>/dashboard</code> і оновлюємо сторінку</li>
+        </ul>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити компонент RegisterForm</h4>
+        <p>Створіть файл <code>components/RegisterForm.jsx</code>:</p>
+        <div class="code-block">
+          <div class="code-header">components/RegisterForm.jsx</div>
+          <pre><code>'use client'
+
+import { useState } from 'react'
+import { signIn } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+
+export default function RegisterForm() {
+  const router = useRouter()
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  })
+  const [error, setError] = useState(null)
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleChange = (e) =&gt; {
+    setFormData({ ...formData, [e.target.name]: e.target.value })
+  }
+
+  const handleSubmit = async (e) =&gt; {
+    e.preventDefault()
+    setError(null)
+
+    // Перевірка паролів
+    if (formData.password !== formData.confirmPassword) {
+      setError('Паролі не збігаються')
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      // 1. Реєстрація
+      const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        setError(data.error || 'Помилка реєстрації')
+        setIsLoading(false)
+        return
+      }
+
+      // 2. Автоматичний вхід після реєстрації
+      const result = await signIn('credentials', {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        // Реєстрація пройшла, але вхід не вдався
+        router.push('/auth/login')
+        return
+      }
+
+      router.push('/dashboard')
+      router.refresh()
+    } catch {
+      setError('Щось пішло не так')
+      setIsLoading(false)
+    }
+  }
+
+  return (
+    &lt;div className="max-w-md mx-auto mt-10"&gt;
+      &lt;div className="bg-white rounded-lg shadow p-8"&gt;
+        &lt;h1 className="text-2xl font-bold text-center mb-6"&gt;
+          Реєстрація
+        &lt;/h1&gt;
+
+        {error &amp;&amp; (
+          &lt;div className="bg-red-50 border border-red-200
+            text-red-700 px-4 py-3 rounded mb-4"&gt;
+            {error}
+          &lt;/div&gt;
+        )}
+
+        &lt;form onSubmit={handleSubmit} className="space-y-4"&gt;
+          &lt;div&gt;
+            &lt;label className="block text-gray-700
+              font-bold mb-2"&gt;
+              Ім&rsquo;я
+            &lt;/label&gt;
+            &lt;input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2 border rounded
+                focus:outline-none focus:border-amber-500"
+            /&gt;
+          &lt;/div&gt;
+
+          &lt;div&gt;
+            &lt;label className="block text-gray-700
+              font-bold mb-2"&gt;
+              Email
+            &lt;/label&gt;
+            &lt;input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-2 border rounded
+                focus:outline-none focus:border-amber-500"
+            /&gt;
+          &lt;/div&gt;
+
+          &lt;div&gt;
+            &lt;label className="block text-gray-700
+              font-bold mb-2"&gt;
+              Пароль
+            &lt;/label&gt;
+            &lt;input
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              required
+              minLength={6}
+              className="w-full px-4 py-2 border rounded
+                focus:outline-none focus:border-amber-500"
+            /&gt;
+          &lt;/div&gt;
+
+          &lt;div&gt;
+            &lt;label className="block text-gray-700
+              font-bold mb-2"&gt;
+              Підтвердження пароля
+            &lt;/label&gt;
+            &lt;input
+              type="password"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              required
+              minLength={6}
+              className="w-full px-4 py-2 border rounded
+                focus:outline-none focus:border-amber-500"
+            /&gt;
+          &lt;/div&gt;
+
+          &lt;button
+            type="submit"
+            disabled={isLoading}
+            className="w-full bg-amber-700 text-white py-2
+              rounded hover:bg-amber-800 font-bold
+              disabled:opacity-50"
+          &gt;
+            {isLoading ? 'Реєстрація...' : 'Зареєструватися'}
+          &lt;/button&gt;
+        &lt;/form&gt;
+
+        &lt;p className="text-center mt-4 text-gray-600"&gt;
+          Вже маєте акаунт?{' '}
+          &lt;Link href="/auth/login"
+            className="text-amber-700 hover:underline"&gt;
+            Увійти
+          &lt;/Link&gt;
+        &lt;/p&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити сторінку входу</h4>
+        <p>Створіть файл <code>app/(auth)/auth/login/page.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">app/(auth)/auth/login/page.js</div>
+          <pre><code>import LoginForm from '@/components/LoginForm'
+
+export const metadata = {
+  title: 'Вхід | Кофеїн',
+}
+
+export default function LoginPage() {
+  return &lt;LoginForm /&gt;
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити сторінку реєстрації</h4>
+        <p>Створіть файл <code>app/(auth)/auth/register/page.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">app/(auth)/auth/register/page.js</div>
+          <pre><code>import RegisterForm from '@/components/RegisterForm'
+
+export const metadata = {
+  title: 'Реєстрація | Кофеїн',
+}
+
+export default function RegisterPage() {
+  return &lt;RegisterForm /&gt;
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Структура Route Group <code>(auth)</code>:</strong>
+        <div class="code-block">
+          <div class="code-header">Файлова структура</div>
+          <pre><code>app/
+  (auth)/              &larr; Route Group (не впливає на URL)
+    auth/
+      login/
+        page.js        &larr; URL: /auth/login
+      register/
+        page.js        &larr; URL: /auth/register</code></pre>
+        </div>
+        <p>
+          Route Group <code>(auth)</code> дозволяє в майбутньому додати окремий <code>layout.js</code>
+          для сторінок автентифікації (наприклад, без Header та Footer).
+        </p>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Відкрийте <code>http://localhost:3000/auth/register</code> &mdash; сторінка реєстрації з формою</li>
+          <li>Зареєструйте нового користувача &mdash; після успішної реєстрації автоматичний вхід та перенаправлення на <code>/dashboard</code></li>
+          <li>Відкрийте <code>http://localhost:3000/auth/login</code> &mdash; сторінка входу</li>
+          <li>Увійдіть з тими ж даними &mdash; перенаправлення на <code>/dashboard</code></li>
+          <li>Спробуйте невірний пароль &mdash; побачите повідомлення про помилку</li>
+        </ul>
+      </div>
+
+      <div class="error-box">
+        <h5>&#x26A0;&#xFE0F; Типова помилка: &laquo;Cannot read properties of undefined (reading 'providers')&raquo;</h5>
+        <p>
+          Ця помилка означає, що NextAuth не може знайти конфігурацію. Перевірте:
+          (1) файл <code>app/api/auth/[...nextauth]/route.js</code> створено в правильній директорії,
+          (2) шлях імпорту <code>@/lib/auth</code> правильний,
+          (3) <code>authOptions</code> експортується з <code>lib/auth.js</code>.
+        </p>
+      </div>
+    </section>
+
+    <!-- Частина 6: Відображення сесії в інтерфейсі -->
+    <section class="lecture-section" id="session-ui">
+      <h2>6. Відображення сесії в інтерфейсі</h2>
+      <p>
+        Тепер оновимо Header, щоб він показував ім&rsquo;я користувача коли він увійшов,
+        та кнопки &laquo;Вхід&raquo; / &laquo;Вихід&raquo; залежно від стану сесії.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Оновити Header.jsx</h4>
+        <p>Оновіть <code>components/Header.jsx</code>:</p>
+        <div class="code-block">
+          <div class="code-header">components/Header.jsx (оновлений)</div>
+          <pre><code>'use client'
+
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useSession, signOut } from 'next-auth/react'
+
+const navLinks = [
+  { href: '/', label: 'Головна' },
+  { href: '/menu', label: 'Меню' },
+  { href: '/about', label: 'Про нас' },
+  { href: '/contact', label: 'Контакти' },
+]
+
+export default function Header() {
+  const pathname = usePathname()
+  const { data: session, status } = useSession()
+
+  return (
+    &lt;header className="bg-amber-900 text-white py-4"&gt;
+      &lt;div className="container mx-auto px-4
+        flex justify-between items-center"&gt;
+        &lt;Link href="/"
+          className="text-xl font-bold hover:text-amber-200
+          transition"&gt;
+          Кофеїн
+        &lt;/Link&gt;
+
+        &lt;nav className="flex items-center gap-6"&gt;
+          &lt;ul className="flex gap-6"&gt;
+            {navLinks.map((link) =&gt; {
+              const isActive =
+                link.href === '/'
+                  ? pathname === '/'
+                  : pathname.startsWith(link.href)
+
+              return (
+                &lt;li key={link.href}&gt;
+                  &lt;Link href={link.href}
+                    className={`transition ${
+                      isActive
+                        ? 'text-amber-300 font-semibold'
+                        : 'hover:text-amber-200'
+                    }`}&gt;
+                    {link.label}
+                  &lt;/Link&gt;
+                &lt;/li&gt;
+              )
+            })}
+          &lt;/ul&gt;
+
+          {/* Блок автентифікації */}
+          {status === 'loading' ? (
+            &lt;span className="text-amber-200 text-sm"&gt;...&lt;/span&gt;
+          ) : session ? (
+            &lt;div className="flex items-center gap-4"&gt;
+              &lt;Link href="/dashboard"
+                className="text-amber-200 hover:text-white
+                transition"&gt;
+                {session.user.name}
+              &lt;/Link&gt;
+              &lt;button
+                onClick={() =&gt; signOut({ callbackUrl: '/' })}
+                className="bg-amber-700 hover:bg-amber-600
+                  px-3 py-1 rounded text-sm transition"
+              &gt;
+                Вийти
+              &lt;/button&gt;
+            &lt;/div&gt;
+          ) : (
+            &lt;Link href="/auth/login"
+              className="bg-amber-700 hover:bg-amber-600
+              px-4 py-2 rounded transition"&gt;
+              Увійти
+            &lt;/Link&gt;
+          )}
+        &lt;/nav&gt;
+      &lt;/div&gt;
+    &lt;/header&gt;
+  )
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Як працює <code>useSession()</code>:</strong>
+        <ul>
+          <li><code>status</code> &mdash; <code>'loading'</code>, <code>'authenticated'</code> або <code>'unauthenticated'</code></li>
+          <li><code>session</code> &mdash; об&rsquo;єкт з <code>user: { name, email, role, id }</code> (або <code>null</code>)</li>
+          <li><code>signOut({ callbackUrl: '/' })</code> &mdash; вихід з автоматичним перенаправленням на головну</li>
+          <li>Хук працює тільки всередині <code>SessionProvider</code> (ми додали його через <code>AuthProvider</code>)</li>
+        </ul>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Коли <strong>не увійшли</strong>: в Header бачите кнопку &laquo;Увійти&raquo;</li>
+          <li>Коли <strong>увійшли</strong>: бачите ім&rsquo;я користувача (клікабельне, веде на dashboard) та кнопку &laquo;Вийти&raquo;</li>
+          <li>Натисніть &laquo;Вийти&raquo; &mdash; повертає на головну, кнопка знову &laquo;Увійти&raquo;</li>
+          <li>Оновіть сторінку (F5) &mdash; стан сесії зберігається (якщо увійшли &mdash; лишаєтесь увійшовшим)</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 7: Git -->
+    <section class="lecture-section" id="git">
+      <h2>7. Збереження та завантаження на GitHub</h2>
+
+      <div class="task-box">
+        <h4>Завдання: Створити гілку та зробити коміт</h4>
+        <div class="code-block">
+          <div class="code-header">Terminal (в папці проекту)</div>
+          <pre><code>git checkout -b LR8
+git add .
+git commit -m "LR8: Authentication with NextAuth.js, User model, login/register"
+git push -u origin LR8</code></pre>
+        </div>
+      </div>
+
+      <div class="error-box">
+        <h5>&#x26A0;&#xFE0F; Перевірте перед комітом!</h5>
+        <p>
+          Переконайтесь, що <code>.env.local</code> <strong>не</strong> потрапляє в коміт!
+          В <code>.env.local</code> тепер є <code>NEXTAUTH_SECRET</code> &mdash; це секретний ключ,
+          який <strong>ніколи</strong> не повинен бути в Git. Виконайте <code>git status</code>
+          і перевірте, що файлу <code>.env.local</code> немає у списку.
+        </p>
+      </div>
+
+      <div class="info-box info">
+        <strong>Якщо ви ще не створили репозиторій на GitHub:</strong>
+        <ol>
+          <li>Створіть новий репозиторій на <a href="https://github.com/new" target="_blank">github.com/new</a></li>
+          <li>Додайте remote: <code>git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git</code></li>
+          <li>Після цього виконайте <code>git push -u origin LR8</code></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Підсумок -->
+    <section class="lecture-section">
+      <h2>Підсумок</h2>
+      <div class="final-result">
+        <h4>Критерії успішного виконання</h4>
+        <ul class="criteria-list">
+          <li><code>next-auth</code> та <code>bcryptjs</code> встановлено</li>
+          <li><code>.env.local</code> містить <code>NEXTAUTH_SECRET</code> та <code>NEXTAUTH_URL</code> (не в Git!)</li>
+          <li><code>lib/models/User.js</code>: модель з полями name, email (unique), password (select: false), role (enum)</li>
+          <li><code>lib/auth.js</code>: конфігурація NextAuth з CredentialsProvider та callbacks (jwt, session)</li>
+          <li><code>app/api/auth/[...nextauth]/route.js</code>: catch-all route для NextAuth</li>
+          <li><code>components/AuthProvider.jsx</code>: обгортка SessionProvider</li>
+          <li><code>app/layout.js</code>: AuthProvider підключено</li>
+          <li><code>app/api/auth/register/route.js</code>: реєстрація з валідацією та хешуванням пароля</li>
+          <li>Сторінка реєстрації <code>/auth/register</code> з формою та валідацією</li>
+          <li>Сторінка входу <code>/auth/login</code> з формою та обробкою помилок</li>
+          <li>Автоматичний вхід після успішної реєстрації</li>
+          <li>Header показує ім&rsquo;я користувача та кнопку &laquo;Вийти&raquo; для авторизованих</li>
+          <li>Header показує кнопку &laquo;Увійти&raquo; для неавторизованих</li>
+          <li><code>signOut()</code> працює та повертає на головну</li>
+          <li>Код адаптовано під тему свого варіанту</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Бонусні завдання -->
+    <section class="lecture-section">
+      <h2>Бонусні завдання</h2>
+      <p>Ці завдання не є обов&rsquo;язковими і не впливають на наступні практичні роботи.</p>
+      <ul>
+        <li>Додати окремий <strong>layout для (auth)</strong> Route Group &mdash; без Header та Footer, центрована форма на кольоровому фоні</li>
+        <li>Додати <strong>валідацію email</strong> на клієнті (regex або бібліотека) з повідомленням про невірний формат</li>
+        <li>Додати <strong>показ/приховання пароля</strong> (кнопка-око) в полях форми</li>
+        <li>Створити <strong>seed-ендпоінт для адміна</strong>: <code>/api/seed-admin</code> створює користувача з <code>role: 'admin'</code></li>
+        <li>Додати <strong>аватар користувача</strong>: поле <code>image</code> в моделі User та відображення в Header</li>
+        <li>Реалізувати <strong>захист сторінки <code>/dashboard</code></strong> &mdash; перенаправлення на <code>/auth/login</code> якщо користувач не авторизований (використовуючи <code>useSession</code> або middleware)</li>
+      </ul>
+    </section>
+
+    <!-- Футер -->
+    <footer class="lecture-footer">
+      <p>Курс "Основи обробки та передачі інформації" | Next.js Full-Stack Development</p>
+      <p>Кібербезпека та захист інформації, 3 курс</p>
+
+      <div class="nav-buttons">
+        <a href="../" class="btn btn-outline">&larr; На головну</a>
+      </div>
+    </footer>
+  </article>
+  <script src="../js/os-tabs.js"></script>
+  <script>
+    (function () {
+      var weekNum = parseInt(document.querySelector('.lecture-number').textContent.replace(/\D/g, ''), 10);
+      fetch('../data/config.json')
+        .then(function (res) { return res.json(); })
+        .then(function (config) {
+          var week = config.weeks.find(function (w) { return w.id === weekNum; });
+          if (week && !week.visible) {
+            document.querySelector('article.lecture-content').style.display = 'none';
+            var msg = document.createElement('div');
+            msg.style.cssText = 'text-align:center;padding:4rem 1rem;';
+            msg.innerHTML = '<h1 style="font-size:1.5rem;color:#333;margin-bottom:1rem;">Це заняття ще не доступне</h1>' +
+              '<a href="../" style="color:var(--primary,#2563eb);">← На головну</a>';
+            document.body.insertBefore(msg, document.querySelector('article.lecture-content'));
+          }
+        });
+    })();
+  </script>
+</body>
+</html>

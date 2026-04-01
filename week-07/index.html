@@ -692,6 +692,67 @@ console.log(data)</code></pre>
         <strong>Файл <code>lib/drinks.js</code></strong> більше не потрібен &mdash; можете його видалити
         або залишити для порівняння. Всі дані тепер зберігаються в MongoDB.
       </div>
+
+      <div class="task-box">
+        <h4>&#x2713; Завдання: Оновити lib/helpers.js для роботи з MongoDB</h4>
+        <p>
+          Файл <code>lib/helpers.js</code> містить функцію <code>getDrinkStats()</code>, яку використовує
+          сторінка Dashboard. Зараз вона імпортує дані з <code>lib/drinks.js</code> (in-memory масив).
+          Потрібно переписати її для роботи з MongoDB:
+        </p>
+        <div class="code-block">
+          <div class="code-header">lib/helpers.js</div>
+          <pre><code>// Допоміжні функції для обчислення статистики
+// Тиждень 7: використовує Mongoose замість in-memory масиву
+
+import dbConnect from "./db";
+import Drink from "./models/Drink";
+
+export async function getDrinkStats() {
+  await dbConnect();
+
+  const drinks = await Drink.find();
+  const total = drinks.length;
+  const available = drinks.filter((d) =&gt; d.available).length;
+  const unavailable = total - available;
+  const categories = [...new Set(drinks.map((d) =&gt; d.category))];
+  const avgPrice =
+    total &gt; 0
+      ? Math.round(drinks.reduce((sum, d) =&gt; sum + d.price, 0) / total)
+      : 0;
+
+  return {
+    total,
+    available,
+    unavailable,
+    categoriesCount: categories.length,
+    avgPrice,
+  };
+}</code></pre>
+        </div>
+        <p>
+          <strong>Зверніть увагу:</strong> функція тепер <code>async</code>, бо робить запит до бази даних.
+          Якщо ваш <code>app/dashboard/page.js</code> викликає <code>getDrinkStats()</code>,
+          переконайтесь, що виклик використовує <code>await</code>:
+        </p>
+        <div class="code-block">
+          <div class="code-header">app/dashboard/page.js (фрагмент)</div>
+          <pre><code>import { getDrinkStats } from "@/lib/helpers";
+
+export default async function DashboardPage() {
+  const stats = await getDrinkStats();  // &larr; await обов'язковий!
+  // ...
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Сторінка <code>/dashboard</code> відображає актуальну статистику з MongoDB</li>
+          <li>Після додавання/видалення напоїв через API статистика оновлюється</li>
+        </ul>
+      </div>
     </section>
 
     <!-- Частина 6: MongoDB Compass -->

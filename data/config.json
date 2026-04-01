@@ -41,6 +41,12 @@
       "visible": true,
       "title": "Підключення MongoDB",
       "description": "MongoDB Atlas, Mongoose, схеми та моделі, CRUD з базою даних"
+    },
+    {
+      "id": 8,
+      "visible": false,
+      "title": "Аутентифікація (NextAuth.js)",
+      "description": "NextAuth.js, Credentials Provider, JWT, bcrypt, реєстрація та логін"
     }
   ]
 }
