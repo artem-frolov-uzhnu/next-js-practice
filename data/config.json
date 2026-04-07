@@ -44,7 +44,7 @@
     },
     {
       "id": 8,
-      "visible": false,
+      "visible": true,
       "title": "Аутентифікація (NextAuth.js)",
       "description": "NextAuth.js, Credentials Provider, JWT, bcrypt, реєстрація та логін"
     }
