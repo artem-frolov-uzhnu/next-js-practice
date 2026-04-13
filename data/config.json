@@ -47,6 +47,12 @@
       "visible": true,
       "title": "Аутентифікація (NextAuth.js)",
       "description": "NextAuth.js, Credentials Provider, JWT, bcrypt, реєстрація та логін"
+    },
+    {
+      "id": 9,
+      "visible": true,
+      "title": "Авторизація та ролі (RBAC)",
+      "description": "RBAC, Middleware, захист API endpoints, getServerSession, умовний рендеринг"
     }
   ]
 }

@@ -1,0 +1,1121 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Практика 9: Авторизація та ролі (RBAC) | Протокол заняття</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/practical.css">
+</head>
+<body>
+  <!-- Навігація -->
+  <nav class="lecture-nav">
+    <div class="container">
+      <div class="nav-title">Тиждень 9: Практичне заняття</div>
+      <div class="nav-links">
+        <a href="../" class="btn btn-outline">&larr; На головну</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Основний контент -->
+  <article class="lecture-content">
+    <!-- Заголовок -->
+    <header class="lecture-header">
+      <span class="lecture-number">Практика 9</span>
+      <h1>Авторизація та ролі (RBAC)</h1>
+      <div class="lecture-meta">
+        <span>&#x1F4C5; Тиждень 9</span>
+        <span>&#x1F4BB; Практичне заняття</span>
+      </div>
+    </header>
+
+    <!-- Зміст -->
+    <nav class="toc">
+      <h3>Зміст заняття</h3>
+      <ol>
+        <li><a href="#setup">Підготовка проєкту</a></li>
+        <li><a href="#middleware">Створення Middleware</a></li>
+        <li><a href="#authorize-helper">Хелпер авторизації</a></li>
+        <li><a href="#api-protection">Захист API endpoints</a></li>
+        <li><a href="#users-page">Сторінка управління користувачами</a></li>
+        <li><a href="#role-change">Зміна ролі користувача</a></li>
+        <li><a href="#ui-rendering">Умовний рендеринг в UI</a></li>
+        <li><a href="#seed">Seed-скрипт для тестування</a></li>
+        <li><a href="#github">Збереження та завантаження на GitHub</a></li>
+      </ol>
+    </nav>
+
+    <!-- Вступ -->
+    <section class="lecture-section">
+      <h2>Мета заняття</h2>
+      <p>На цьому практичному занятті ви:</p>
+      <ul>
+        <li>Створите middleware для захисту маршрутів dashboard від неаутентифікованих користувачів</li>
+        <li>Захистите API endpoints (POST, PUT, DELETE) перевіркою авторизації</li>
+        <li>Створите хелпер-функцію <code>authorize()</code> для уніфікованої перевірки ролі</li>
+        <li>Реалізуєте сторінку управління користувачами (тільки для admin)</li>
+        <li>Додасте умовний рендеринг UI на основі ролі (badge, навігація, кнопки)</li>
+      </ul>
+
+      <div class="info-box info">
+        <strong>Передумова:</strong> Ви маєте мати працюючий Next.js проєкт з тижня 8
+        (NextAuth.js, реєстрація, логін, модель User з полем role).
+        Ми продовжуємо працювати з тим самим проєктом.
+      </div>
+
+      <div class="info-box warning">
+        <strong>Приклад викладача:</strong> Кав&rsquo;ярня &laquo;Кофеїн&raquo;. Ви маєте адаптувати код під свою тему з 15 варіантів.
+        Наприклад, для &laquo;Бібліотеки&raquo; &mdash; замість напоїв будуть книги, замість /dashboard/drinks &mdash; /dashboard/books.
+      </div>
+    </section>
+
+    <!-- Частина 1: Підготовка -->
+    <section class="lecture-section" id="setup">
+      <h2>1. Підготовка проєкту</h2>
+      <p>
+        Цього тижня ми не встановлюємо нових пакетів. Все необхідне вже є з тижня 8:
+        <code>next-auth</code> для сесій та <code>bcryptjs</code> для паролів.
+        Ми будемо додавати нову функціональність поверх існуючого коду.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Перевірити працездатність проєкту</h4>
+        <p>Запустіть проєкт та переконайтеся, що все працює з тижня 8:</p>
+        <div class="code-block">
+          <div class="code-header">Terminal</div>
+          <pre><code>npm run dev</code></pre>
+        </div>
+        <p>Перевірте:</p>
+        <ul>
+          <li>Сторінка логіну (<code>/login</code>) відкривається</li>
+          <li>Можна зареєструвати нового користувача (<code>/register</code>)</li>
+          <li>Після логіну Header показує ім&rsquo;я та кнопку &laquo;Вийти&raquo;</li>
+          <li>Dashboard (<code>/dashboard</code>) доступний (поки без захисту)</li>
+        </ul>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Проєкт запускається без помилок</li>
+          <li>Реєстрація та логін працюють</li>
+          <li>У MongoDB є хоча б один користувач</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 2: Middleware -->
+    <section class="lecture-section" id="middleware">
+      <h2>2. Створення Middleware</h2>
+      <p>
+        Middleware &mdash; це функція, яка виконується <strong>перед</strong> обробкою кожного запиту.
+        Ми використаємо її для захисту маршрутів <code>/dashboard</code> &mdash; якщо користувач
+        не увійшов у систему, він буде перенаправлений на сторінку логіну.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Створити файл middleware.js</h4>
+        <p>
+          Створіть файл <code>middleware.js</code> в <strong>корені проєкту</strong>
+          (на одному рівні з папкою <code>app/</code>, не всередині неї!):
+        </p>
+        <div class="code-block">
+          <div class="code-header">middleware.js (корінь проєкту)</div>
+          <pre><code>// Тиждень 9: Middleware для захисту маршрутів
+// Перехоплює запити до /dashboard/* і перевіряє JWT-токен
+
+import { NextResponse } from "next/server";
+import { getToken } from "next-auth/jwt";
+
+export async function middleware(request) {
+  // Отримуємо JWT-токен із cookie
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
+  // Якщо токена немає — redirect на сторінку логіну
+  if (!token) {
+    const loginUrl = new URL("/login", request.url);
+    // Зберігаємо URL, куди хотів потрапити користувач
+    loginUrl.searchParams.set("callbackUrl", request.url);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  // Токен є — пропускаємо запит далі
+  return NextResponse.next();
+}
+
+// Конфігурація: які маршрути захищати
+export const config = {
+  matcher: ["/dashboard/:path*"],
+};</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Чому getToken, а не getServerSession?</strong>
+        Middleware працює на Edge Runtime (не Node.js), де <code>getServerSession</code>
+        не підтримується. Функція <code>getToken</code> з <code>next-auth/jwt</code>
+        лише декодує JWT із cookie &mdash; це швидко і не потребує запиту до бази даних.
+      </div>
+
+      <div class="error-box">
+        <h5>&#x26A0;&#xFE0F; Типова помилка: middleware не спрацьовує</h5>
+        <p>
+          Файл <code>middleware.js</code> <strong>обов&rsquo;язково</strong> має бути в корені проєкту,
+          поруч з папкою <code>app/</code>. Якщо розмістити його всередині <code>app/</code> &mdash;
+          Next.js його не знайде. Перевірте структуру:
+        </p>
+        <div class="code-block">
+          <div class="code-header">Правильна структура</div>
+          <pre><code>my-project/
+  middleware.js    ← ТУТ (в корені!)
+  app/
+    page.js
+    dashboard/
+      page.js
+  lib/
+  components/</code></pre>
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Вийдіть із системи (натисніть &laquo;Вийти&raquo;)</li>
+          <li>Спробуйте відкрити <code>/dashboard</code> &mdash; має перенаправити на <code>/login</code></li>
+          <li>Увійдіть &mdash; тепер <code>/dashboard</code> відкривається нормально</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 3: Хелпер авторизації -->
+    <section class="lecture-section" id="authorize-helper">
+      <h2>3. Хелпер авторизації</h2>
+      <p>
+        Перед тим як захищати API endpoints, створимо хелпер-функцію, яка перевірятиме
+        сесію та роль користувача. Це дозволить уникнути дублювання коду в кожному API Route.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Створити lib/authorize.js</h4>
+        <div class="code-block">
+          <div class="code-header">lib/authorize.js</div>
+          <pre><code>// Тиждень 9: Хелпер для перевірки авторизації в API Routes
+
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+
+/**
+ * Перевіряє авторизацію користувача
+ * @param {string|null} requiredRole — необхідна роль (null = будь-який аутентифікований)
+ * @returns {{ session, error }} — сесія або Response з помилкою
+ */
+export async function authorize(requiredRole = null) {
+  const session = await getServerSession(authOptions);
+
+  // Не аутентифікований
+  if (!session) {
+    return {
+      session: null,
+      error: Response.json(
+        { error: "Необхідно увійти в систему" },
+        { status: 401 }
+      ),
+    };
+  }
+
+  // Перевірка ролі (якщо вказана)
+  if (requiredRole && session.user.role !== requiredRole) {
+    return {
+      session: null,
+      error: Response.json(
+        { error: `Потрібна роль: ${requiredRole}` },
+        { status: 403 }
+      ),
+    };
+  }
+
+  // Все ОК
+  return { session, error: null };
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Як використовувати authorize():</strong>
+        <ul>
+          <li><code>authorize()</code> &mdash; будь-який аутентифікований користувач (user або admin)</li>
+          <li><code>authorize('admin')</code> &mdash; тільки admin</li>
+          <li>Якщо <code>error</code> не <code>null</code> &mdash; повертаємо його як Response</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 4: Захист API -->
+    <section class="lecture-section" id="api-protection">
+      <h2>4. Захист API endpoints</h2>
+      <p>
+        Зараз API endpoints для створення, редагування та видалення напоїв доступні всім без обмежень.
+        Додамо перевірку авторизації: GET залишимо публічним, а POST/PUT/DELETE &mdash; тільки для admin.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Захистити POST в app/api/drinks/route.js</h4>
+        <p>Оновіть функцію <code>POST</code> &mdash; додайте перевірку авторизації на початку:</p>
+        <div class="code-block">
+          <div class="code-header">app/api/drinks/route.js (оновлений POST)</div>
+          <pre><code>// Тиждень 9: додано захист API через authorize()
+
+import dbConnect from "@/lib/db";
+import Drink from "@/lib/models/Drink";
+import { authorize } from "@/lib/authorize";
+
+// GET — публічний (без змін)
+export async function GET(request) {
+  await dbConnect();
+
+  const { searchParams } = new URL(request.url);
+  const category = searchParams.get("category");
+  const search = searchParams.get("search");
+
+  const filter = {};
+
+  if (category && category !== "Всі") {
+    filter.category = category;
+  }
+
+  if (search) {
+    filter.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { description: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  const drinks = await Drink.find(filter).sort({ createdAt: -1 });
+  return Response.json(drinks);
+}
+
+// POST — тільки admin
+export async function POST(request) {
+  // Перевірка авторизації
+  const { session, error } = await authorize("admin");
+  if (error) return error;
+
+  await dbConnect();
+
+  try {
+    const data = await request.json();
+    const drink = await Drink.create(data);
+
+    return Response.json(drink, { status: 201 });
+  } catch (error) {
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return Response.json({ errors: messages }, { status: 400 });
+    }
+
+    return Response.json({ error: "Помилка сервера" }, { status: 500 });
+  }
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Захистити PUT та DELETE в app/api/drinks/[id]/route.js</h4>
+        <p>Додайте перевірку авторизації до PUT та DELETE. GET залишіть без змін:</p>
+        <div class="code-block">
+          <div class="code-header">app/api/drinks/[id]/route.js (оновлений)</div>
+          <pre><code>// Тиждень 9: додано захист PUT та DELETE через authorize()
+
+import dbConnect from "@/lib/db";
+import Drink from "@/lib/models/Drink";
+import { authorize } from "@/lib/authorize";
+
+// GET — публічний (без змін)
+export async function GET(request, { params }) {
+  await dbConnect();
+  const { id } = await params;
+
+  try {
+    const drink = await Drink.findById(id);
+
+    if (!drink) {
+      return Response.json({ error: "Напій не знайдено" }, { status: 404 });
+    }
+
+    return Response.json(drink);
+  } catch (error) {
+    return Response.json({ error: "Невалідний ID" }, { status: 400 });
+  }
+}
+
+// PUT — тільки admin
+export async function PUT(request, { params }) {
+  const { session, error } = await authorize("admin");
+  if (error) return error;
+
+  await dbConnect();
+  const { id } = await params;
+
+  try {
+    const data = await request.json();
+    const drink = await Drink.findByIdAndUpdate(id, data, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!drink) {
+      return Response.json({ error: "Напій не знайдено" }, { status: 404 });
+    }
+
+    return Response.json(drink);
+  } catch (error) {
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return Response.json({ errors: messages }, { status: 400 });
+    }
+
+    return Response.json({ error: "Помилка сервера" }, { status: 500 });
+  }
+}
+
+// DELETE — тільки admin
+export async function DELETE(request, { params }) {
+  const { session, error } = await authorize("admin");
+  if (error) return error;
+
+  await dbConnect();
+  const { id } = await params;
+
+  try {
+    const drink = await Drink.findByIdAndDelete(id);
+
+    if (!drink) {
+      return Response.json({ error: "Напій не знайдено" }, { status: 404 });
+    }
+
+    return Response.json({ message: `Напій "${drink.name}" видалено` });
+  } catch (error) {
+    return Response.json({ error: "Невалідний ID" }, { status: 400 });
+  }
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <p>Перевірте через Thunder Client або Postman:</p>
+        <ul>
+          <li><code>GET /api/drinks</code> &mdash; працює без логіну (200)</li>
+          <li><code>POST /api/drinks</code> без cookie &mdash; повертає 401</li>
+          <li><code>DELETE /api/drinks/будь-який-id</code> без cookie &mdash; повертає 401</li>
+          <li>Увійдіть як user &mdash; POST повертає 403 (&laquo;Потрібна роль: admin&raquo;)</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 5: Сторінка користувачів -->
+    <section class="lecture-section" id="users-page">
+      <h2>5. Сторінка управління користувачами</h2>
+      <p>
+        Створимо сторінку, де адміністратор може переглядати список всіх зареєстрованих
+        користувачів. Ця сторінка буде доступна тільки для ролі <code>admin</code>.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Створити API для списку користувачів</h4>
+        <p>Створіть файл <code>app/api/users/route.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">app/api/users/route.js</div>
+          <pre><code>// Тиждень 9: API для списку користувачів (тільки admin)
+
+import dbConnect from "@/lib/db";
+import User from "@/lib/models/User";
+import { authorize } from "@/lib/authorize";
+
+// GET /api/users — список користувачів (тільки admin)
+export async function GET() {
+  const { session, error } = await authorize("admin");
+  if (error) return error;
+
+  await dbConnect();
+
+  // Отримуємо всіх користувачів без паролів
+  const users = await User.find()
+    .select("-password")
+    .sort({ createdAt: -1 });
+
+  return Response.json(users);
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити сторінку /dashboard/users</h4>
+        <p>Створіть файл <code>app/dashboard/users/page.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">app/dashboard/users/page.js</div>
+          <pre><code>// Тиждень 9: Сторінка управління користувачами (admin only)
+// Server Component — можемо використовувати getServerSession та await
+
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import dbConnect from "@/lib/db";
+import User from "@/lib/models/User";
+
+export const metadata = {
+  title: "Користувачі | Dashboard",
+};
+
+export default async function UsersPage() {
+  // Перевірка авторизації
+  const session = await getServerSession(authOptions);
+
+  if (!session) {
+    redirect("/login");
+  }
+
+  if (session.user.role !== "admin") {
+    redirect("/dashboard");
+  }
+
+  // Отримуємо користувачів
+  await dbConnect();
+  const users = await User.find()
+    .select("-password")
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return (
+    &lt;div&gt;
+      &lt;h1 className="text-3xl font-bold mb-6 text-gray-900"&gt;
+        Управління користувачами
+      &lt;/h1&gt;
+
+      &lt;div className="bg-white rounded-lg shadow overflow-hidden"&gt;
+        &lt;table className="w-full"&gt;
+          &lt;thead className="bg-gray-50"&gt;
+            &lt;tr&gt;
+              &lt;th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;
+                Ім&amp;rsquo;я
+              &lt;/th&gt;
+              &lt;th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;
+                Email
+              &lt;/th&gt;
+              &lt;th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;
+                Роль
+              &lt;/th&gt;
+              &lt;th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;
+                Дата реєстрації
+              &lt;/th&gt;
+            &lt;/tr&gt;
+          &lt;/thead&gt;
+          &lt;tbody className="divide-y divide-gray-200"&gt;
+            {users.map((user) =&gt; (
+              &lt;tr key={user._id.toString()}&gt;
+                &lt;td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"&gt;
+                  {user.name}
+                &lt;/td&gt;
+                &lt;td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"&gt;
+                  {user.email}
+                &lt;/td&gt;
+                &lt;td className="px-6 py-4 whitespace-nowrap"&gt;
+                  &lt;span className={`px-2 py-1 text-xs rounded-full ${
+                    user.role === "admin"
+                      ? "bg-red-100 text-red-800"
+                      : "bg-green-100 text-green-800"
+                  }`}&gt;
+                    {user.role}
+                  &lt;/span&gt;
+                &lt;/td&gt;
+                &lt;td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"&gt;
+                  {new Date(user.createdAt).toLocaleDateString("uk-UA")}
+                &lt;/td&gt;
+              &lt;/tr&gt;
+            ))}
+          &lt;/tbody&gt;
+        &lt;/table&gt;
+      &lt;/div&gt;
+
+      &lt;p className="mt-4 text-sm text-gray-500"&gt;
+        Всього користувачів: {users.length}
+      &lt;/p&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Чому перевірка і в middleware, і на сторінці?</strong>
+        Middleware захищає від неаутентифікованих (немає токена &rarr; redirect на /login).
+        Сторінка додатково перевіряє роль (user &rarr; redirect на /dashboard).
+        Це два незалежних рівні захисту (defence in depth).
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Увійдіть як звичайний user &mdash; при спробі відкрити <code>/dashboard/users</code> перенаправляє на <code>/dashboard</code></li>
+          <li>Щоб тестувати admin, потрібно вручну змінити роль у MongoDB Compass: знайдіть свого користувача в колекції <code>users</code> та змініть <code>role</code> на <code>"admin"</code>. Після цього вийдіть та увійдіть знову</li>
+          <li>Як admin &mdash; <code>/dashboard/users</code> показує таблицю користувачів</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 6: Зміна ролі -->
+    <section class="lecture-section" id="role-change">
+      <h2>6. Зміна ролі користувача</h2>
+      <p>
+        Адміністратор повинен мати можливість змінювати роль інших користувачів
+        прямо зі сторінки управління. Для цього створимо API endpoint та клієнтський
+        компонент з кнопкою зміни ролі.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Створити API для зміни ролі</h4>
+        <p>Створіть файл <code>app/api/users/[id]/route.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">app/api/users/[id]/route.js</div>
+          <pre><code>// Тиждень 9: API для зміни ролі користувача (тільки admin)
+
+import dbConnect from "@/lib/db";
+import User from "@/lib/models/User";
+import { authorize } from "@/lib/authorize";
+
+// PUT /api/users/[id] — зміна ролі
+export async function PUT(request, { params }) {
+  const { session, error } = await authorize("admin");
+  if (error) return error;
+
+  await dbConnect();
+  const { id } = await params;
+
+  try {
+    const { role } = await request.json();
+
+    // Валідація ролі
+    if (!["user", "admin"].includes(role)) {
+      return Response.json(
+        { error: "Роль має бути 'user' або 'admin'" },
+        { status: 400 }
+      );
+    }
+
+    // Не дозволяємо змінити роль самому собі
+    if (id === session.user.id) {
+      return Response.json(
+        { error: "Не можна змінити власну роль" },
+        { status: 400 }
+      );
+    }
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { role },
+      { new: true }
+    ).select("-password");
+
+    if (!user) {
+      return Response.json(
+        { error: "Користувача не знайдено" },
+        { status: 404 }
+      );
+    }
+
+    return Response.json(user);
+  } catch (error) {
+    return Response.json({ error: "Помилка сервера" }, { status: 500 });
+  }
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Захист від самозміни:</strong> Адмін не може змінити власну роль &mdash; це захист
+        від випадкового &laquo;зниження&raquo; себе до user, після чого ніхто не зможе керувати системою.
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити компонент кнопки зміни ролі</h4>
+        <p>Створіть файл <code>components/RoleToggle.jsx</code>:</p>
+        <div class="code-block">
+          <div class="code-header">components/RoleToggle.jsx</div>
+          <pre><code>// Тиждень 9: Кнопка зміни ролі користувача (Client Component)
+
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+
+export default function RoleToggle({ userId, currentRole, currentUserId }) {
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  // Не показуємо кнопку для поточного користувача
+  if (userId === currentUserId) {
+    return &lt;span className="text-xs text-gray-400"&gt;(ви)&lt;/span&gt;;
+  }
+
+  const newRole = currentRole === "admin" ? "user" : "admin";
+
+  const handleToggle = async () =&gt; {
+    setLoading(true);
+
+    try {
+      const response = await fetch(`/api/users/${userId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role: newRole }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        alert(data.error || "Помилка зміни ролі");
+        return;
+      }
+
+      // Оновлюємо сторінку для відображення нової ролі
+      router.refresh();
+    } catch (error) {
+      alert("Помилка з'єднання");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    &lt;button
+      onClick={handleToggle}
+      disabled={loading}
+      className="text-xs px-2 py-1 rounded bg-gray-100 hover:bg-gray-200
+        text-gray-600 transition disabled:opacity-50 cursor-pointer"
+    &gt;
+      {loading ? "..." : `→ ${newRole}`}
+    &lt;/button&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Додати кнопку зміни ролі на сторінку користувачів</h4>
+        <p>Оновіть <code>app/dashboard/users/page.js</code> &mdash; додайте колонку &laquo;Дії&raquo; з компонентом <code>RoleToggle</code>:</p>
+        <div class="code-block">
+          <div class="code-header">app/dashboard/users/page.js (оновлений)</div>
+          <pre><code>// Тиждень 9: Сторінка управління користувачами (admin only)
+// Додано кнопку зміни ролі через RoleToggle
+
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import dbConnect from "@/lib/db";
+import User from "@/lib/models/User";
+import RoleToggle from "@/components/RoleToggle";
+
+export const metadata = {
+  title: "Користувачі | Dashboard",
+};
+
+export default async function UsersPage() {
+  const session = await getServerSession(authOptions);
+
+  if (!session) redirect("/login");
+  if (session.user.role !== "admin") redirect("/dashboard");
+
+  await dbConnect();
+  const users = await User.find()
+    .select("-password")
+    .sort({ createdAt: -1 })
+    .lean();
+
+  return (
+    &lt;div&gt;
+      &lt;h1 className="text-3xl font-bold mb-6 text-gray-900"&gt;
+        Управління користувачами
+      &lt;/h1&gt;
+
+      &lt;div className="bg-white rounded-lg shadow overflow-hidden"&gt;
+        &lt;table className="w-full"&gt;
+          &lt;thead className="bg-gray-50"&gt;
+            &lt;tr&gt;
+              &lt;th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;
+                Ім&amp;rsquo;я
+              &lt;/th&gt;
+              &lt;th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;
+                Email
+              &lt;/th&gt;
+              &lt;th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;
+                Роль
+              &lt;/th&gt;
+              &lt;th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;
+                Дата реєстрації
+              &lt;/th&gt;
+              &lt;th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;
+                Дії
+              &lt;/th&gt;
+            &lt;/tr&gt;
+          &lt;/thead&gt;
+          &lt;tbody className="divide-y divide-gray-200"&gt;
+            {users.map((user) =&gt; (
+              &lt;tr key={user._id.toString()}&gt;
+                &lt;td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900"&gt;
+                  {user.name}
+                &lt;/td&gt;
+                &lt;td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"&gt;
+                  {user.email}
+                &lt;/td&gt;
+                &lt;td className="px-6 py-4 whitespace-nowrap"&gt;
+                  &lt;span className={`px-2 py-1 text-xs rounded-full ${
+                    user.role === "admin"
+                      ? "bg-red-100 text-red-800"
+                      : "bg-green-100 text-green-800"
+                  }`}&gt;
+                    {user.role}
+                  &lt;/span&gt;
+                &lt;/td&gt;
+                &lt;td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500"&gt;
+                  {new Date(user.createdAt).toLocaleDateString("uk-UA")}
+                &lt;/td&gt;
+                &lt;td className="px-6 py-4 whitespace-nowrap"&gt;
+                  &lt;RoleToggle
+                    userId={user._id.toString()}
+                    currentRole={user.role}
+                    currentUserId={session.user.id}
+                  /&gt;
+                &lt;/td&gt;
+              &lt;/tr&gt;
+            ))}
+          &lt;/tbody&gt;
+        &lt;/table&gt;
+      &lt;/div&gt;
+
+      &lt;p className="mt-4 text-sm text-gray-500"&gt;
+        Всього користувачів: {users.length}
+      &lt;/p&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Увійдіть як admin &mdash; на сторінці <code>/dashboard/users</code> біля кожного користувача (крім вас) є кнопка &laquo;&rarr; user&raquo; або &laquo;&rarr; admin&raquo;</li>
+          <li>Натисніть кнопку &mdash; роль змінюється, badge оновлюється</li>
+          <li>Біля вашого акаунта відображається &laquo;(ви)&raquo; замість кнопки</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 7: UI рендеринг -->
+    <section class="lecture-section" id="ui-rendering">
+      <h2>7. Умовний рендеринг в UI</h2>
+      <p>
+        Тепер додамо візуальні зміни в інтерфейсі: badge ролі в Header,
+        посилання &laquo;Користувачі&raquo; у навігації dashboard (тільки для admin),
+        та приховування кнопок редагування/видалення для звичайних користувачів.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Додати badge ролі в Header</h4>
+        <p>Оновіть <code>components/Header.jsx</code> &mdash; додайте badge після імені користувача:</p>
+        <div class="code-block">
+          <div class="code-header">components/Header.jsx (оновлений блок аутентифікації)</div>
+          <pre><code>{/* Тиждень 9: додано badge ролі */}
+{session ? (
+  &lt;div className="flex items-center gap-3 ml-4 pl-4 border-l border-amber-700"&gt;
+    &lt;span className="text-amber-200 text-sm"&gt;
+      {session.user.name}
+    &lt;/span&gt;
+    &lt;span className={`text-xs px-2 py-0.5 rounded-full ${
+      session.user.role === "admin"
+        ? "bg-red-500 text-white"
+        : "bg-amber-600 text-amber-100"
+    }`}&gt;
+      {session.user.role}
+    &lt;/span&gt;
+    &lt;button
+      onClick={() =&gt; signOut({ callbackUrl: "/" })}
+      className="bg-amber-700 hover:bg-amber-600 text-white text-sm px-3 py-1 rounded transition"
+    &gt;
+      Вийти
+    &lt;/button&gt;
+  &lt;/div&gt;
+) : (
+  &lt;Link
+    href="/login"
+    className="ml-4 pl-4 border-l border-amber-700 text-amber-200 hover:text-white text-sm transition"
+  &gt;
+    Увійти
+  &lt;/Link&gt;
+)}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Додати посилання &laquo;Користувачі&raquo; в DashboardNav</h4>
+        <p>Оновіть <code>components/DashboardNav.jsx</code> &mdash; додайте <code>useSession</code>
+        та умовний пункт навігації:</p>
+        <div class="code-block">
+          <div class="code-header">components/DashboardNav.jsx (оновлений)</div>
+          <pre><code>// Компонент DashboardNav — навігація для адміністративної панелі
+// Тиждень 9: додано умовний пункт "Користувачі" для admin
+
+'use client'
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
+
+export default function DashboardNav() {
+  const pathname = usePathname();
+  const { data: session } = useSession();
+  const isAdmin = session?.user?.role === "admin";
+
+  const links = [
+    { href: "/dashboard", label: "Огляд" },
+    { href: "/dashboard/drinks", label: "Напої" },
+    // Пункт "Користувачі" тільки для admin
+    ...(isAdmin ? [{ href: "/dashboard/users", label: "Користувачі" }] : []),
+  ];
+
+  return (
+    &lt;nav&gt;
+      &lt;ul className="space-y-2"&gt;
+        {links.map((link) =&gt; {
+          const isActive =
+            link.href === "/dashboard"
+              ? pathname === "/dashboard"
+              : pathname.startsWith(link.href);
+
+          return (
+            &lt;li key={link.href}&gt;
+              &lt;Link
+                href={link.href}
+                className={`block px-4 py-2 rounded transition-colors ${
+                  isActive
+                    ? "bg-amber-700 text-white"
+                    : "text-gray-300 hover:bg-gray-700"
+                }`}
+              &gt;
+                {link.label}
+              &lt;/Link&gt;
+            &lt;/li&gt;
+          );
+        })}
+      &lt;/ul&gt;
+    &lt;/nav&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Приховати кнопки дій для звичайних користувачів</h4>
+        <p>
+          Оновіть компонент, який відображає кнопки &laquo;Редагувати&raquo; та &laquo;Видалити&raquo;
+          для напоїв (наприклад, <code>components/DrinkActions.jsx</code> або відповідний компонент
+          у вашому проєкті). Додайте перевірку ролі:
+        </p>
+        <div class="code-block">
+          <div class="code-header">Приклад: приховування кнопок за роллю</div>
+          <pre><code>// Додайте на початку компонента:
+import { useSession } from "next-auth/react";
+
+// Всередині компонента:
+const { data: session } = useSession();
+const isAdmin = session?.user?.role === "admin";
+
+// В JSX — оберніть кнопки умовою:
+{isAdmin && (
+  &lt;div className="flex gap-2"&gt;
+    &lt;Link href={`/dashboard/drinks/${id}/edit`}
+      className="text-blue-600 hover:text-blue-800"&gt;
+      Редагувати
+    &lt;/Link&gt;
+    &lt;button onClick={handleDelete}
+      className="text-red-600 hover:text-red-800"&gt;
+      Видалити
+    &lt;/button&gt;
+  &lt;/div&gt;
+)}</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box danger">
+        <strong>Важливо!</strong> Приховування кнопок в UI &mdash; це <strong>не захист</strong>.
+        Це лише покращення інтерфейсу. API endpoints вже захищені через <code>authorize()</code>
+        (крок 4), тому навіть якщо хтось спробує відправити запит напряму &mdash; отримає 401 або 403.
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Увійдіть як <strong>user</strong> &mdash; у Header видно badge &laquo;user&raquo;, в DashboardNav немає пункту &laquo;Користувачі&raquo;, кнопки дій приховані</li>
+          <li>Увійдіть як <strong>admin</strong> &mdash; badge &laquo;admin&raquo; (червоний), пункт &laquo;Користувачі&raquo; є, кнопки дій відображаються</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 8: Seed скрипт -->
+    <section class="lecture-section" id="seed">
+      <h2>8. Seed-скрипт для тестування</h2>
+      <p>
+        Для зручного тестування авторизації оновимо seed-скрипт, щоб він створював
+        два тестових акаунти: admin та user. Це дозволить швидко перемикатися між ролями.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Оновити seed endpoint</h4>
+        <p>Оновіть файл <code>app/api/seed/route.js</code> &mdash; додайте створення тестових користувачів:</p>
+        <div class="code-block">
+          <div class="code-header">app/api/seed/route.js (оновлений)</div>
+          <pre><code>// Тиждень 9: додано seed користувачів з різними ролями
+
+import dbConnect from "@/lib/db";
+import Drink from "@/lib/models/Drink";
+import User from "@/lib/models/User";
+import bcrypt from "bcryptjs";
+
+export async function GET() {
+  await dbConnect();
+
+  // Seed напоїв (з тижня 7)
+  await Drink.deleteMany({});
+  const drinks = await Drink.insertMany([
+    // ... ваші напої тут (залиште існуючі)
+  ]);
+
+  // Seed користувачів
+  await User.deleteMany({});
+  const hashedPassword = await bcrypt.hash("password123", 10);
+
+  const users = await User.insertMany([
+    {
+      name: "Адміністратор",
+      email: "admin@test.com",
+      password: hashedPassword,
+      role: "admin",
+    },
+    {
+      name: "Користувач",
+      email: "user@test.com",
+      password: hashedPassword,
+      role: "user",
+    },
+  ]);
+
+  return Response.json({
+    message: "Seed виконано",
+    drinks: drinks.length,
+    users: users.length,
+    testAccounts: [
+      { email: "admin@test.com", password: "password123", role: "admin" },
+      { email: "user@test.com", password: "password123", role: "user" },
+    ],
+  });
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box warning">
+        <strong>Увага!</strong> Seed-скрипт видаляє всіх існуючих користувачів та напої.
+        Використовуйте його тільки для тестування. У продакшні seed-скрипти не повинні
+        видаляти дані.
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x2705; Контрольна точка</h5>
+        <ul>
+          <li>Відкрийте <code>/api/seed</code> у браузері &mdash; побачите JSON з тестовими акаунтами</li>
+          <li>Увійдіть як <code>admin@test.com</code> / <code>password123</code> &mdash; маєте бачити badge &laquo;admin&raquo; та всі кнопки</li>
+          <li>Увійдіть як <code>user@test.com</code> / <code>password123</code> &mdash; badge &laquo;user&raquo;, кнопки дій приховані</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 9: GitHub -->
+    <section class="lecture-section" id="github">
+      <h2>9. Збереження та завантаження на GitHub</h2>
+
+      <div class="task-box">
+        <h4>Завдання: Зберегти роботу в Git</h4>
+        <div class="code-block">
+          <div class="code-header">Terminal</div>
+          <pre><code>git checkout -b LR9
+git add .
+git commit -m "LR9: Авторизація та ролі (RBAC)"
+git push -u origin LR9</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Перевірте перед push:</strong> Файл <code>.env.local</code> повинен бути в <code>.gitignore</code>
+        (це вже має бути з тижня 7-8). Секрети <strong>ніколи</strong> не потрапляють у Git!
+      </div>
+    </section>
+
+    <!-- Підсумок -->
+    <section class="lecture-section">
+      <h2>Підсумок</h2>
+
+      <div class="final-result">
+        <h4>&#x2705; Критерії успішного виконання</h4>
+        <ul class="criteria-list">
+          <li>middleware.js створено та захищає /dashboard/* від неаутентифікованих</li>
+          <li>lib/authorize.js &mdash; хелпер перевірки авторизації створено</li>
+          <li>POST /api/drinks захищено (401 без логіну, 403 без ролі admin)</li>
+          <li>PUT /api/drinks/[id] захищено (401/403)</li>
+          <li>DELETE /api/drinks/[id] захищено (401/403)</li>
+          <li>GET /api/drinks залишається публічним</li>
+          <li>Сторінка /dashboard/users створена (тільки для admin)</li>
+          <li>API GET /api/users захищено (тільки admin)</li>
+          <li>API PUT /api/users/[id] для зміни ролі (тільки admin)</li>
+          <li>Кнопка зміни ролі на сторінці користувачів працює</li>
+          <li>Badge ролі відображається в Header</li>
+          <li>Код адаптовано під тему свого варіанту</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Бонусні завдання -->
+    <section class="lecture-section">
+      <h2>Бонусні завдання</h2>
+      <p>
+        Ці завдання не є обов&rsquo;язковими і не впливають на наступні практичні роботи.
+      </p>
+
+      <div class="task-box">
+        <h4>Бонус 1: Сторінка профілю</h4>
+        <p>
+          Створіть сторінку <code>/dashboard/profile</code>, де користувач бачить свої дані
+          (ім&rsquo;я, email, роль, дата реєстрації). Додайте посилання в DashboardNav для всіх ролей.
+        </p>
+      </div>
+
+      <div class="task-box">
+        <h4>Бонус 2: Створення нових користувачів адміністратором</h4>
+        <p>
+          На сторінці <code>/dashboard/users</code> додайте форму для створення нового користувача
+          (ім&rsquo;я, email, пароль, роль). Створіть API endpoint <code>POST /api/users</code>,
+          який дозволяє admin створювати нових користувачів з будь-якою роллю.
+        </p>
+      </div>
+
+      <div class="task-box">
+        <h4>Бонус 3: Навігація DashboardNav показує кількість користувачів</h4>
+        <p>
+          Поруч з посиланням &laquo;Користувачі&raquo; додайте badge з кількістю зареєстрованих
+          користувачів (fetch з <code>/api/users</code>).
+        </p>
+      </div>
+    </section>
+
+  </article>
+</body>
+</html>
