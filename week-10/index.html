@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Практика 10: Безпека веб-застосунків | Протокол заняття</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/practical.css">
+</head>
+<body>
+  <!-- Навігація -->
+  <nav class="lecture-nav">
+    <div class="container">
+      <div class="nav-title">Тиждень 10: Безпека веб-застосунків</div>
+      <div class="nav-links">
+        <a href="../" class="btn btn-outline">&larr; Всі тижні</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Основний контент -->
+  <article class="lecture-content">
+    <!-- Заголовок -->
+    <header class="lecture-header">
+      <span class="lecture-number">Практика 10</span>
+      <h1>Безпека веб-застосунків</h1>
+      <div class="lecture-meta">
+        <span>&#x1F4C5; Тиждень 10</span>
+        <span>&#x1F4BB; Практичне заняття</span>
+      </div>
+    </header>
+
+    <!-- Зміст -->
+    <nav class="toc">
+      <h3>Зміст заняття</h3>
+      <ol>
+        <li><a href="#setup">Підготовка проєкту</a></li>
+        <li><a href="#zod-install">Встановлення zod</a></li>
+        <li><a href="#schemas">Створення схем валідації</a></li>
+        <li><a href="#drinks-validation">Валідація API напоїв</a></li>
+        <li><a href="#register-validation">Валідація API реєстрації</a></li>
+        <li><a href="#users-validation">Валідація API користувачів</a></li>
+        <li><a href="#sanitize">Санітизація даних</a></li>
+        <li><a href="#headers">Безпекові заголовки</a></li>
+        <li><a href="#github">Збереження та завантаження на GitHub</a></li>
+      </ol>
+    </nav>
+
+    <!-- Вступ -->
+    <section class="lecture-section">
+      <h2>Мета заняття</h2>
+      <p>На цьому практичному занятті ви:</p>
+      <ul>
+        <li>Встановите бібліотеку <code>zod</code> для серверної валідації</li>
+        <li>Створите схеми валідації для моделей (напої, користувачі)</li>
+        <li>Додасте валідацію до всіх API endpoints (POST/PUT)</li>
+        <li>Реалізуєте санітизацію вхідних даних</li>
+        <li>Налаштуєте безпекові HTTP-заголовки</li>
+        <li>Перевірите існуючі заходи безпеки</li>
+      </ul>
+
+      <div class="info-box info">
+        <strong>Передумова:</strong> Ви маєте мати працюючий Next.js проєкт з тижня 9
+        (аутентифікація + авторизація з RBAC). Ми продовжуємо працювати з тим самим проєктом.
+      </div>
+
+      <div class="info-box warning">
+        <strong>Приклад викладача:</strong> Кав&rsquo;ярня &laquo;Кофеїн&raquo;. Ви маєте адаптувати код під свою тему з 15 варіантів.
+        Наприклад, для &laquo;Бібліотеки&raquo; &mdash; замість напоїв будуть книги, замість <code>drink.js</code> &mdash; <code>book.js</code>.
+      </div>
+    </section>
+
+    <!-- Частина 1: Підготовка -->
+    <section class="lecture-section" id="setup">
+      <h2>1. Підготовка проєкту</h2>
+
+      <div class="task-box">
+        <h4>Завдання: Перевірити працездатність проєкту</h4>
+        <p>Запустіть проєкт та переконайтеся, що все працює з тижня 9:</p>
+        <div class="code-block">
+          <div class="code-header">Terminal</div>
+          <pre><code>npm run dev</code></pre>
+        </div>
+        <p>Перевірте:</p>
+        <ul>
+          <li>Сторінка логіну працює (<code>/login</code>)</li>
+          <li>Вхід з обліковим записом admin працює</li>
+          <li>Вхід з обліковим записом user працює</li>
+          <li>RBAC функціонує &mdash; admin бачить сторінку користувачів, user &mdash; ні</li>
+          <li>API endpoints захищені авторизацією (з тижня 9)</li>
+        </ul>
+      </div>
+
+      <div class="checkpoint">
+        <h5>Checkpoint</h5>
+        <p>Проєкт запускається, логін працює для обох ролей, RBAC функціонує.</p>
+      </div>
+    </section>
+
+    <!-- Частина 2: Встановлення zod -->
+    <section class="lecture-section" id="zod-install">
+      <h2>2. Встановлення zod</h2>
+
+      <p>
+        <code>zod</code> &mdash; це TypeScript-first бібліотека валідації даних.
+        Вона дозволяє описати схему даних і автоматично перевіряти вхідні дані на відповідність цій схемі.
+        Zod став стандартом у Next.js екосистемі завдяки простоті та нульовим залежностям.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Встановити zod</h4>
+        <div class="code-block">
+          <div class="code-header">Terminal</div>
+          <pre><code>npm install zod</code></pre>
+        </div>
+        <p>Переконайтеся, що <code>zod</code> з&rsquo;явився в <code>package.json</code>:</p>
+        <div class="code-block">
+          <div class="code-header">package.json (фрагмент)</div>
+          <pre><code>"dependencies": {
+  ...
+  "zod": "^3.x.x"
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Чому zod?</strong> Легка бібліотека без залежностей, стандарт у Next.js екосистемі.
+        Працює і на сервері, і на клієнті. Автоматично виводить TypeScript-типи зі схем.
+      </div>
+
+      <div class="checkpoint">
+        <h5>Checkpoint</h5>
+        <p><code>zod</code> є в <code>dependencies</code> у <code>package.json</code>.</p>
+      </div>
+    </section>
+
+    <!-- Частина 3: Створення схем валідації -->
+    <section class="lecture-section" id="schemas">
+      <h2>3. Створення схем валідації</h2>
+
+      <p>
+        Zod-схема описує структуру даних: які поля обов&rsquo;язкові, які типи допустимі,
+        обмеження на довжину, формат тощо. Якщо вхідні дані не відповідають схемі &mdash;
+        zod поверне список помилок з людино-зрозумілими повідомленнями.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Створити схему валідації для напоїв</h4>
+        <p>Створіть файл <code>lib/validations/drink.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">lib/validations/drink.js</div>
+          <pre><code>import { z } from "zod";
+
+export const createDrinkSchema = z.object({
+  name: z
+    .string({ required_error: "Назва обов'язкова" })
+    .min(1, "Назва обов'язкова")
+    .max(100, "Максимум 100 символів")
+    .trim(),
+  description: z
+    .string()
+    .max(500, "Максимум 500 символів")
+    .trim()
+    .optional()
+    .default(""),
+  price: z
+    .number({
+      required_error: "Ціна обов'язкова",
+      invalid_type_error: "Ціна має бути числом",
+    })
+    .min(0, "Ціна не може бути від'ємною"),
+  emoji: z.string().max(10).optional().default("&#x2615;"),
+  category: z.enum(["Кава", "Чай", "Їжа", "Інше"], {
+    errorMap: () =&gt; ({
+      message: "Категорія має бути: Кава, Чай, Їжа або Інше",
+    }),
+  }),
+  available: z.boolean().optional().default(true),
+});
+
+// Для PUT &mdash; всі поля необов'язкові
+export const updateDrinkSchema = createDrinkSchema.partial();</code></pre>
+        </div>
+      </div>
+
+      <p>
+        Метод <code>.partial()</code> робить усі поля необов&rsquo;язковими &mdash; це ідеально
+        для PUT-запитів, де клієнт може надіслати лише ті поля, які хоче змінити.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Створити схеми валідації для користувачів</h4>
+        <p>Створіть файл <code>lib/validations/user.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">lib/validations/user.js</div>
+          <pre><code>import { z } from "zod";
+
+export const registerSchema = z.object({
+  name: z
+    .string({ required_error: "Ім'я обов'язкове" })
+    .min(2, "Мінімум 2 символи")
+    .max(50, "Максимум 50 символів")
+    .trim(),
+  email: z
+    .string({ required_error: "Email обов'язковий" })
+    .email("Некоректний формат email")
+    .toLowerCase()
+    .trim(),
+  password: z
+    .string({ required_error: "Пароль обов'язковий" })
+    .min(6, "Мінімум 6 символів")
+    .max(100, "Максимум 100 символів"),
+});
+
+export const updateRoleSchema = z.object({
+  role: z.enum(["user", "admin"], {
+    errorMap: () =&gt; ({
+      message: "Роль має бути 'user' або 'admin'",
+    }),
+  }),
+});</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Zod vs Mongoose:</strong> Zod-схема дзеркалює Mongoose-модель, але з іншою метою.
+        Mongoose валідує при збереженні в БД. Zod валідує на вході в API &mdash; раніше і з кращими
+        повідомленнями про помилки. Це два різних рівні захисту.
+      </div>
+
+      <div class="checkpoint">
+        <h5>Checkpoint</h5>
+        <p>
+          Обидва файли створено: <code>lib/validations/drink.js</code> та
+          <code>lib/validations/user.js</code>. Синтаксичних помилок немає.
+        </p>
+      </div>
+    </section>
+
+    <!-- Частина 4: Валідація API напоїв -->
+    <section class="lecture-section" id="drinks-validation">
+      <h2>4. Валідація API напоїв</h2>
+
+      <p>
+        Зараз наші API endpoints приймають будь-які дані і передають їх напряму в Mongoose.
+        Додамо валідацію через zod &mdash; перед тим як дані потраплять до бази.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Додати валідацію до POST /api/drinks</h4>
+        <p>Відкрийте <code>app/api/drinks/route.js</code> та оновіть функцію POST:</p>
+        <div class="code-block">
+          <div class="code-header">app/api/drinks/route.js</div>
+          <pre><code>import { NextResponse } from "next/server";
+import dbConnect from "@/lib/db";
+import Drink from "@/models/Drink";
+import { authorize } from "@/lib/authorize";
+import { createDrinkSchema } from "@/lib/validations/drink";
+
+export async function GET() {
+  await dbConnect();
+  const drinks = await Drink.find({}).sort({ createdAt: -1 });
+  return NextResponse.json(drinks);
+}
+
+export async function POST(request) {
+  const { session, error } = await authorize("admin");
+  if (error) return error;
+
+  await dbConnect();
+
+  try {
+    const data = await request.json();
+
+    // Валідація через zod
+    const result = createDrinkSchema.safeParse(data);
+    if (!result.success) {
+      const messages = result.error.errors.map((e) =&gt; e.message);
+      return NextResponse.json({ errors: messages }, { status: 400 });
+    }
+
+    const drink = await Drink.create(result.data);
+
+    return NextResponse.json(drink, { status: 201 });
+  } catch (error) {
+    if (
+      error.message === "Unexpected end of JSON input" ||
+      error instanceof SyntaxError
+    ) {
+      return NextResponse.json(
+        { error: "Невалідний JSON у тілі запиту" },
+        { status: 400 }
+      );
+    }
+    return NextResponse.json(
+      { error: "Помилка сервера" },
+      { status: 500 }
+    );
+  }
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>safeParse() vs parse():</strong>
+        <code>safeParse()</code> повертає об&rsquo;єкт <code>{ success, data, error }</code> і ніколи не кидає
+        виняток. <code>parse()</code> кидає <code>ZodError</code> &mdash; його потрібно ловити в try/catch.
+        Для API зручніший <code>safeParse()</code>.
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Додати валідацію до PUT /api/drinks/[id]</h4>
+        <p>Відкрийте <code>app/api/drinks/[id]/route.js</code> та оновіть функцію PUT:</p>
+        <div class="code-block">
+          <div class="code-header">app/api/drinks/[id]/route.js (фрагмент PUT)</div>
+          <pre><code>import { updateDrinkSchema } from "@/lib/validations/drink";
+
+// В PUT handler:
+export async function PUT(request, { params }) {
+  const { session, error } = await authorize("admin");
+  if (error) return error;
+
+  await dbConnect();
+
+  try {
+    const { id } = await params;
+    const data = await request.json();
+
+    // Валідація через zod
+    const result = updateDrinkSchema.safeParse(data);
+    if (!result.success) {
+      const messages = result.error.errors.map((e) =&gt; e.message);
+      return NextResponse.json({ errors: messages }, { status: 400 });
+    }
+
+    const drink = await Drink.findByIdAndUpdate(id, result.data, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!drink) {
+      return NextResponse.json(
+        { error: "Напій не знайдено" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(drink);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Помилка сервера" },
+      { status: 500 }
+    );
+  }
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Важливо:</strong> Ми передаємо <code>result.data</code> (а не <code>data</code>) до Mongoose.
+        Це означає, що в БД потраплять тільки валідовані поля &mdash; зайві поля з запиту будуть
+        автоматично відкинуті zod&rsquo;ом.
+      </div>
+
+      <div class="checkpoint">
+        <h5>Checkpoint</h5>
+        <p>Протестуйте за допомогою Postman, Thunder Client або curl:</p>
+        <ul>
+          <li>
+            <code>POST /api/drinks</code> з <code>{ "name": "", "price": -5 }</code>
+            &rarr; <strong>400</strong> з масивом помилок
+          </li>
+          <li>
+            <code>POST /api/drinks</code> з <code>{ "name": {"$gt": ""}, "price": 50, "category": "Кава" }</code>
+            &rarr; <strong>400</strong> (name не є рядком)
+          </li>
+          <li>
+            <code>POST /api/drinks</code> з валідними даними
+            &rarr; <strong>201</strong>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 5: Валідація API реєстрації -->
+    <section class="lecture-section" id="register-validation">
+      <h2>5. Валідація API реєстрації</h2>
+
+      <p>
+        Зараз API реєстрації має ручну валідацію (<code>if (!name || !email)</code>).
+        Замінимо її на zod &mdash; це дасть кращі повідомлення про помилки та автоматичну
+        нормалізацію даних (trim, toLowerCase).
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Замінити ручну валідацію на zod в API реєстрації</h4>
+        <p>Відкрийте <code>app/api/auth/register/route.js</code> та оновіть:</p>
+        <div class="code-block">
+          <div class="code-header">app/api/auth/register/route.js</div>
+          <pre><code>import { NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
+import dbConnect from "@/lib/db";
+import User from "@/models/User";
+import { registerSchema } from "@/lib/validations/user";
+import { stripHtml } from "@/lib/sanitize";
+
+export async function POST(request) {
+  try {
+    await dbConnect();
+
+    const data = await request.json();
+
+    // Валідація через zod (замість ручної)
+    const result = registerSchema.safeParse(data);
+    if (!result.success) {
+      const messages = result.error.errors.map((e) =&gt; e.message);
+      return NextResponse.json(
+        { error: messages.join(", ") },
+        { status: 400 }
+      );
+    }
+
+    const { email, password } = result.data;
+    const name = stripHtml(result.data.name);
+
+    // Перевірка унікальності email
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return NextResponse.json(
+        { error: "Користувач з таким email вже існує" },
+        { status: 409 }
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+    });
+
+    return NextResponse.json(
+      {
+        message: "Користувача успішно створено",
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    if (error.code === 11000) {
+      return NextResponse.json(
+        { error: "Користувач з таким email вже існує" },
+        { status: 409 }
+      );
+    }
+    return NextResponse.json(
+      { error: "Помилка сервера" },
+      { status: 500 }
+    );
+  }
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Що робить zod автоматично:</strong> перевіряє формат email, обрізає пробіли (<code>trim()</code>),
+        конвертує email у нижній регістр (<code>toLowerCase()</code>). Ручні перевірки
+        <code>if (!name || !email)</code> більше не потрібні.
+      </div>
+
+      <div class="error-box">
+        <h5>Увага: імпорт stripHtml</h5>
+        <p>
+          Функція <code>stripHtml</code> буде створена на кроці 7 (Санітизація).
+          Поки що цей імпорт викличе помилку &mdash; це нормально. Ви можете тимчасово закоментувати
+          рядок імпорту та використання <code>stripHtml</code>, або спочатку виконати крок 7.
+        </p>
+      </div>
+
+      <div class="checkpoint">
+        <h5>Checkpoint</h5>
+        <p>Протестуйте реєстрацію:</p>
+        <ul>
+          <li><code>POST /api/auth/register</code> з порожнім email &rarr; <strong>400</strong> &laquo;Email обов&rsquo;язковий&raquo;</li>
+          <li><code>POST /api/auth/register</code> з паролем &laquo;123&raquo; &rarr; <strong>400</strong> &laquo;Мінімум 6 символів&raquo;</li>
+          <li><code>POST /api/auth/register</code> з валідними даними &rarr; <strong>201</strong></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 6: Валідація API користувачів -->
+    <section class="lecture-section" id="users-validation">
+      <h2>6. Валідація API користувачів</h2>
+
+      <p>
+        API зміни ролі (<code>PUT /api/users/[id]</code>) приймає поле <code>role</code>.
+        Без валідації хтось може надіслати <code>{ "role": "superadmin" }</code> або
+        взагалі будь-який рядок. Додамо zod-валідацію.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Додати валідацію до PUT /api/users/[id]</h4>
+        <p>Відкрийте <code>app/api/users/[id]/route.js</code> та оновіть функцію PUT:</p>
+        <div class="code-block">
+          <div class="code-header">app/api/users/[id]/route.js (фрагмент PUT)</div>
+          <pre><code>import { updateRoleSchema } from "@/lib/validations/user";
+
+// В PUT handler:
+export async function PUT(request, { params }) {
+  const { session, error } = await authorize("admin");
+  if (error) return error;
+
+  await dbConnect();
+
+  try {
+    const { id } = await params;
+    const data = await request.json();
+
+    // Валідація через zod
+    const result = updateRoleSchema.safeParse(data);
+    if (!result.success) {
+      const messages = result.error.errors.map((e) =&gt; e.message);
+      return NextResponse.json(
+        { error: messages.join(", ") },
+        { status: 400 }
+      );
+    }
+
+    const { role } = result.data;
+
+    const user = await User.findByIdAndUpdate(
+      id,
+      { role },
+      { new: true }
+    ).select("-password");
+
+    if (!user) {
+      return NextResponse.json(
+        { error: "Користувача не знайдено" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(user);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Помилка сервера" },
+      { status: 500 }
+    );
+  }
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Перевага zod enum:</strong> Якщо хтось надішле <code>{ "role": "superadmin" }</code>,
+        zod автоматично поверне помилку &mdash; enum дозволяє тільки <code>"user"</code> або <code>"admin"</code>.
+        Без валідації такий рядок потрапив би в БД.
+      </div>
+
+      <div class="checkpoint">
+        <h5>Checkpoint</h5>
+        <p>Протестуйте:</p>
+        <ul>
+          <li>
+            <code>PUT /api/users/[id]</code> з <code>{ "role": "superadmin" }</code>
+            &rarr; <strong>400</strong> &laquo;Роль має бути &lsquo;user&rsquo; або &lsquo;admin&rsquo;&raquo;
+          </li>
+          <li>
+            <code>PUT /api/users/[id]</code> з <code>{ "role": "admin" }</code>
+            &rarr; <strong>200</strong> (роль змінено)
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 7: Санітизація даних -->
+    <section class="lecture-section" id="sanitize">
+      <h2>7. Санітизація даних</h2>
+
+      <p>
+        Валідація перевіряє структуру та типи даних. Санітизація &mdash; це очищення вмісту:
+        видалення HTML-тегів, потенційно небезпечного коду тощо. Це додатковий рівень захисту
+        (defence in depth).
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Створити хелпер санітизації</h4>
+        <p>Створіть файл <code>lib/sanitize.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">lib/sanitize.js</div>
+          <pre><code>/**
+ * Видаляє HTML-теги з рядка
+ */
+export function stripHtml(str) {
+  if (typeof str !== "string") return str;
+  return str.replace(/&lt;[^&gt;]*&gt;/g, "").trim();
+}
+
+/**
+ * Санітизує всі рядкові поля об'єкта
+ */
+export function sanitizeObject(obj) {
+  const sanitized = {};
+  for (const [key, value] of Object.entries(obj)) {
+    sanitized[key] = typeof value === "string" ? stripHtml(value) : value;
+  }
+  return sanitized;
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Інтегрувати санітизацію в API напоїв</h4>
+        <p>Оновіть <code>app/api/drinks/route.js</code> &mdash; додайте санітизацію після валідації:</p>
+        <div class="code-block">
+          <div class="code-header">app/api/drinks/route.js (фрагмент POST)</div>
+          <pre><code>import { sanitizeObject } from "@/lib/sanitize";
+
+// Після валідації через zod:
+const result = createDrinkSchema.safeParse(data);
+if (!result.success) {
+  const messages = result.error.errors.map((e) =&gt; e.message);
+  return NextResponse.json({ errors: messages }, { status: 400 });
+}
+
+// Санітизація
+const sanitized = sanitizeObject(result.data);
+const drink = await Drink.create(sanitized);</code></pre>
+        </div>
+        <p>Зробіть аналогічно для PUT в <code>app/api/drinks/[id]/route.js</code>:</p>
+        <div class="code-block">
+          <div class="code-header">app/api/drinks/[id]/route.js (фрагмент PUT)</div>
+          <pre><code>import { sanitizeObject } from "@/lib/sanitize";
+
+// Після валідації:
+const sanitized = sanitizeObject(result.data);
+const drink = await Drink.findByIdAndUpdate(id, sanitized, {
+  new: true,
+  runValidators: true,
+});</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Чому санітизація після валідації?</strong> Zod перевіряє структуру та типи.
+        Санітизація очищує вміст. Порядок важливий: спочатку переконуємося, що дані правильного типу,
+        потім чистимо вміст рядків.
+      </div>
+
+      <div class="error-box">
+        <h5>Важливо розуміти</h5>
+        <p>
+          Санітизація <strong>не замінює</strong> React JSX escaping! React вже автоматично екранує
+          вивід у JSX. Санітизація &mdash; додатковий рівень (defence in depth), щоб у БД не
+          потрапляв HTML-код. Якщо ви використовуєте <code>dangerouslySetInnerHTML</code> &mdash;
+          тоді санітизація на сервері критично важлива.
+        </p>
+      </div>
+
+      <div class="checkpoint">
+        <h5>Checkpoint</h5>
+        <p>Протестуйте:</p>
+        <ul>
+          <li>
+            <code>POST /api/drinks</code> з name
+            <code>"&lt;script&gt;alert('xss')&lt;/script&gt;Лате"</code>
+            &rarr; у БД збережено як <code>"alert('xss')Лате"</code> (теги видалено)
+          </li>
+          <li>Звичайні назви без HTML-тегів зберігаються без змін</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Частина 8: Безпекові заголовки -->
+    <section class="lecture-section" id="headers">
+      <h2>8. Безпекові заголовки</h2>
+
+      <p>
+        HTTP-заголовки безпеки &mdash; це інструкції для браузера, як обробляти контент з вашого сайту.
+        Вони захищають від типових атак: clickjacking, MIME-sniffing тощо.
+        Next.js дозволяє налаштувати заголовки через <code>next.config.mjs</code>.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Додати безпекові заголовки</h4>
+        <p>Відкрийте (або створіть) файл <code>next.config.mjs</code> у корені проєкту та оновіть:</p>
+        <div class="code-block">
+          <div class="code-header">next.config.mjs</div>
+          <pre><code>/** @type {import('next').NextConfig} */
+const nextConfig = {
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          {
+            key: "X-Content-Type-Options",
+            value: "nosniff",
+          },
+          {
+            key: "X-Frame-Options",
+            value: "DENY",
+          },
+          {
+            key: "X-XSS-Protection",
+            value: "0",
+          },
+          {
+            key: "Referrer-Policy",
+            value: "strict-origin-when-cross-origin",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
+        ],
+      },
+    ];
+  },
+};
+
+export default nextConfig;</code></pre>
+        </div>
+      </div>
+
+      <p>Що робить кожний заголовок:</p>
+      <ul>
+        <li><strong>X-Content-Type-Options: nosniff</strong> &mdash; запобігає MIME-type sniffing (браузер не буде &laquo;вгадувати&raquo; тип контенту)</li>
+        <li><strong>X-Frame-Options: DENY</strong> &mdash; захист від clickjacking (забороняє завантаження сайту в iframe)</li>
+        <li><strong>X-XSS-Protection: 0</strong> &mdash; вимикає застарілий XSS-фільтр браузера (сучасний підхід &mdash; Content Security Policy)</li>
+        <li><strong>Referrer-Policy</strong> &mdash; контролює, яка інформація передається в HTTP-заголовку Referrer при переході на інший сайт</li>
+        <li><strong>Permissions-Policy</strong> &mdash; обмежує доступ сторінки до камери, мікрофона та геолокації</li>
+      </ul>
+
+      <div class="task-box">
+        <h4>Завдання: Перевірити заголовки в браузері</h4>
+        <p>Після зміни <code>next.config.mjs</code> потрібно перезапустити сервер:</p>
+        <div class="code-block">
+          <div class="code-header">Terminal</div>
+          <pre><code># Зупиніть сервер (Ctrl+C) та запустіть знову
+npm run dev</code></pre>
+        </div>
+        <p>Перевірте заголовки:</p>
+        <ol>
+          <li>Відкрийте сайт у браузері</li>
+          <li>Відкрийте DevTools (F12)</li>
+          <li>Перейдіть на вкладку <strong>Network</strong></li>
+          <li>Оновіть сторінку</li>
+          <li>Натисніть на будь-який запит (наприклад, перший документ)</li>
+          <li>У вкладці <strong>Headers</strong> перегляньте <strong>Response Headers</strong></li>
+          <li>Знайдіть всі 5 заголовків</li>
+        </ol>
+      </div>
+
+      <div class="info-box info">
+        <strong>Нагадування:</strong> Після зміни <code>next.config.mjs</code> завжди потрібно
+        перезапустити сервер (<code>npm run dev</code>). Зміни в цьому файлі не підхоплюються
+        автоматично.
+      </div>
+
+      <div class="checkpoint">
+        <h5>Checkpoint</h5>
+        <p>Всі 5 безпекових заголовків видно в DevTools Response Headers.</p>
+      </div>
+    </section>
+
+    <!-- Частина 9: Збереження на GitHub -->
+    <section class="lecture-section" id="github">
+      <h2>9. Збереження та завантаження на GitHub</h2>
+
+      <div class="task-box">
+        <h4>Завдання: Створити гілку та завантажити код</h4>
+        <div class="code-block">
+          <div class="code-header">Terminal</div>
+          <pre><code>git checkout -b LR10
+git add .
+git commit -m "feat: add zod validation, sanitization, security headers"
+git push -u origin LR10</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Перевірте .gitignore:</strong> Переконайтеся, що файл <code>.env.local</code> є в
+        <code>.gitignore</code>. Ніколи не комітьте файли з секретами (паролі БД, SECRET ключі)!
+      </div>
+
+      <div class="checkpoint">
+        <h5>Checkpoint</h5>
+        <p>Код завантажено на GitHub у гілці <code>LR10</code>.</p>
+      </div>
+    </section>
+
+    <!-- Підсумок -->
+    <section class="lecture-section">
+      <h2>Підсумок</h2>
+
+      <div class="final-result">
+        <h4>&#x2705; Критерії успішного виконання</h4>
+        <ul class="criteria-list">
+          <li>zod встановлено (є в package.json)</li>
+          <li>lib/validations/drink.js &mdash; схема валідації напоїв (createDrinkSchema + updateDrinkSchema)</li>
+          <li>lib/validations/user.js &mdash; схеми реєстрації (registerSchema) та зміни ролі (updateRoleSchema)</li>
+          <li>POST /api/drinks &mdash; валідація через zod працює (400 на невалідних даних)</li>
+          <li>PUT /api/drinks/[id] &mdash; валідація через zod працює</li>
+          <li>POST /api/auth/register &mdash; валідація через zod (замінює ручну)</li>
+          <li>PUT /api/users/[id] &mdash; валідація ролі через zod</li>
+          <li>lib/sanitize.js &mdash; хелпер санітизації створено (stripHtml + sanitizeObject)</li>
+          <li>Санітизація інтегрована в API напоїв (HTML-теги видаляються з рядків)</li>
+          <li>next.config.mjs &mdash; безпекові заголовки додано (мінімум 3 заголовки)</li>
+          <li>Безпекові заголовки видно в DevTools (Response Headers)</li>
+          <li>Код адаптовано під тему свого варіанту</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Бонусні завдання -->
+    <section class="lecture-section">
+      <h2>Бонусні завдання</h2>
+      <p>
+        Ці завдання не є обов&rsquo;язковими і не впливають на наступні практичні роботи.
+      </p>
+
+      <div class="task-box">
+        <h4>Бонус 1: Rate Limiting</h4>
+        <p>
+          Додайте простий rate limiter для <code>/api/auth/register</code> &mdash; обмеження кількості
+          запитів з одного IP за хвилину. Використайте <code>Map</code> для зберігання лічильників.
+        </p>
+      </div>
+
+      <div class="task-box">
+        <h4>Бонус 2: CORS конфігурація</h4>
+        <p>
+          Додайте CORS headers через middleware для API-маршрутів. Дозвольте запити тільки з
+          вашого домену.
+        </p>
+      </div>
+
+      <div class="task-box">
+        <h4>Бонус 3: Content Security Policy</h4>
+        <p>
+          Додайте базовий CSP header до <code>next.config.mjs</code>. Дозвольте тільки ресурси з
+          вашого домену (<code>self</code>).
+        </p>
+      </div>
+    </section>
+
+  </article>
+</body>
+</html>

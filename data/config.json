@@ -53,6 +53,12 @@
       "visible": true,
       "title": "Авторизація та ролі (RBAC)",
       "description": "RBAC, Middleware, захист API endpoints, getServerSession, умовний рендеринг"
+    },
+    {
+      "id": 10,
+      "visible": true,
+      "title": "Безпека веб-застосунків",
+      "description": "OWASP Top 10, валідація zod, санітизація даних, безпекові HTTP-заголовки"
     }
   ]
 }
