@@ -1,0 +1,2104 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Практика 11: Другий CRUD об'єкт зі зв'язками (1-to-many + many-to-many) | Протокол заняття</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/practical.css">
+</head>
+<body>
+  <!-- Навігація -->
+  <nav class="lecture-nav">
+    <div class="container">
+      <div class="nav-title">Тиждень 11: Другий CRUD об'єкт зі зв'язками</div>
+      <div class="nav-links">
+        <a href="../" class="btn btn-outline">&larr; Всі тижні</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Основний контент -->
+  <article class="lecture-content">
+    <!-- Заголовок -->
+    <header class="lecture-header">
+      <span class="lecture-number">Практика 11</span>
+      <h1>Другий CRUD об'єкт зі зв'язками: 1-to-many + many-to-many</h1>
+      <div class="lecture-meta">
+        <span>&#x1F4C5; Тиждень 11</span>
+        <span>&#x1F4BB; Практичне заняття</span>
+      </div>
+    </header>
+
+    <!-- Зміст -->
+    <nav class="toc">
+      <h3>Зміст заняття</h3>
+      <ol>
+        <li><a href="#setup">Підготовка проєкту</a></li>
+        <li><a href="#design">Проєктування другої сутності зі зв'язками</a></li>
+        <li><a href="#models">Моделі Order та OrderItem + zod</a></li>
+        <li><a href="#cascade">Cascade hooks (Drink і Order)</a></li>
+        <li><a href="#api">CRUD API з вкладеним populate</a></li>
+        <li><a href="#ui">Сторінки dashboard та форма з items</a></li>
+        <li><a href="#seed">Seed з Order + OrderItem</a></li>
+        <li><a href="#dashboard-stats">Статистика замовлень на dashboard (admin only)</a></li>
+        <li><a href="#github">Збереження та завантаження на GitHub</a></li>
+      </ol>
+    </nav>
+
+    <!-- Вступ -->
+    <section class="lecture-section">
+      <h2>Мета заняття</h2>
+      <p>На цьому практичному занятті ви:</p>
+      <ul>
+        <li>Спроєктуєте другу CRUD-сутність вашого проєкту зі зв'язками <strong>двох типів</strong>: 1-to-many (користувач &rarr; замовлення) та many-to-many (замовлення &harr; товари через pivot-колекцію)</li>
+        <li>Створите <strong>дві</strong> Mongoose-моделі: <code>Order</code> (верхній рівень) та <code>OrderItem</code> (pivot з per-pair атрибутами)</li>
+        <li>Реалізуєте virtual populate для зворотного зв'язку Order &rarr; items</li>
+        <li>Реалізуєте CRUD API з вкладеним populate <code>items.drink</code></li>
+        <li>Додасте UI: список з позиціями, форма з <strong>динамічним масивом items</strong>, деталі з таблицею позицій</li>
+        <li>Налаштуєте каскадне видалення через <code>pre("findOneAndDelete")</code> на двох моделях</li>
+        <li>Оновите seed-скрипт для створення Order + OrderItem</li>
+      </ul>
+
+      <div class="info-box info">
+        <strong>Передумова:</strong> працюючий Next.js проєкт з тижня 10
+        (аутентифікація + RBAC + валідація zod + санітизація + security headers).
+      </div>
+
+      <div class="info-box warning">
+        <strong>Приклад викладача:</strong> Кав'ярня &laquo;Кофеїн&raquo; &mdash; додаємо <strong>Order</strong>
+        (замовлення з кількома напоями) та <strong>OrderItem</strong> (pivot: напій + кількість + ціна snapshot).
+        Ви адаптуєте під свій варіант: наприклад, <em>Order + OrderItem</em> у магазині,
+        <em>Screening + Ticket</em> у кінотеатрі, <em>Project + Task</em> у менеджері задач тощо.
+      </div>
+    </section>
+
+    <!-- 1. Підготовка -->
+    <section class="lecture-section" id="setup">
+      <h2>1. Підготовка проєкту</h2>
+      <p>
+        Цього тижня ми не встановлюємо нових пакетів &mdash; усе необхідне вже є з попередніх тижнів
+        (Mongoose, NextAuth.js, zod). Додаємо нову функціональність поверх існуючого коду.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Перевірити працездатність проєкту</h4>
+        <p>Запустіть проєкт та переконайтеся, що все працює з тижня 10:</p>
+        <div class="code-block">
+          <div class="code-header">Terminal</div>
+          <pre><code>npm run dev</code></pre>
+        </div>
+        <p>Перевірте:</p>
+        <ul>
+          <li>Логін та реєстрація працюють</li>
+          <li><code>/dashboard/drinks</code> &mdash; CRUD напоїв для admin</li>
+          <li><code>/dashboard/users</code> &mdash; керування ролями (admin only)</li>
+          <li>zod-валідація і санітизація активні, security headers видно у DevTools</li>
+        </ul>
+      </div>
+
+      <div class="checkpoint">
+        <h5>Checkpoint</h5>
+        <p>Проєкт запускається, всі фічі тижня 10 живі.</p>
+      </div>
+    </section>
+
+    <!-- 2. Проєктування -->
+    <section class="lecture-section" id="design">
+      <h2>2. Проєктування другої сутності зі зв'язками</h2>
+
+      <p>
+        Перш ніж писати код, визначте структуру зв'язків. У нашому проєкті &mdash; <strong>два типи зв'язків</strong>:
+      </p>
+
+      <div class="code-block">
+        <div class="code-header">Схема зв'язків</div>
+        <pre><code>User  ────&lt;  Order  ────&lt;  OrderItem  &gt;────  Drink
+ (1)        (N)         (N)              (1)
+
+ ↑ 1-to-many            ↑ many-to-many (через pivot OrderItem)</code></pre>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Спроєктувати обидві моделі</h4>
+        <p>На папері / у документі опишіть:</p>
+        <ul>
+          <li><strong>Верхній рівень (Order):</strong> ref на User, поля-скаляри (<code>totalPrice</code>, <code>status</code>, <code>notes</code>); НЕ містить позицій</li>
+          <li><strong>Pivot (OrderItem):</strong> два ref (на Order та на основну сутність типу Drink) + per-pair атрибути (<code>quantity</code>, <code>priceAtOrder</code>)</li>
+          <li><strong>Snapshot ціни:</strong> <code>priceAtOrder</code> фіксує ціну в момент замовлення, щоб зміна ціни не перекидала історичні суми</li>
+          <li><strong>Enum-статус</strong> на Order: 3&ndash;5 значень (pending / in-progress / done / cancelled)</li>
+          <li><strong>Індекси:</strong> на кожному ref <code>index: true</code>; композитний <code>(user: 1, createdAt: -1)</code> на Order</li>
+        </ul>
+      </div>
+
+      <div class="info-box info">
+        <strong>Чому окрема OrderItem, а не масив refs?</strong> Якби Order мав
+        <code>drinks: [ObjectId]</code> &mdash; губимо <code>quantity</code> і <code>priceAtOrder</code> на кожну позицію.
+        Pivot-колекція зберігає per-pair атрибути, дозволяє окремі індекси та масштабується без ліміту 16&nbsp;MB на Order.
+      </div>
+
+      <div class="checkpoint">
+        <h5>Checkpoint</h5>
+        <p>У вас є чіткий список полів обох моделей з типами та зв'язками.</p>
+      </div>
+    </section>
+
+    <!-- 3. Моделі + zod -->
+    <section class="lecture-section" id="models">
+      <h2>3. Моделі Order та OrderItem + zod</h2>
+
+      <div class="task-box">
+        <h4>Завдання: Створити <code>lib/models/Order.js</code></h4>
+        <p>Order містить лише верхній рівень; позиції приходять через virtual populate:</p>
+        <div class="code-block">
+          <div class="code-header">lib/models/Order.js</div>
+          <pre><code>import mongoose from "mongoose";
+
+const orderSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: [true, "Користувач обов'язковий"],
+      index: true,
+    },
+    totalPrice: { type: Number, required: true, min: 0 },
+    status: {
+      type: String,
+      enum: ["pending", "preparing", "ready", "completed", "cancelled"],
+      default: "pending",
+      index: true,
+    },
+    notes: { type: String, maxlength: 300, default: "", trim: true },
+  },
+  {
+    timestamps: true,
+    toJSON:   { virtuals: true },
+    toObject: { virtuals: true },
+  }
+);
+
+orderSchema.index({ user: 1, createdAt: -1 });
+
+// Virtual populate: Order.items &mdash; зворотній зв'язок з OrderItem.order
+orderSchema.virtual("items", {
+  ref: "OrderItem",
+  localField: "_id",
+  foreignField: "order",
+});
+
+export default mongoose.models.Order || mongoose.model("Order", orderSchema);</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити <code>lib/models/OrderItem.js</code> (нова pivot-модель)</h4>
+        <div class="code-block">
+          <div class="code-header">lib/models/OrderItem.js</div>
+          <pre><code>import mongoose from "mongoose";
+
+const orderItemSchema = new mongoose.Schema(
+  {
+    order: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Order",
+      required: true,
+      index: true,          // позиції одного замовлення
+    },
+    drink: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Drink",
+      required: true,
+      index: true,          // "у яких замовленнях цей напій?"
+    },
+    quantity:     { type: Number, required: true, min: 1, max: 20 },
+    priceAtOrder: { type: Number, required: true, min: 0 },   // snapshot
+  },
+  { timestamps: true }
+);
+
+export default mongoose.models.OrderItem ||
+  mongoose.model("OrderItem", orderItemSchema);</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Створити <code>lib/validations/order.js</code></h4>
+        <p>Клієнт шле <code>items[]</code>, сервер рахує <code>totalPrice</code> та <code>priceAtOrder</code>:</p>
+        <div class="code-block">
+          <div class="code-header">lib/validations/order.js</div>
+          <pre><code>import { z } from "zod";
+
+const objectIdSchema = z.string()
+  .regex(/^[a-fA-F0-9]{24}$/, "Невалідний ідентифікатор");
+
+const orderItemInputSchema = z.object({
+  drink: objectIdSchema,
+  quantity: z.number().int().min(1).max(20),
+});
+
+export const createOrderSchema = z.object({
+  // user — опціональний; враховується тільки коли запит від admin.
+  // Звичайний user не може створити замовлення на чуже ім'я: сервер
+  // у цьому випадку поле ігнорує та бере session.user.id.
+  user: objectIdSchema.optional(),
+  items: z.array(orderItemInputSchema)
+    .min(1, "Замовлення має містити хоча б одну позицію")
+    .max(20, "Максимум 20 позицій"),
+  notes: z.string().max(300).trim().optional().default(""),
+});
+
+export const updateOrderSchema = z.object({
+  status: z.enum(["pending","preparing","ready","completed","cancelled"]).optional(),
+  notes:  z.string().max(300).trim().optional(),
+}).refine((d) =&gt; Object.keys(d).length &gt; 0, {
+  message: "Немає даних для оновлення",
+});
+
+// User може лише скасувати своє pending
+export const userUpdateOrderSchema = z.object({
+  status: z.literal("cancelled"),
+});</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Безпека:</strong> <code>user</code> і <code>priceAtOrder</code> у клієнтській схемі <em>відсутні</em> &mdash;
+        сервер завжди підставить <code>user</code> зі session і зафіксує ціну з актуальної БД.
+        Це не <em>not trusting client input</em>.
+      </div>
+
+      <div class="checkpoint">
+        <h5>Checkpoint</h5>
+        <p>Три файли (<code>Order.js</code>, <code>OrderItem.js</code>, <code>validations/order.js</code>) створено,
+        <code>npm run dev</code> запускається без помилок.</p>
+      </div>
+    </section>
+
+    <!-- 4. Cascade hooks -->
+    <section class="lecture-section" id="cascade">
+      <h2>4. Cascade hooks (Drink і Order)</h2>
+
+      <p>
+        У many-to-many через OrderItem треба два cascade-hooks:
+        <strong>Drink &rarr; OrderItem</strong> (при видаленні напою) та
+        <strong>Order &rarr; OrderItem</strong> (при видаленні замовлення).
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Додати cascade hook у <code>lib/models/Drink.js</code></h4>
+        <p>Стратегія: прибираємо OrderItem з цим напоєм + видаляємо порожні Order.</p>
+        <div class="code-block">
+          <div class="code-header">lib/models/Drink.js (додати перед export)</div>
+          <pre><code>drinkSchema.pre("findOneAndDelete", async function (next) {
+  const doc = await this.model.findOne(this.getFilter());
+  if (doc) {
+    const OrderItem = mongoose.model("OrderItem");
+    const Order     = mongoose.model("Order");
+
+    // 1) Які замовлення зачеплені?
+    const affected = await OrderItem
+      .find({ drink: doc._id }).distinct("order");
+
+    // 2) Прибираємо позиції з цим напоєм
+    await OrderItem.deleteMany({ drink: doc._id });
+
+    // 3) Якщо замовлення лишилося без позицій — видаляємо його
+    for (const orderId of affected) {
+      const left = await OrderItem.countDocuments({ order: orderId });
+      if (left === 0) {
+        await Order.deleteOne({ _id: orderId });
+      }
+    }
+  }
+  next();
+});</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Додати cascade hook у <code>lib/models/Order.js</code></h4>
+        <p>При видаленні замовлення прибираємо всі його OrderItem:</p>
+        <div class="code-block">
+          <div class="code-header">lib/models/Order.js (додати перед export)</div>
+          <pre><code>orderSchema.pre("findOneAndDelete", async function (next) {
+  const doc = await this.model.findOne(this.getFilter());
+  if (doc) {
+    await mongoose.model("OrderItem").deleteMany({ order: doc._id });
+  }
+  next();
+});</code></pre>
+        </div>
+      </div>
+
+      <div class="error-box">
+        <h5>&#x26A0;&#xFE0F; findOneAndDelete &ne; deleteOne</h5>
+        <p>
+          Mongoose має <strong>різні хуки</strong> для різних методів видалення.
+          Якщо ви поставите hook на <code>findOneAndDelete</code>, але у коді викликаєте
+          <code>Drink.deleteOne(...)</code> &mdash; <strong>хук не спрацює</strong>.
+          У нашому проєкті <code>DELETE /api/drinks/[id]</code> використовує <code>findByIdAndDelete</code>,
+          що саме запускає <code>findOneAndDelete</code> hook &mdash; все добре.
+        </p>
+      </div>
+
+      <div class="checkpoint">
+        <h5>Checkpoint</h5>
+        <p>Обидва hook-и додано; після API-кроку зможемо протестувати.</p>
+      </div>
+    </section>
+
+    <!-- 5. API -->
+    <section class="lecture-section" id="api">
+      <h2>5. CRUD API з вкладеним populate</h2>
+
+      <div class="task-box">
+        <h4>Завдання: <code>app/api/orders/route.js</code> &mdash; GET + POST</h4>
+        <p>
+          GET повертає список з фільтром по ролі та вкладеним populate <code>items.drink</code>.
+          POST приймає <code>items[]</code>, перевіряє всі напої одним запитом, створює Order + OrderItem
+          пакетом; при помилці робить manual rollback (видаляє щойно створений Order).
+        </p>
+        <div class="code-block">
+          <div class="code-header">app/api/orders/route.js</div>
+          <pre><code>// Тиждень 11: API для колекції замовлень (MongoDB з many-to-many через OrderItem)
+// GET  /api/orders — admin бачить усе, user — лише свої (+ ?status= ?drink=)
+// POST /api/orders — аутентифікований, user береться з session, totalPrice — з сервера
+
+import dbConnect from "@/lib/db";
+import Order from "@/lib/models/Order";
+import OrderItem from "@/lib/models/OrderItem";
+import Drink from "@/lib/models/Drink";
+import User from "@/lib/models/User"; // register model for populate
+import { authorize } from "@/lib/authorize";
+import { createOrderSchema } from "@/lib/validations/order";
+import { sanitizeObject } from "@/lib/sanitize";
+
+// Явна реєстрація моделей для populate() — інакше при hot-reload буде
+// "Schema hasn't been registered for model ..."
+void [User, Drink, OrderItem];
+
+export async function GET(request) {
+  const { session, error } = await authorize();
+  if (error) return error;
+
+  await dbConnect();
+
+  const { searchParams } = new URL(request.url);
+  const status = searchParams.get("status");
+  const drink = searchParams.get("drink");
+
+  const filter =
+    session.user.role === "admin" ? {} : { user: session.user.id };
+
+  if (status) filter.status = status;
+
+  // ?drink=&lt;id&gt; — показати лише замовлення, що містять цей напій.
+  // Шукаємо через OrderItem і звужуємо filter по _id замовлення.
+  if (drink) {
+    const orderIds = await OrderItem.find({ drink }).distinct("order");
+    filter._id = { $in: orderIds };
+  }
+
+  const orders = await Order.find(filter)
+    .populate({ path: "user", select: "name email role" })
+    .populate({
+      path: "items",
+      populate: { path: "drink", select: "name price emoji category" },
+    })
+    .sort({ createdAt: -1 });
+
+  return Response.json(orders);
+}
+
+export async function POST(request) {
+  const { session, error } = await authorize();
+  if (error) return error;
+
+  await dbConnect();
+
+  let createdOrderId = null;
+
+  try {
+    const data = await request.json();
+
+    const result = createOrderSchema.safeParse(data);
+    if (!result.success) {
+      const messages = result.error.errors.map((e) =&gt; e.message);
+      return Response.json({ errors: messages }, { status: 400 });
+    }
+
+    const sanitized = sanitizeObject(result.data);
+
+    // 0) Визначити користувача-власника замовлення.
+    // Admin може вказати user у тілі запиту (замовлення на іншого);
+    // звичайний user — лише на себе (поле з body ігнорується).
+    let orderUserId = session.user.id;
+    if (session.user.role === "admin" &amp;&amp; sanitized.user) {
+      const targetUser = await User.findById(sanitized.user);
+      if (!targetUser) {
+        return Response.json(
+          { error: "Користувача не знайдено" },
+          { status: 404 }
+        );
+      }
+      orderUserId = targetUser._id;
+    }
+
+    // 1) Підтягнути всі напої одним запитом (Mongoose не перевіряє ref).
+    const drinkIds = sanitized.items.map((i) =&gt; i.drink);
+    const drinks = await Drink.find({ _id: { $in: drinkIds } });
+
+    // Мапа для швидкого доступу
+    const drinkById = new Map(drinks.map((d) =&gt; [d._id.toString(), d]));
+
+    // 2) Перевірити, що всі напої існують та доступні.
+    for (const item of sanitized.items) {
+      const drink = drinkById.get(item.drink);
+      if (!drink) {
+        return Response.json(
+          { error: `Напій не знайдено: ${item.drink}` },
+          { status: 404 }
+        );
+      }
+      if (!drink.available) {
+        return Response.json(
+          { error: `Напій зараз недоступний: ${drink.name}` },
+          { status: 409 }
+        );
+      }
+    }
+
+    // 3) Обчислити totalPrice на сервері (zero trust).
+    const totalPrice = sanitized.items.reduce((sum, item) =&gt; {
+      const drink = drinkById.get(item.drink);
+      return sum + drink.price * item.quantity;
+    }, 0);
+
+    // 4) Створити Order (user — або з session, або вибраний admin'ом).
+    const order = await Order.create({
+      user: orderUserId,
+      totalPrice,
+      notes: sanitized.notes,
+    });
+    createdOrderId = order._id;
+
+    // 5) Створити OrderItem-и пакетом (priceAtOrder = snapshot поточної ціни).
+    const itemsToCreate = sanitized.items.map((item) =&gt; {
+      const drink = drinkById.get(item.drink);
+      return {
+        order: order._id,
+        drink: drink._id,
+        quantity: item.quantity,
+        priceAtOrder: drink.price,
+      };
+    });
+    await OrderItem.insertMany(itemsToCreate);
+
+    // 6) Повернути замовлення з populate-ом items.drink + user.
+    const populated = await Order.findById(order._id)
+      .populate({ path: "user", select: "name email" })
+      .populate({
+        path: "items",
+        populate: { path: "drink", select: "name price emoji category" },
+      });
+
+    return Response.json(populated, { status: 201 });
+  } catch (err) {
+    // Rollback: якщо вже встигли створити Order, але впала вставка items,
+    // прибираємо порожнє замовлення, щоб не було orphaned запису.
+    if (createdOrderId) {
+      try {
+        await Order.deleteOne({ _id: createdOrderId });
+      } catch {
+        // best-effort — не ламаємо основну відповідь
+      }
+    }
+
+    if (err.message === "Unexpected end of JSON input" || err instanceof SyntaxError) {
+      return Response.json(
+        { error: "Невалідний JSON у тілі запиту" },
+        { status: 400 }
+      );
+    }
+    return Response.json({ error: "Помилка сервера" }, { status: 500 });
+  }
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: <code>app/api/orders/[id]/route.js</code></h4>
+        <p>
+          GET з вкладеним populate <code>items.drink</code> + IDOR-перевірка власника;
+          PUT з різними правами для admin (status/notes) і user (лише скасування pending);
+          DELETE тільки admin (<code>findByIdAndDelete</code> тригерить cascade hook у Order).
+        </p>
+        <div class="code-block">
+          <div class="code-header">app/api/orders/[id]/route.js</div>
+          <pre><code>// Тиждень 11: API для окремого замовлення (many-to-many через OrderItem)
+// GET    /api/orders/[id] — owner або admin (захист від IDOR)
+// PUT    /api/orders/[id] — admin: status/notes; user: лише status → cancelled з pending
+// DELETE /api/orders/[id] — admin only (тригерить cascade видалення OrderItem)
+
+import dbConnect from "@/lib/db";
+import Order from "@/lib/models/Order";
+import OrderItem from "@/lib/models/OrderItem";
+import Drink from "@/lib/models/Drink";
+import User from "@/lib/models/User";
+import { authorize } from "@/lib/authorize";
+import {
+  updateOrderSchema,
+  userUpdateOrderSchema,
+} from "@/lib/validations/order";
+import { sanitizeObject } from "@/lib/sanitize";
+
+// Явна реєстрація моделей для populate()
+void [Drink, User, OrderItem];
+
+export async function GET(request, { params }) {
+  const { session, error } = await authorize();
+  if (error) return error;
+
+  await dbConnect();
+  const { id } = await params;
+
+  try {
+    const order = await Order.findById(id)
+      .populate({ path: "user", select: "name email role" })
+      .populate({
+        path: "items",
+        populate: {
+          path: "drink",
+          select: "name price emoji category description",
+        },
+      });
+
+    if (!order) {
+      return Response.json({ error: "Не знайдено" }, { status: 404 });
+    }
+
+    const isOwner = order.user?._id?.toString() === session.user.id;
+    if (session.user.role !== "admin" &amp;&amp; !isOwner) {
+      return Response.json({ error: "Немає доступу" }, { status: 403 });
+    }
+
+    return Response.json(order);
+  } catch {
+    return Response.json({ error: "Невалідний ID" }, { status: 400 });
+  }
+}
+
+export async function PUT(request, { params }) {
+  const { session, error } = await authorize();
+  if (error) return error;
+
+  await dbConnect();
+  const { id } = await params;
+
+  try {
+    const order = await Order.findById(id);
+    if (!order) {
+      return Response.json({ error: "Не знайдено" }, { status: 404 });
+    }
+
+    const isAdmin = session.user.role === "admin";
+    const isOwner = order.user.toString() === session.user.id;
+
+    if (!isAdmin &amp;&amp; !isOwner) {
+      return Response.json({ error: "Немає доступу" }, { status: 403 });
+    }
+
+    const body = await request.json();
+
+    // Admin: повна схема (status/notes); user: лише скасування pending
+    const schema = isAdmin ? updateOrderSchema : userUpdateOrderSchema;
+    const result = schema.safeParse(body);
+    if (!result.success) {
+      const messages = result.error.errors.map((e) =&gt; e.message);
+      return Response.json({ errors: messages }, { status: 400 });
+    }
+
+    // User може скасувати лише pending
+    if (!isAdmin &amp;&amp; order.status !== "pending") {
+      return Response.json(
+        { error: "Скасувати можна лише замовлення зі статусом pending" },
+        { status: 409 }
+      );
+    }
+
+    const sanitized = sanitizeObject(result.data);
+
+    const updated = await Order.findByIdAndUpdate(id, sanitized, {
+      new: true,
+      runValidators: true,
+    })
+      .populate({ path: "user", select: "name email" })
+      .populate({
+        path: "items",
+        populate: { path: "drink", select: "name price emoji category" },
+      });
+
+    return Response.json(updated);
+  } catch (err) {
+    if (err instanceof SyntaxError) {
+      return Response.json({ error: "Невалідний JSON" }, { status: 400 });
+    }
+    return Response.json({ error: "Помилка сервера" }, { status: 500 });
+  }
+}
+
+export async function DELETE(request, { params }) {
+  const { session, error } = await authorize("admin");
+  if (error) return error;
+
+  await dbConnect();
+  const { id } = await params;
+
+  try {
+    // findByIdAndDelete → спрацює pre-hook у Order.js → каскадне видалення OrderItem
+    const deleted = await Order.findByIdAndDelete(id);
+    if (!deleted) {
+      return Response.json({ error: "Не знайдено" }, { status: 404 });
+    }
+    return Response.json({ message: "Замовлення видалено" });
+  } catch {
+    return Response.json({ error: "Невалідний ID" }, { status: 400 });
+  }
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Протестувати API через curl / Thunder Client</h4>
+        <ol>
+          <li><strong>401:</strong> GET <code>/api/orders</code> без cookie</li>
+          <li><strong>400:</strong> POST з порожнім <code>items: []</code></li>
+          <li><strong>201:</strong> POST з 2-3 позиціями &mdash; перевірте, що повертається з items і totalPrice</li>
+          <li><strong>200:</strong> GET як user &mdash; лише свої замовлення</li>
+          <li><strong>403:</strong> GET <code>/api/orders/&lt;id&gt;</code> чужого замовлення як user</li>
+        </ol>
+      </div>
+
+      <div class="checkpoint">
+        <h5>Checkpoint</h5>
+        <p>API створює Order + OrderItem атомарно; GET повертає <code>items</code> з назвами напоїв;
+        IDOR працює.</p>
+      </div>
+    </section>
+
+    <!-- 6. UI -->
+    <section class="lecture-section" id="ui">
+      <h2>6. Сторінки dashboard та форма з items</h2>
+
+      <p>Головний виклик UI &mdash; <strong>форма створення замовлення з динамічним масивом позицій</strong>.</p>
+
+      <div class="task-box">
+        <h4>Завдання: Переписати <code>components/OrderForm.jsx</code> під items[]</h4>
+        <p>Замість одного <code>drink</code> + <code>quantity</code> &mdash; масив позицій з кнопками додати/видалити:</p>
+        <div class="code-block">
+          <div class="code-header">components/OrderForm.jsx</div>
+          <pre><code>'use client'
+
+import { useEffect, useState, useMemo } from 'react'
+import { useSession } from 'next-auth/react'
+import Link from 'next/link'
+
+// Створити пусту позицію для додавання
+const emptyItem = () =&gt; ({ drink: '', quantity: 1 })
+
+export default function OrderForm({ onSubmit, isSubmitting, error }) {
+  const { data: session } = useSession()
+  const isAdmin = session?.user?.role === 'admin'
+
+  const [drinks, setDrinks] = useState([])
+  const [items, setItems] = useState([emptyItem()])
+  const [notes, setNotes] = useState('')
+  const [loadingDrinks, setLoadingDrinks] = useState(true)
+
+  // Список користувачів — лише для admin (для вибору власника замовлення).
+  const [users, setUsers] = useState([])
+  const [userId, setUserId] = useState('')
+
+  useEffect(() =&gt; {
+    fetch('/api/drinks')
+      .then((res) =&gt; res.json())
+      .then((data) =&gt; {
+        const available = (data || []).filter((d) =&gt; d.available)
+        setDrinks(available)
+        setLoadingDrinks(false)
+      })
+      .catch(() =&gt; setLoadingDrinks(false))
+  }, [])
+
+  useEffect(() =&gt; {
+    if (!isAdmin) return
+    fetch('/api/users')
+      .then((res) =&gt; res.json())
+      .then((data) =&gt; {
+        if (Array.isArray(data)) setUsers(data)
+      })
+      .catch(() =&gt; {})
+  }, [isAdmin])
+
+  // Default: сам admin (типовий випадок: admin створює тестове замовлення).
+  useEffect(() =&gt; {
+    if (isAdmin &amp;&amp; session?.user?.id &amp;&amp; !userId) {
+      setUserId(session.user.id)
+    }
+  }, [isAdmin, session?.user?.id, userId])
+
+  // Мапа drink._id -&gt; drink, для швидкого lookup у рендері
+  const drinksById = useMemo(() =&gt; {
+    const map = new Map()
+    drinks.forEach((d) =&gt; map.set(d._id, d))
+    return map
+  }, [drinks])
+
+  const totalPrice = useMemo(() =&gt; {
+    return items.reduce((sum, item) =&gt; {
+      const drink = drinksById.get(item.drink)
+      if (!drink) return sum
+      return sum + drink.price * Number(item.quantity || 0)
+    }, 0)
+  }, [items, drinksById])
+
+  const updateItem = (index, patch) =&gt; {
+    setItems((prev) =&gt; prev.map((it, i) =&gt; (i === index ? { ...it, ...patch } : it)))
+  }
+
+  const addItem = () =&gt; setItems((prev) =&gt; [...prev, emptyItem()])
+
+  const removeItem = (index) =&gt; {
+    setItems((prev) =&gt; (prev.length === 1 ? prev : prev.filter((_, i) =&gt; i !== index)))
+  }
+
+  const canSubmit =
+    items.length &gt; 0 &amp;&amp;
+    items.every((it) =&gt; it.drink &amp;&amp; Number(it.quantity) &gt;= 1) &amp;&amp;
+    (!isAdmin || Boolean(userId))
+
+  const handleSubmit = (e) =&gt; {
+    e.preventDefault()
+    const payload = {
+      items: items.map((it) =&gt; ({
+        drink: it.drink,
+        quantity: Number(it.quantity),
+      })),
+      notes: notes.trim(),
+    }
+    // Admin вказує користувача-власника; для звичайного user
+    // сервер сам бере session.user.id, а поле ігнорується.
+    if (isAdmin &amp;&amp; userId) payload.user = userId
+    onSubmit(payload)
+  }
+
+  if (loadingDrinks) {
+    return &lt;div className="bg-white rounded-lg shadow p-8 text-gray-500"&gt;Завантаження напоїв...&lt;/div&gt;
+  }
+
+  return (
+    &lt;&gt;
+      {error &amp;&amp; (
+        &lt;div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6"&gt;
+          {error}
+        &lt;/div&gt;
+      )}
+
+      &lt;form onSubmit={handleSubmit} className="space-y-6 bg-white p-6 rounded-lg shadow"&gt;
+        {isAdmin &amp;&amp; (
+          &lt;div&gt;
+            &lt;label className="block text-gray-700 font-bold mb-2"&gt;Замовник *&lt;/label&gt;
+            &lt;select
+              required
+              value={userId}
+              onChange={(e) =&gt; setUserId(e.target.value)}
+              className="w-full px-4 py-2 border rounded focus:outline-none focus:border-amber-500"
+            &gt;
+              &lt;option value=""&gt;Оберіть користувача&lt;/option&gt;
+              {users.map((u) =&gt; (
+                &lt;option key={u._id} value={u._id}&gt;
+                  {u.name} ({u.email}){u.role === 'admin' ? ' — admin' : ''}
+                &lt;/option&gt;
+              ))}
+            &lt;/select&gt;
+            &lt;p className="text-xs text-gray-500 mt-1"&gt;
+              Адміністратор може створити замовлення на будь-якого користувача.
+            &lt;/p&gt;
+          &lt;/div&gt;
+        )}
+
+        &lt;div&gt;
+          &lt;div className="flex justify-between items-center mb-3"&gt;
+            &lt;label className="block text-gray-700 font-bold"&gt;Позиції замовлення *&lt;/label&gt;
+            &lt;button
+              type="button"
+              onClick={addItem}
+              className="text-amber-700 hover:underline text-sm font-medium"
+            &gt;
+              + Додати позицію
+            &lt;/button&gt;
+          &lt;/div&gt;
+
+          &lt;div className="space-y-3"&gt;
+            {items.map((item, index) =&gt; {
+              const drink = drinksById.get(item.drink)
+              const subtotal = drink ? drink.price * Number(item.quantity || 0) : 0
+              return (
+                &lt;div
+                  key={index}
+                  className="flex gap-3 items-start bg-gray-50 p-3 rounded border"
+                &gt;
+                  &lt;div className="flex-1"&gt;
+                    &lt;select
+                      required
+                      value={item.drink}
+                      onChange={(e) =&gt; updateItem(index, { drink: e.target.value })}
+                      className="w-full px-3 py-2 border rounded focus:outline-none focus:border-amber-500"
+                    &gt;
+                      &lt;option value=""&gt;Оберіть напій&lt;/option&gt;
+                      {drinks.map((d) =&gt; (
+                        &lt;option key={d._id} value={d._id}&gt;
+                          {d.emoji} {d.name} — {d.price} грн
+                        &lt;/option&gt;
+                      ))}
+                    &lt;/select&gt;
+                  &lt;/div&gt;
+                  &lt;div className="w-24"&gt;
+                    &lt;input
+                      type="number"
+                      min="1"
+                      max="20"
+                      required
+                      value={item.quantity}
+                      onChange={(e) =&gt; updateItem(index, { quantity: e.target.value })}
+                      className="w-full px-3 py-2 border rounded focus:outline-none focus:border-amber-500"
+                    /&gt;
+                  &lt;/div&gt;
+                  &lt;div className="w-24 text-right pt-2 text-sm text-gray-700"&gt;
+                    {subtotal ? `${subtotal} грн` : '—'}
+                  &lt;/div&gt;
+                  &lt;button
+                    type="button"
+                    onClick={() =&gt; removeItem(index)}
+                    disabled={items.length === 1}
+                    className="text-red-600 hover:text-red-800 disabled:text-gray-300 text-lg px-2"
+                    title="Видалити позицію"
+                  &gt;
+                    ×
+                  &lt;/button&gt;
+                &lt;/div&gt;
+              )
+            })}
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div&gt;
+          &lt;label className="block text-gray-700 font-bold mb-2"&gt;Коментар&lt;/label&gt;
+          &lt;textarea
+            rows="3"
+            maxLength="300"
+            value={notes}
+            onChange={(e) =&gt; setNotes(e.target.value)}
+            placeholder="Напр.: без цукру, з молоком..."
+            className="w-full px-4 py-2 border rounded focus:outline-none focus:border-amber-500"
+          /&gt;
+        &lt;/div&gt;
+
+        {totalPrice &gt; 0 &amp;&amp; (
+          &lt;div className="bg-amber-50 border border-amber-200 px-4 py-3 rounded"&gt;
+            &lt;p className="text-gray-700"&gt;
+              &lt;strong&gt;До сплати:&lt;/strong&gt;{' '}
+              &lt;span className="text-xl font-bold text-amber-700"&gt;{totalPrice} грн&lt;/span&gt;
+              &lt;span className="text-sm text-gray-500 ml-2"&gt;
+                ({items.length} поз.)
+              &lt;/span&gt;
+            &lt;/p&gt;
+          &lt;/div&gt;
+        )}
+
+        &lt;div className="flex gap-4"&gt;
+          &lt;button
+            type="submit"
+            disabled={isSubmitting || !canSubmit}
+            className="bg-amber-700 text-white px-6 py-3 rounded hover:bg-amber-800 font-bold disabled:opacity-50"
+          &gt;
+            {isSubmitting ? 'Створення...' : 'Створити замовлення'}
+          &lt;/button&gt;
+          &lt;Link
+            href="/dashboard/orders"
+            className="bg-gray-300 text-gray-700 px-6 py-3 rounded hover:bg-gray-400 font-bold inline-block"
+          &gt;
+            Скасувати
+          &lt;/Link&gt;
+        &lt;/div&gt;
+      &lt;/form&gt;
+    &lt;/&gt;
+  )
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: <code>app/dashboard/orders/page.js</code> — список замовлень</h4>
+        <p>
+          Admin бачить таблицю з користувачем і прев'ю позицій (перші 2 + «і ще N»);
+          user бачить картки зі своїми замовленнями.
+        </p>
+        <div class="code-block">
+          <div class="code-header">app/dashboard/orders/page.js</div>
+          <pre><code>// Тиждень 11: Список замовлень у dashboard (many-to-many через OrderItem)
+// Admin — таблиця з user + items (перелік позицій)
+// User  — власні замовлення картками
+
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useSession } from 'next-auth/react'
+import Link from 'next/link'
+import OrderStatusBadge from '@/components/OrderStatusBadge'
+
+export default function OrdersListPage() {
+  const { data: session } = useSession()
+  const role = session?.user?.role
+
+  const [orders, setOrders] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() =&gt; {
+    fetch('/api/orders')
+      .then((res) =&gt; res.json())
+      .then((data) =&gt; {
+        setOrders(Array.isArray(data) ? data : [])
+        setLoading(false)
+      })
+  }, [])
+
+  if (loading) {
+    return (
+      &lt;div&gt;
+        &lt;div className="h-10 bg-gray-200 rounded w-48 mb-6 animate-pulse"&gt;&lt;/div&gt;
+        &lt;div className="bg-white rounded-lg shadow p-8 text-center text-gray-500"&gt;
+          Завантаження...
+        &lt;/div&gt;
+      &lt;/div&gt;
+    )
+  }
+
+  return (
+    &lt;div&gt;
+      &lt;div className="flex justify-between items-center mb-6"&gt;
+        &lt;h1 className="text-3xl font-bold text-gray-900"&gt;
+          {role === 'admin' ? 'Усі замовлення' : 'Мої замовлення'}
+        &lt;/h1&gt;
+        &lt;Link
+          href="/dashboard/orders/new"
+          className="bg-amber-700 text-white px-6 py-2 rounded hover:bg-amber-800 transition"
+        &gt;
+          + Нове замовлення
+        &lt;/Link&gt;
+      &lt;/div&gt;
+
+      {orders.length === 0 ? (
+        &lt;div className="bg-white rounded-lg shadow p-8 text-center text-gray-500"&gt;
+          Замовлень поки немає.
+        &lt;/div&gt;
+      ) : role === 'admin' ? (
+        &lt;AdminTable orders={orders} /&gt;
+      ) : (
+        &lt;UserCards orders={orders} /&gt;
+      )}
+    &lt;/div&gt;
+  )
+}
+
+// Стисле прев'ю позицій: перші 2 + "і ще N"
+function ItemsPreview({ items }) {
+  if (!items || items.length === 0) {
+    return &lt;span className="text-gray-400 italic"&gt;(без позицій)&lt;/span&gt;
+  }
+  const visible = items.slice(0, 2)
+  const rest = items.length - visible.length
+  return (
+    &lt;div className="text-sm"&gt;
+      {visible.map((it, idx) =&gt; (
+        &lt;div key={it._id || idx} className="text-gray-700"&gt;
+          {it.drink ? (
+            &lt;&gt;
+              {it.drink.emoji} {it.drink.name}
+              &lt;span className="text-gray-500"&gt; × {it.quantity}&lt;/span&gt;
+            &lt;/&gt;
+          ) : (
+            &lt;span className="text-gray-400 italic"&gt;(видалено) × {it.quantity}&lt;/span&gt;
+          )}
+        &lt;/div&gt;
+      ))}
+      {rest &gt; 0 &amp;&amp; (
+        &lt;div className="text-xs text-gray-500"&gt;і ще {rest}…&lt;/div&gt;
+      )}
+    &lt;/div&gt;
+  )
+}
+
+function AdminTable({ orders }) {
+  return (
+    &lt;div className="bg-white rounded-lg shadow overflow-hidden"&gt;
+      &lt;table className="w-full"&gt;
+        &lt;thead className="bg-gray-50"&gt;
+          &lt;tr&gt;
+            &lt;th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;Дата&lt;/th&gt;
+            &lt;th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;Користувач&lt;/th&gt;
+            &lt;th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;Позиції&lt;/th&gt;
+            &lt;th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;Сума&lt;/th&gt;
+            &lt;th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;Статус&lt;/th&gt;
+            &lt;th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;Дії&lt;/th&gt;
+          &lt;/tr&gt;
+        &lt;/thead&gt;
+        &lt;tbody className="divide-y divide-gray-200"&gt;
+          {orders.map((order) =&gt; (
+            &lt;tr key={order._id} className="hover:bg-gray-50"&gt;
+              &lt;td className="px-4 py-3 text-sm text-gray-600 align-top"&gt;
+                {new Date(order.createdAt).toLocaleString('uk-UA')}
+              &lt;/td&gt;
+              &lt;td className="px-4 py-3 align-top"&gt;
+                {order.user ? (
+                  &lt;div&gt;
+                    &lt;div className="font-medium text-gray-900"&gt;{order.user.name}&lt;/div&gt;
+                    &lt;div className="text-xs text-gray-500"&gt;{order.user.email}&lt;/div&gt;
+                  &lt;/div&gt;
+                ) : (
+                  &lt;span className="text-gray-400 italic"&gt;—&lt;/span&gt;
+                )}
+              &lt;/td&gt;
+              &lt;td className="px-4 py-3 align-top"&gt;
+                &lt;ItemsPreview items={order.items} /&gt;
+              &lt;/td&gt;
+              &lt;td className="px-4 py-3 font-medium text-gray-900 align-top"&gt;{order.totalPrice} грн&lt;/td&gt;
+              &lt;td className="px-4 py-3 align-top"&gt;
+                &lt;OrderStatusBadge status={order.status} /&gt;
+              &lt;/td&gt;
+              &lt;td className="px-4 py-3 align-top"&gt;
+                &lt;Link
+                  href={`/dashboard/orders/${order._id}`}
+                  className="text-amber-700 hover:underline text-sm"
+                &gt;
+                  Переглянути
+                &lt;/Link&gt;
+              &lt;/td&gt;
+            &lt;/tr&gt;
+          ))}
+        &lt;/tbody&gt;
+      &lt;/table&gt;
+    &lt;/div&gt;
+  )
+}
+
+function UserCards({ orders }) {
+  return (
+    &lt;div className="grid grid-cols-1 md:grid-cols-2 gap-4"&gt;
+      {orders.map((order) =&gt; {
+        const itemsCount = order.items?.length || 0
+        return (
+          &lt;Link
+            key={order._id}
+            href={`/dashboard/orders/${order._id}`}
+            className="bg-white rounded-lg shadow p-5 hover:shadow-md transition"
+          &gt;
+            &lt;div className="flex justify-between items-start mb-3"&gt;
+              &lt;div&gt;
+                &lt;h3 className="font-bold text-lg text-gray-900"&gt;
+                  Замовлення #{order._id.slice(-6)}
+                &lt;/h3&gt;
+                &lt;p className="text-sm text-gray-500"&gt;
+                  {new Date(order.createdAt).toLocaleString('uk-UA')}
+                &lt;/p&gt;
+              &lt;/div&gt;
+              &lt;OrderStatusBadge status={order.status} /&gt;
+            &lt;/div&gt;
+            &lt;div className="mb-3"&gt;
+              &lt;ItemsPreview items={order.items} /&gt;
+            &lt;/div&gt;
+            &lt;div className="flex justify-between text-sm text-gray-700 border-t pt-2"&gt;
+              &lt;span&gt;{itemsCount} {itemsCount === 1 ? 'позиція' : 'позицій'}&lt;/span&gt;
+              &lt;span className="font-bold text-amber-700"&gt;{order.totalPrice} грн&lt;/span&gt;
+            &lt;/div&gt;
+            {order.notes &amp;&amp; (
+              &lt;p className="text-xs text-gray-500 mt-2 italic"&gt;&amp;ldquo;{order.notes}&amp;rdquo;&lt;/p&gt;
+            )}
+          &lt;/Link&gt;
+        )
+      })}
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: <code>app/dashboard/orders/new/page.js</code> — створення</h4>
+        <div class="code-block">
+          <div class="code-header">app/dashboard/orders/new/page.js</div>
+          <pre><code>// Тиждень 11: Сторінка створення замовлення
+
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import OrderForm from '@/components/OrderForm'
+
+export default function NewOrderPage() {
+  const router = useRouter()
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+
+  const handleSubmit = async (data) =&gt; {
+    setSubmitting(true)
+    setError('')
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    const body = await res.json().catch(() =&gt; ({}))
+    setSubmitting(false)
+    if (!res.ok) {
+      setError(body.errors?.join(', ') || body.error || 'Помилка створення')
+      return
+    }
+    router.push(`/dashboard/orders/${body._id}`)
+    router.refresh()
+  }
+
+  return (
+    &lt;div className="max-w-2xl"&gt;
+      &lt;h1 className="text-3xl font-bold text-gray-900 mb-6"&gt;Нове замовлення&lt;/h1&gt;
+      &lt;OrderForm onSubmit={handleSubmit} isSubmitting={submitting} error={error} /&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: <code>app/dashboard/orders/[id]/page.js</code> — деталі</h4>
+        <p>
+          Server Component, populate <code>items.drink</code> через Mongoose; таблиця позицій
+          з <code>priceAtOrder</code>, кількістю та subtotal; разом унизу.
+        </p>
+        <div class="code-block">
+          <div class="code-header">app/dashboard/orders/[id]/page.js</div>
+          <pre><code>// Тиждень 11: Деталі одного замовлення (many-to-many через OrderItem)
+// Server Component — populate items.drink через virtual
+
+import { notFound, redirect } from 'next/navigation'
+import Link from 'next/link'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import dbConnect from '@/lib/db'
+import Order from '@/lib/models/Order'
+import OrderItem from '@/lib/models/OrderItem'
+import Drink from '@/lib/models/Drink'
+import User from '@/lib/models/User'
+import OrderStatusBadge from '@/components/OrderStatusBadge'
+import OrderActions from '@/components/OrderActions'
+
+// Реєструємо моделі для populate()
+void [Drink, User, OrderItem]
+
+export default async function OrderDetailsPage({ params }) {
+  const session = await getServerSession(authOptions)
+  if (!session) redirect('/login')
+
+  const { id } = await params
+  await dbConnect()
+
+  let order
+  try {
+    order = await Order.findById(id)
+      .populate({ path: 'user', select: 'name email role' })
+      .populate({
+        path: 'items',
+        populate: { path: 'drink', select: 'name price emoji category description' },
+      })
+      .lean({ virtuals: true })
+  } catch {
+    notFound()
+  }
+  if (!order) notFound()
+
+  const isAdmin = session.user.role === 'admin'
+  const isOwner = order.user?._id?.toString() === session.user.id
+  if (!isAdmin &amp;&amp; !isOwner) {
+    return (
+      &lt;div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded"&gt;
+        У вас немає доступу до цього замовлення.
+      &lt;/div&gt;
+    )
+  }
+
+  // Прибираємо Mongoose внутрішні поля для серіалізації
+  const serialized = JSON.parse(JSON.stringify(order))
+  const items = serialized.items || []
+
+  return (
+    &lt;div className="max-w-3xl"&gt;
+      &lt;div className="mb-4"&gt;
+        &lt;Link href="/dashboard/orders" className="text-amber-700 hover:underline text-sm"&gt;
+          &amp;larr; До списку
+        &lt;/Link&gt;
+      &lt;/div&gt;
+
+      &lt;div className="flex justify-between items-start mb-6"&gt;
+        &lt;h1 className="text-3xl font-bold text-gray-900"&gt;
+          Замовлення #{serialized._id.slice(-6)}
+        &lt;/h1&gt;
+        &lt;OrderStatusBadge status={serialized.status} /&gt;
+      &lt;/div&gt;
+
+      &lt;div className="bg-white rounded-lg shadow p-6 space-y-5"&gt;
+        &lt;InfoRow label="Створено"&gt;
+          {new Date(serialized.createdAt).toLocaleString('uk-UA')}
+        &lt;/InfoRow&gt;
+
+        &lt;InfoRow label="Користувач"&gt;
+          {serialized.user ? (
+            &lt;&gt;
+              &lt;span className="font-medium"&gt;{serialized.user.name}&lt;/span&gt;
+              &lt;span className="text-gray-500 text-sm ml-2"&gt;({serialized.user.email})&lt;/span&gt;
+            &lt;/&gt;
+          ) : (
+            &lt;span className="italic text-gray-400"&gt;—&lt;/span&gt;
+          )}
+        &lt;/InfoRow&gt;
+
+        {serialized.notes &amp;&amp; (
+          &lt;InfoRow label="Коментар"&gt;
+            &lt;span className="italic"&gt;&amp;ldquo;{serialized.notes}&amp;rdquo;&lt;/span&gt;
+          &lt;/InfoRow&gt;
+        )}
+      &lt;/div&gt;
+
+      &lt;h2 className="text-xl font-bold text-gray-900 mt-8 mb-4"&gt;Позиції замовлення&lt;/h2&gt;
+      &lt;div className="bg-white rounded-lg shadow overflow-hidden"&gt;
+        &lt;table className="w-full"&gt;
+          &lt;thead className="bg-gray-50"&gt;
+            &lt;tr&gt;
+              &lt;th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase"&gt;Напій&lt;/th&gt;
+              &lt;th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase"&gt;Ціна&lt;/th&gt;
+              &lt;th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase"&gt;К-сть&lt;/th&gt;
+              &lt;th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase"&gt;Сума&lt;/th&gt;
+            &lt;/tr&gt;
+          &lt;/thead&gt;
+          &lt;tbody className="divide-y divide-gray-200"&gt;
+            {items.length === 0 ? (
+              &lt;tr&gt;
+                &lt;td colSpan={4} className="px-4 py-6 text-center text-gray-400 italic"&gt;
+                  Позицій немає
+                &lt;/td&gt;
+              &lt;/tr&gt;
+            ) : (
+              items.map((it) =&gt; {
+                const subtotal = it.priceAtOrder * it.quantity
+                return (
+                  &lt;tr key={it._id}&gt;
+                    &lt;td className="px-4 py-3"&gt;
+                      {it.drink ? (
+                        &lt;div&gt;
+                          &lt;div className="font-medium text-gray-900"&gt;
+                            {it.drink.emoji} {it.drink.name}
+                          &lt;/div&gt;
+                          &lt;div className="text-xs text-gray-500"&gt;{it.drink.category}&lt;/div&gt;
+                        &lt;/div&gt;
+                      ) : (
+                        &lt;span className="text-gray-400 italic"&gt;(напій видалено)&lt;/span&gt;
+                      )}
+                    &lt;/td&gt;
+                    &lt;td className="px-4 py-3 text-right text-gray-700"&gt;
+                      {it.priceAtOrder} грн
+                    &lt;/td&gt;
+                    &lt;td className="px-4 py-3 text-right text-gray-700"&gt;{it.quantity}&lt;/td&gt;
+                    &lt;td className="px-4 py-3 text-right font-medium text-gray-900"&gt;
+                      {subtotal} грн
+                    &lt;/td&gt;
+                  &lt;/tr&gt;
+                )
+              })
+            )}
+          &lt;/tbody&gt;
+          &lt;tfoot className="bg-gray-50"&gt;
+            &lt;tr&gt;
+              &lt;td colSpan={3} className="px-4 py-3 text-right font-bold text-gray-700"&gt;
+                Разом:
+              &lt;/td&gt;
+              &lt;td className="px-4 py-3 text-right text-xl font-bold text-amber-700"&gt;
+                {serialized.totalPrice} грн
+              &lt;/td&gt;
+            &lt;/tr&gt;
+          &lt;/tfoot&gt;
+        &lt;/table&gt;
+      &lt;/div&gt;
+
+      &lt;div className="mt-6"&gt;
+        &lt;OrderActions
+          order={serialized}
+          role={session.user.role}
+          currentUserId={session.user.id}
+        /&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}
+
+function InfoRow({ label, children }) {
+  return (
+    &lt;div className="flex gap-4 border-b pb-3 last:border-0 last:pb-0"&gt;
+      &lt;div className="w-32 text-sm font-medium text-gray-500 flex-shrink-0"&gt;{label}&lt;/div&gt;
+      &lt;div className="flex-1 text-gray-900"&gt;{children}&lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: <code>app/dashboard/orders/[id]/edit/page.js</code> — редагування</h4>
+        <p>Admin редагує лише <code>status</code> і <code>notes</code>; items відображаються read-only.</p>
+        <div class="code-block">
+          <div class="code-header">app/dashboard/orders/[id]/edit/page.js</div>
+          <pre><code>// Тиждень 11: Редагування замовлення (admin only — status + notes)
+// Позиції замовлення (items) у цьому тижні read-only.
+
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter, useParams } from 'next/navigation'
+import { useSession } from 'next-auth/react'
+import Link from 'next/link'
+
+const STATUSES = [
+  { value: 'pending',    label: 'Очікує' },
+  { value: 'preparing',  label: 'Готується' },
+  { value: 'ready',      label: 'Готово' },
+  { value: 'completed',  label: 'Виконано' },
+  { value: 'cancelled',  label: 'Скасовано' },
+]
+
+export default function EditOrderPage() {
+  const router = useRouter()
+  const params = useParams()
+  const { data: session, status: sessionStatus } = useSession()
+
+  const [order, setOrder] = useState(null)
+  const [status, setStatus] = useState('pending')
+  const [notes, setNotes] = useState('')
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() =&gt; {
+    fetch(`/api/orders/${params.id}`)
+      .then((res) =&gt; res.json())
+      .then((data) =&gt; {
+        if (data.error) {
+          setError(data.error)
+          setLoading(false)
+          return
+        }
+        setOrder(data)
+        setStatus(data.status)
+        setNotes(data.notes || '')
+        setLoading(false)
+      })
+  }, [params.id])
+
+  if (sessionStatus === 'loading' || loading) {
+    return &lt;div className="text-gray-500"&gt;Завантаження...&lt;/div&gt;
+  }
+
+  if (session?.user?.role !== 'admin') {
+    return (
+      &lt;div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded"&gt;
+        Редагувати замовлення може лише адміністратор.
+      &lt;/div&gt;
+    )
+  }
+
+  const handleSubmit = async (e) =&gt; {
+    e.preventDefault()
+    setSaving(true)
+    setError('')
+    const res = await fetch(`/api/orders/${params.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, notes }),
+    })
+    const body = await res.json().catch(() =&gt; ({}))
+    setSaving(false)
+    if (!res.ok) {
+      setError(body.errors?.join(', ') || body.error || 'Помилка збереження')
+      return
+    }
+    router.push(`/dashboard/orders/${params.id}`)
+    router.refresh()
+  }
+
+  if (!order) {
+    return (
+      &lt;div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded"&gt;
+        {error || 'Замовлення не знайдено'}
+      &lt;/div&gt;
+    )
+  }
+
+  const items = order.items || []
+
+  return (
+    &lt;div className="max-w-2xl"&gt;
+      &lt;div className="mb-4"&gt;
+        &lt;Link
+          href={`/dashboard/orders/${params.id}`}
+          className="text-amber-700 hover:underline text-sm"
+        &gt;
+          &amp;larr; До замовлення
+        &lt;/Link&gt;
+      &lt;/div&gt;
+
+      &lt;h1 className="text-3xl font-bold text-gray-900 mb-6"&gt;
+        Редагування замовлення
+      &lt;/h1&gt;
+
+      {error &amp;&amp; (
+        &lt;div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-6"&gt;
+          {error}
+        &lt;/div&gt;
+      )}
+
+      &lt;form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow space-y-5"&gt;
+        &lt;div className="text-sm text-gray-600 border-b pb-3"&gt;
+          &lt;div&gt;Користувач: &lt;strong&gt;{order.user?.name}&lt;/strong&gt;&lt;/div&gt;
+          &lt;div className="mt-2"&gt;Позиції (read-only):&lt;/div&gt;
+          &lt;ul className="mt-1 ml-4 list-disc"&gt;
+            {items.map((it) =&gt; (
+              &lt;li key={it._id}&gt;
+                {it.drink ? `${it.drink.emoji} ${it.drink.name}` : '(напій видалено)'}
+                {' '}× {it.quantity} ({it.priceAtOrder} грн)
+              &lt;/li&gt;
+            ))}
+          &lt;/ul&gt;
+          &lt;div className="mt-2"&gt;
+            Сума: &lt;strong&gt;{order.totalPrice} грн&lt;/strong&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+
+        &lt;div&gt;
+          &lt;label className="block text-gray-700 font-bold mb-2"&gt;Статус *&lt;/label&gt;
+          &lt;select
+            required
+            value={status}
+            onChange={(e) =&gt; setStatus(e.target.value)}
+            className="w-full px-4 py-2 border rounded focus:outline-none focus:border-amber-500"
+          &gt;
+            {STATUSES.map((s) =&gt; (
+              &lt;option key={s.value} value={s.value}&gt;{s.label}&lt;/option&gt;
+            ))}
+          &lt;/select&gt;
+        &lt;/div&gt;
+
+        &lt;div&gt;
+          &lt;label className="block text-gray-700 font-bold mb-2"&gt;Коментар&lt;/label&gt;
+          &lt;textarea
+            rows="3"
+            maxLength="300"
+            value={notes}
+            onChange={(e) =&gt; setNotes(e.target.value)}
+            className="w-full px-4 py-2 border rounded focus:outline-none focus:border-amber-500"
+          /&gt;
+        &lt;/div&gt;
+
+        &lt;div className="flex gap-4"&gt;
+          &lt;button
+            type="submit"
+            disabled={saving}
+            className="bg-amber-700 text-white px-6 py-3 rounded hover:bg-amber-800 font-bold disabled:opacity-50"
+          &gt;
+            {saving ? 'Збереження...' : 'Зберегти'}
+          &lt;/button&gt;
+          &lt;Link
+            href={`/dashboard/orders/${params.id}`}
+            className="bg-gray-300 text-gray-700 px-6 py-3 rounded hover:bg-gray-400 font-bold inline-block"
+          &gt;
+            Скасувати
+          &lt;/Link&gt;
+        &lt;/div&gt;
+      &lt;/form&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: <code>components/OrderStatusBadge.jsx</code></h4>
+        <p>Бейдж зі 5 кольорами для кожного статусу:</p>
+        <div class="code-block">
+          <div class="code-header">components/OrderStatusBadge.jsx</div>
+          <pre><code>// Тиждень 11: Компонент-бейдж статусу замовлення
+
+const STATUS_CONFIG = {
+  pending:    { label: "Очікує",    classes: "bg-yellow-100 text-yellow-800" },
+  preparing:  { label: "Готується", classes: "bg-blue-100 text-blue-800" },
+  ready:      { label: "Готово",    classes: "bg-emerald-100 text-emerald-800" },
+  completed:  { label: "Виконано",  classes: "bg-gray-200 text-gray-700" },
+  cancelled:  { label: "Скасовано", classes: "bg-red-100 text-red-700" },
+};
+
+export default function OrderStatusBadge({ status }) {
+  const cfg = STATUS_CONFIG[status] || {
+    label: status,
+    classes: "bg-gray-100 text-gray-700",
+  };
+  return (
+    &lt;span className={`inline-block text-xs font-semibold px-2 py-1 rounded ${cfg.classes}`}&gt;
+      {cfg.label}
+    &lt;/span&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: <code>components/OrderActions.jsx</code></h4>
+        <p>Кнопки Редагувати / Видалити (для admin) та Скасувати (для власника pending-замовлення):</p>
+        <div class="code-block">
+          <div class="code-header">components/OrderActions.jsx</div>
+          <pre><code>// Тиждень 11: Кнопки дій над замовленням
+// Admin: редагувати статус, видалити
+// User (owner, pending): скасувати
+
+'use client'
+
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
+
+export default function OrderActions({ order, role, currentUserId }) {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const isAdmin = role === 'admin'
+  const isOwner =
+    (order.user?._id || order.user || '').toString() === currentUserId
+  const canCancel = isOwner &amp;&amp; order.status === 'pending'
+
+  const handleDelete = async () =&gt; {
+    if (!confirm('Видалити замовлення безповоротно?')) return
+    setLoading(true)
+    const res = await fetch(`/api/orders/${order._id}`, { method: 'DELETE' })
+    setLoading(false)
+    if (!res.ok) {
+      const data = await res.json().catch(() =&gt; ({}))
+      setError(data.error || 'Помилка видалення')
+      return
+    }
+    router.push('/dashboard/orders')
+    router.refresh()
+  }
+
+  const handleCancel = async () =&gt; {
+    if (!confirm('Скасувати це замовлення?')) return
+    setLoading(true)
+    const res = await fetch(`/api/orders/${order._id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'cancelled' }),
+    })
+    setLoading(false)
+    if (!res.ok) {
+      const data = await res.json().catch(() =&gt; ({}))
+      setError(data.errors?.[0] || data.error || 'Помилка скасування')
+      return
+    }
+    router.refresh()
+  }
+
+  return (
+    &lt;div&gt;
+      {error &amp;&amp; (
+        &lt;div className="bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded mb-3 text-sm"&gt;
+          {error}
+        &lt;/div&gt;
+      )}
+      &lt;div className="flex gap-3 flex-wrap"&gt;
+        {isAdmin &amp;&amp; (
+          &lt;&gt;
+            &lt;Link
+              href={`/dashboard/orders/${order._id}/edit`}
+              className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm font-medium"
+            &gt;
+              Редагувати
+            &lt;/Link&gt;
+            &lt;button
+              onClick={handleDelete}
+              disabled={loading}
+              className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm font-medium disabled:opacity-50"
+            &gt;
+              Видалити
+            &lt;/button&gt;
+          &lt;/&gt;
+        )}
+        {!isAdmin &amp;&amp; canCancel &amp;&amp; (
+          &lt;button
+            onClick={handleCancel}
+            disabled={loading}
+            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 text-sm font-medium disabled:opacity-50"
+          &gt;
+            Скасувати
+          &lt;/button&gt;
+        )}
+      &lt;/div&gt;
+    &lt;/div&gt;
+  )
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Оновити <code>components/DashboardNav.jsx</code></h4>
+        <div class="code-block">
+          <div class="code-header">DashboardNav (фрагмент)</div>
+          <pre><code>const links = [
+  { href: "/dashboard",        label: "Огляд" },
+  { href: "/dashboard/drinks", label: "Напої" },
+  { href: "/dashboard/orders", label: "Замовлення" },   // NEW
+  ...(isAdmin ? [{ href: "/dashboard/users", label: "Користувачі" }] : []),
+];</code></pre>
+        </div>
+      </div>
+
+      <div class="error-box">
+        <h5>&#x26A0;&#xFE0F; Часта помилка: MissingSchemaError при populate</h5>
+        <p>
+          Якщо бачите <code>Schema hasn't been registered for model "OrderItem"</code> &mdash;
+          ви забули імпортувати модель у файл, що викликає populate.
+          Додайте <code>import OrderItem from "@/lib/models/OrderItem"</code> та
+          <code>void OrderItem</code> (щоб webpack не вирізав unused import).
+        </p>
+      </div>
+
+      <div class="checkpoint">
+        <h5>Checkpoint</h5>
+        <p>
+          Логін як user &rarr; <code>/dashboard/orders/new</code> &rarr; додайте 2-3 позиції &rarr;
+          створіть замовлення &rarr; деталі показують таблицю з напоями та <code>priceAtOrder</code>.
+        </p>
+      </div>
+    </section>
+
+    <!-- 7. Seed -->
+    <section class="lecture-section" id="seed">
+      <h2>7. Seed з Order + OrderItem</h2>
+
+      <div class="task-box">
+        <h4>Завдання: Оновити <code>app/api/seed/route.js</code></h4>
+        <p>Seed створює Order + OrderItem разом через хелпер. 6 замовлень з 1-3 позиціями:</p>
+        <div class="code-block">
+          <div class="code-header">app/api/seed/route.js</div>
+          <pre><code>// Тиждень 9: Seed endpoint — наповнює базу початковими даними
+// GET /api/seed — видаляє всі документи та створює нові
+// Тиждень 11: seed замовлень через Order + OrderItem (many-to-many)
+
+import dbConnect from "@/lib/db";
+import Drink from "@/lib/models/Drink";
+import User from "@/lib/models/User";
+import Order from "@/lib/models/Order";
+import OrderItem from "@/lib/models/OrderItem";
+import bcrypt from "bcryptjs";
+
+const initialDrinks = [
+  { name: "Еспресо",     description: "Класичний італійський еспресо.",
+    price: 45, emoji: "☕", category: "Кава", available: true },
+  { name: "Капучіно",    description: "Еспресо з молочною пінкою.",
+    price: 65, emoji: "🥛", category: "Кава", available: true },
+  { name: "Латте",       description: "М'який смак кави з теплим молоком.",
+    price: 70, emoji: "🍵", category: "Кава", available: true },
+  { name: "Американо",   description: "Еспресо розбавлений гарячою водою.",
+    price: 50, emoji: "☕", category: "Кава", available: true },
+  { name: "Раф",         description: "Вершковий кавовий напій.",
+    price: 75, emoji: "🍨", category: "Кава", available: false },
+  { name: "Круасан",     description: "Свіжий французький круасан.",
+    price: 55, emoji: "🥐", category: "Їжа", available: true },
+  { name: "Чізкейк",     description: "Ніжний чізкейк Нью-Йорк.",
+    price: 95, emoji: "🍰", category: "Їжа", available: true },
+  { name: "Зелений чай", description: "Японський зелений чай Сенча.",
+    price: 55, emoji: "🍃", category: "Чай", available: true },
+  { name: "Матча латте", description: "Японський чай матча з молоком.",
+    price: 80, emoji: "🍵", category: "Чай", available: true },
+  { name: "Какао",       description: "Гарячий шоколадний напій.",
+    price: 60, emoji: "🍫", category: "Інше", available: true },
+];
+
+// Хелпер: створити Order + його OrderItem-и одним блоком
+async function seedOrder({ user, items, status, notes = "" }) {
+  const totalPrice = items.reduce(
+    (sum, it) =&gt; sum + it.drink.price * it.quantity,
+    0
+  );
+
+  const order = await Order.create({
+    user: user._id,
+    totalPrice,
+    status,
+    notes,
+  });
+
+  await OrderItem.insertMany(
+    items.map((it) =&gt; ({
+      order: order._id,
+      drink: it.drink._id,
+      quantity: it.quantity,
+      priceAtOrder: it.drink.price,
+    }))
+  );
+
+  return order;
+}
+
+export async function GET() {
+  try {
+    await dbConnect();
+
+    // Seed напоїв
+    await Drink.deleteMany({});
+    const drinks = await Drink.create(initialDrinks);
+
+    // Seed користувачів з різними ролями
+    await User.deleteMany({});
+    const hashedPassword = await bcrypt.hash("password123", 10);
+
+    const users = await User.insertMany([
+      { name: "Адміністратор", email: "admin@test.com",
+        password: hashedPassword, role: "admin" },
+      { name: "Користувач",    email: "user@test.com",
+        password: hashedPassword, role: "user" },
+      { name: "Олена",         email: "olena@test.com",
+        password: hashedPassword, role: "user" },
+    ]);
+
+    // Seed замовлень через Order + OrderItem
+    await Order.deleteMany({});
+    await OrderItem.deleteMany({});
+
+    const [admin, userOne, userTwo] = users;
+    const [espresso, cappuccino, latte, americano, , croissant,
+           cheesecake, greenTea, matcha] = drinks;
+
+    const ordersData = [
+      // Замовлення з 2 позиціями (many-to-many у дії)
+      { user: userOne,
+        items: [
+          { drink: latte, quantity: 2 },
+          { drink: croissant, quantity: 1 },
+        ],
+        status: "pending", notes: "Без цукру" },
+      // Одна позиція
+      { user: userOne,
+        items: [{ drink: americano, quantity: 1 }],
+        status: "completed" },
+      // 3 позиції
+      { user: userTwo,
+        items: [
+          { drink: cappuccino, quantity: 1 },
+          { drink: cheesecake, quantity: 1 },
+          { drink: greenTea, quantity: 2 },
+        ],
+        status: "preparing", notes: "З корицею" },
+      // Одна позиція
+      { user: userTwo,
+        items: [{ drink: matcha, quantity: 1 }],
+        status: "ready" },
+      // 2 позиції
+      { user: userTwo,
+        items: [
+          { drink: greenTea, quantity: 3 },
+          { drink: croissant, quantity: 2 },
+        ],
+        status: "pending" },
+      // Замовлення адміна
+      { user: admin,
+        items: [{ drink: espresso, quantity: 1 }],
+        status: "completed" },
+    ];
+
+    const orders = [];
+    for (const data of ordersData) {
+      orders.push(await seedOrder(data));
+    }
+
+    const itemsCount = await OrderItem.countDocuments({});
+
+    return Response.json({
+      message: `Seed виконано: ${drinks.length} напоїв, ${users.length} користувачів, ${orders.length} замовлень, ${itemsCount} позицій`,
+      drinks: drinks.length,
+      users: users.length,
+      orders: orders.length,
+      orderItems: itemsCount,
+      testAccounts: [
+        { email: "admin@test.com", password: "password123", role: "admin" },
+        { email: "user@test.com",  password: "password123", role: "user" },
+        { email: "olena@test.com", password: "password123", role: "user" },
+      ],
+    });
+  } catch (error) {
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Протестувати каскад</h4>
+        <ol>
+          <li>GET <code>/api/seed</code> &rarr; у відповіді має бути <code>orders: 6, orderItems: ~10</code></li>
+          <li>Логін як admin &rarr; <code>/dashboard/drinks</code> &rarr; видаліть &laquo;Какао&raquo;</li>
+          <li>У MongoDB Compass: у <code>orderitems</code> немає документів з цим <code>drink</code>; якщо якесь замовлення було лише з Какао &mdash; воно видалилося</li>
+          <li>Видаліть одне замовлення через UI &mdash; в Compass відповідні <code>orderitems</code> зникли</li>
+        </ol>
+      </div>
+
+      <div class="checkpoint">
+        <h5>Checkpoint</h5>
+        <p><code>/api/seed</code> створює Order + OrderItem; каскади працюють в обох напрямках.</p>
+      </div>
+    </section>
+
+    <!-- 8. Dashboard stats (admin only) -->
+    <section class="lecture-section" id="dashboard-stats">
+      <h2>8. Статистика замовлень на dashboard (admin only)</h2>
+      <p>
+        Admin має на головній dashboard бачити агреговану статистику замовлень
+        (всього, очікують, виконано). Звичайному користувачу ця інформація не потрібна
+        &mdash; вона стосується всіх замовлень у системі, а не його власних.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання: Додати <code>getOrderStats()</code> у <code>lib/helpers.js</code></h4>
+        <p>Хелпер рахує сумарні показники по всій колекції <code>orders</code>:</p>
+        <div class="code-block">
+          <div class="code-header">lib/helpers.js (додати функцію)</div>
+          <pre><code>import Order from "./models/Order";
+
+export async function getOrderStats() {
+  await dbConnect();
+
+  const [total, pending, completed] = await Promise.all([
+    Order.countDocuments({}),
+    Order.countDocuments({ status: "pending" }),
+    Order.countDocuments({ status: "completed" }),
+  ]);
+
+  return { total, pending, completed };
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Оновити <code>app/dashboard/page.js</code></h4>
+        <p>
+          Через <code>getServerSession</code> визначаємо роль; для не-admin
+          навіть не запитуємо <code>getOrderStats()</code>. Секція &laquo;Замовлення&raquo;
+          рендериться лише в гілці <code>isAdmin &amp;&amp; orderStats</code>.
+        </p>
+        <div class="code-block">
+          <div class="code-header">app/dashboard/page.js</div>
+          <pre><code>// Dashboard — Server Component
+// Тиждень 7: статистика з MongoDB через getDrinkStats()
+// Тиждень 11: статистика замовлень видна лише адміністратору
+
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import StatsCard from "@/components/StatsCard";
+import { getDrinkStats, getOrderStats } from "@/lib/helpers";
+
+export const metadata = {
+  title: "Dashboard",
+};
+
+export default async function DashboardPage() {
+  const session = await getServerSession(authOptions);
+  const isAdmin = session?.user?.role === "admin";
+
+  // Замовлення-статистика — лише адмінам, тому й запит робимо тільки для них.
+  const [drinkStats, orderStats] = await Promise.all([
+    getDrinkStats(),
+    isAdmin ? getOrderStats() : Promise.resolve(null),
+  ]);
+
+  return (
+    &lt;div&gt;
+      &lt;h1 className="text-3xl font-bold mb-6 text-gray-900"&gt;Огляд&lt;/h1&gt;
+
+      &lt;h2 className="text-xl font-semibold text-gray-700 mb-3"&gt;Меню&lt;/h2&gt;
+      &lt;div className="grid grid-cols-1 md:grid-cols-3 gap-6"&gt;
+        &lt;StatsCard title="Позицій у меню" value={drinkStats.total} color="amber" /&gt;
+        &lt;StatsCard title="В наявності" value={drinkStats.available} color="green" /&gt;
+        &lt;StatsCard title="Середня ціна" value={`${drinkStats.avgPrice} грн`} color="blue" /&gt;
+      &lt;/div&gt;
+      &lt;div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6"&gt;
+        &lt;StatsCard title="Категорій" value={drinkStats.categoriesCount} color="blue" /&gt;
+        &lt;StatsCard title="Немає в наявності" value={drinkStats.unavailable} color="red" /&gt;
+      &lt;/div&gt;
+
+      {isAdmin &amp;&amp; orderStats &amp;&amp; (
+        &lt;&gt;
+          &lt;h2 className="text-xl font-semibold text-gray-700 mt-8 mb-3"&gt;Замовлення&lt;/h2&gt;
+          &lt;div className="grid grid-cols-1 md:grid-cols-3 gap-6"&gt;
+            &lt;StatsCard title="Замовлень всього" value={orderStats.total} color="amber" /&gt;
+            &lt;StatsCard title="Очікують" value={orderStats.pending} color="red" /&gt;
+            &lt;StatsCard title="Виконано" value={orderStats.completed} color="green" /&gt;
+          &lt;/div&gt;
+        &lt;/&gt;
+      )}
+    &lt;/div&gt;
+  );
+}</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Чому conditional fetch?</strong> Якщо ми завжди викликаємо <code>getOrderStats()</code>,
+        а потім просто ховаємо UI &mdash; даремно б'ємо БД для звичайних користувачів. Краще не запитувати
+        те, чого не покажемо. Це ще й мінімізує витоки інформації: статистика по всіх замовленнях
+        ніколи не покидає сервер.
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання: Перевірити</h4>
+        <ol>
+          <li>Логін як admin &rarr; <code>/dashboard</code> &rarr; видно секцію &laquo;Замовлення&raquo; з 3 картками</li>
+          <li>Логін як user &rarr; <code>/dashboard</code> &rarr; секції &laquo;Замовлення&raquo; <strong>немає</strong></li>
+          <li>У DevTools Network &mdash; для user не має бути запитів, що повертають <code>orderStats</code></li>
+        </ol>
+      </div>
+
+      <div class="checkpoint">
+        <h5>Checkpoint</h5>
+        <p>Admin бачить статистику замовлень на dashboard, user — лише статистику меню.</p>
+      </div>
+    </section>
+
+    <!-- 9. GitHub -->
+    <section class="lecture-section" id="github">
+      <h2>9. Збереження та завантаження на GitHub</h2>
+
+      <div class="task-box">
+        <h4>Завдання: Створити гілку та завантажити код</h4>
+        <div class="code-block">
+          <div class="code-header">Terminal</div>
+          <pre><code>git checkout -b LR11
+git add .
+git commit -m "feat: add Order+OrderItem with 1-to-many and many-to-many relations"
+git push -u origin LR11</code></pre>
+        </div>
+      </div>
+
+      <div class="info-box info">
+        <strong>Перевірте .gitignore:</strong> <code>.env.local</code> не повинен потрапити в репозиторій.
+      </div>
+
+      <div class="checkpoint">
+        <h5>Checkpoint</h5>
+        <p>Код завантажено на GitHub у гілці <code>LR11</code>.</p>
+      </div>
+    </section>
+
+    <!-- Підсумок -->
+    <section class="lecture-section">
+      <h2>Підсумок</h2>
+
+      <div class="final-result">
+        <h4>&#x2705; Критерії успішного виконання</h4>
+        <ul class="criteria-list">
+          <li><code>lib/models/Order.js</code> &mdash; верхній рівень замовлення з ref на User, без прив'язки до основної сутності</li>
+          <li><code>lib/models/OrderItem.js</code> &mdash; pivot-модель з двома ref + <code>quantity</code> + <code>priceAtOrder</code></li>
+          <li>Virtual populate <code>Order.items</code> налаштовано (<code>toJSON: { virtuals: true }</code>)</li>
+          <li><code>lib/validations/order.js</code> &mdash; create-схема з <code>items[]</code>, update-схема лише status/notes</li>
+          <li>Cascade hook на Drink: pull з OrderItem + delete empty Order</li>
+          <li>Cascade hook на Order: deleteMany OrderItem при видаленні замовлення</li>
+          <li><code>POST /api/orders</code> &mdash; атомарне створення з manual rollback при помилці</li>
+          <li><code>totalPrice</code> і <code>priceAtOrder</code> обчислюються на сервері (zero trust)</li>
+          <li>GET з вкладеним populate <code>items.drink</code></li>
+          <li>Фільтрація по ролі: user бачить лише свої, admin &mdash; усі</li>
+          <li>IDOR-захист у <code>GET /api/orders/[id]</code></li>
+          <li>Форма створення підтримує <strong>кілька позицій</strong> з кнопками додати/видалити</li>
+          <li>Сторінка деталей показує таблицю items з <code>priceAtOrder</code> та сумами</li>
+          <li>Seed створює Order + OrderItem разом</li>
+          <li>Статистика замовлень на dashboard видна лише admin (для user — секція прихована)</li>
+          <li>Admin може створити замовлення на іншого користувача (через випадаючий список у формі)</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Бонуси -->
+    <section class="lecture-section">
+      <h2>Бонусні завдання</h2>
+      <p>Необов'язкові задачі для вищого балу.</p>
+
+      <div class="task-box">
+        <h4>Бонус 1: Редагування items замовлення</h4>
+        <p>
+          Admin може на сторінці <code>/dashboard/orders/[id]/edit</code> додавати і видаляти позиції.
+          Сервер: <code>PUT /api/orders/[id]</code> приймає <code>items: [{ drink, quantity }]</code>,
+          перераховує <code>totalPrice</code>, видаляє старі OrderItem і створює нові атомарно.
+        </p>
+      </div>
+
+      <div class="task-box">
+        <h4>Бонус 2: Стратегія заборони замість каскаду</h4>
+        <p>
+          Реалізуйте альтернативу у <code>Drink.js</code> pre-hook: замість pull+delete викиньте
+          <code>throw new Error("Напій використовується у N замовленнях")</code>, якщо знайшли posts.
+          Обгорніть у try/catch у API, поверніть 409 Conflict.
+        </p>
+      </div>
+
+      <div class="task-box">
+        <h4>Бонус 3: Soft delete для Drink</h4>
+        <p>
+          Додайте <code>deletedAt</code> у Drink, модифікуйте <code>DELETE /api/drinks/[id]</code>
+          щоб виставляти прапорець замість реального видалення. Список напоїв фільтрує
+          <code>{ deletedAt: null }</code>, а <code>OrderItem.drink</code> продовжує посилатися на
+          &laquo;історичний&raquo; напій зі збереженим описом.
+        </p>
+      </div>
+
+      <div class="task-box">
+        <h4>Бонус 4: Аналітика drink-sales</h4>
+        <p>
+          Новий endpoint <code>GET /api/stats/top-drinks</code>: агрегація <code>OrderItem</code> за <code>drink</code>
+          з <code>$sum: "$quantity"</code>; сортування по популярності. Відобразіть на dashboard як топ-5.
+        </p>
+      </div>
+
+      <div class="task-box">
+        <h4>Бонус 5: Фільтр замовлень по напою</h4>
+        <p>
+          У <code>GET /api/orders?drink=&lt;id&gt;</code> поверніть лише замовлення, що містять цей напій.
+          Для цього спочатку візьміть <code>OrderItem.find({ drink }).distinct("order")</code>,
+          потім <code>Order.find({ _id: { $in: orderIds } })</code>.
+        </p>
+      </div>
+
+      <div class="task-box">
+        <h4>Бонус 6: Оптимізація одного запиту через $lookup</h4>
+        <p>
+          Замість двох populate-ів скористайтеся <code>Order.aggregate()</code> з <code>$lookup</code>,
+          щоб одним агрегаційним запитом витягти Order + items + drink. Порівняйте швидкість з populate
+          на 1000 замовлень.
+        </p>
+      </div>
+    </section>
+
+  </article>
+</body>
+</html>

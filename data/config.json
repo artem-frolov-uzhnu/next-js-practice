@@ -59,6 +59,12 @@
       "visible": true,
       "title": "Безпека веб-застосунків",
       "description": "OWASP Top 10, валідація zod, санітизація даних, безпекові HTTP-заголовки"
+    },
+    {
+      "id": 11,
+      "visible": true,
+      "title": "Другий CRUD об'єкт зі зв'язками",
+      "description": "MongoDB relations, Mongoose ref, populate(), one-to-many, cascade delete"
     }
   ]
 }
