@@ -65,6 +65,12 @@
       "visible": true,
       "title": "Другий CRUD об'єкт зі зв'язками",
       "description": "MongoDB relations, Mongoose ref, populate(), one-to-many, cascade delete"
+    },
+    {
+      "id": 12,
+      "visible": true,
+      "title": "UI/UX та форми (RHF + Zod + Sonner)",
+      "description": "React Hook Form, zodResolver, useFieldArray, sonner toast, reusable FormField"
     }
   ]
 }
