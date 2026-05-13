@@ -71,6 +71,12 @@
       "visible": true,
       "title": "UI/UX та форми (RHF + Zod + Sonner)",
       "description": "React Hook Form, zodResolver, useFieldArray, sonner toast, reusable FormField"
+    },
+    {
+      "id": 13,
+      "visible": true,
+      "title": "Деплоймент на Vercel + Production-готовність",
+      "description": "Vercel, env vars, next/image, SEO metadata + OpenGraph, robots.txt + sitemap.xml, README"
     }
   ]
 }

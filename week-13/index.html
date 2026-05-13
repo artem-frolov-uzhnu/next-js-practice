@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Практика 13: Деплоймент на Vercel + Production-готовність | Протокол заняття</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/practical.css">
+</head>
+<body>
+  <!-- Навігація -->
+  <nav class="lecture-nav">
+    <div class="container">
+      <div class="nav-title">Тиждень 13: Деплоймент на Vercel + Production-готовність</div>
+      <div class="nav-links">
+        <a href="../" class="btn btn-outline">&larr; Всі тижні</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Основний контент -->
+  <article class="lecture-content">
+    <!-- Заголовок -->
+    <header class="lecture-header">
+      <span class="lecture-number">Практика 13</span>
+      <h1>Деплоймент на Vercel + Production-готовність</h1>
+      <div class="lecture-meta">
+        <span>&#x1F4C5; Тиждень 13</span>
+        <span>&#x1F4BB; Практичне заняття</span>
+      </div>
+    </header>
+
+    <!-- Зміст -->
+    <nav class="toc">
+      <h3>Зміст заняття</h3>
+      <ol>
+        <li><a href="#setup">Підготовка проєкту до деплойменту</a></li>
+        <li><a href="#image">Оптимізація зображень з next/image</a></li>
+        <li><a href="#metadata">Розширення metadata + OpenGraph</a></li>
+        <li><a href="#robots-sitemap">robots.js + sitemap.js</a></li>
+        <li><a href="#readme">Написання README.md</a></li>
+        <li><a href="#vercel">Деплой на Vercel</a></li>
+        <li><a href="#verify">Перевірка production</a></li>
+        <li><a href="#github">Збереження та завантаження на GitHub</a></li>
+      </ol>
+    </nav>
+
+    <!-- Мета заняття -->
+    <section class="lecture-section">
+      <h2>Мета заняття</h2>
+      <p>
+        Підготувати ваш full-stack застосунок до production і задеплоїти його на Vercel. До
+        кінця практики у вас буде:
+      </p>
+      <ul>
+        <li>Публічний URL вигляду <code>https://your-app.vercel.app</code> &mdash; працюючий застосунок в інтернеті</li>
+        <li>Оптимізовані зображення через <code>next/image</code></li>
+        <li>SEO-готова сторінка: title-template, OpenGraph, Twitter Cards</li>
+        <li>Convention-based <code>robots.txt</code> та <code>sitemap.xml</code> через Next.js</li>
+        <li>Якісний <code>README.md</code> з демо-посиланням, скріншотами та інструкціями</li>
+        <li>Auto-deploy на push у <code>main</code> &mdash; кожен коміт автоматично деплоїться</li>
+      </ul>
+    </section>
+
+    <!-- Секція 1: Підготовка -->
+    <section class="lecture-section" id="setup">
+      <h2>1. Підготовка проєкту до деплойменту</h2>
+
+      <p>
+        Стартуємо з результату тижня 12: повний CRUD з RHF + Zod, авторизація, RBAC, безпека,
+        toast-нотифікації. Перевіряємо, що проєкт готовий до production-білда.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання 1.1: Створити робочу гілку</h4>
+        <ol>
+          <li>Перейти у директорію вашого проєкту: <code>cd шлях/до/вашого-проекту</code></li>
+          <li>Переконатися, що ви на основній гілці: <code>git status</code></li>
+          <li>Створити робочу гілку для тижня 13:
+            <pre><code>git checkout -b LR13</code></pre>
+          </li>
+        </ol>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 1.2: Перевірити .env.local.example</h4>
+        <p>
+          Файл <code>.env.local.example</code> повинен містити <strong>всі</strong> змінні, які
+          потрібні для запуску, без реальних значень. Це шаблон, який бачитиме той, хто склонує
+          ваш репозиторій.
+        </p>
+        <pre><code># .env.local.example
+MONGODB_URI=mongodb+srv://YOUR_USER:YOUR_PASSWORD@cluster0.xxxxx.mongodb.net/yourdb
+NEXTAUTH_SECRET=GENERATE_WITH_openssl_rand_base64_32
+NEXTAUTH_URL=http://localhost:3000
+NEXT_PUBLIC_SITE_URL=http://localhost:3000</code></pre>
+        <p>
+          Якщо у вашому <code>.env.local.example</code> чогось не вистачає &mdash; додайте.
+        </p>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 1.3: Перевірити .gitignore</h4>
+        <p>
+          Файл <code>.env.local</code> з реальними секретами <strong>не повинен бути в git</strong>.
+          Перевірте <code>.gitignore</code>:
+        </p>
+        <pre><code>cat .gitignore | grep .env</code></pre>
+        <p>Має бути рядок (приходить з <code>create-next-app</code>):</p>
+        <pre><code># env files (can opt-in for committing if needed)
+.env*</code></pre>
+        <p>Якщо це є &mdash; <code>.env.local</code> не комітиться, все ок.</p>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 1.4: Локальний production-білд</h4>
+        <p>
+          Це <strong>найважливіша перевірка перед деплоєм</strong>. Vercel запускає той самий
+          <code>next build</code>, що й ви локально.
+        </p>
+        <pre><code>npm run build</code></pre>
+        <p>
+          Якщо білд проходить (бачите &laquo;Compiled successfully&raquo; і таблицю маршрутів) &mdash;
+          можна деплоїти. Якщо ламається &mdash; виправляйте помилки тут, а не в Vercel.
+        </p>
+      </div>
+
+      <div class="error-box">
+        <h5>&#x26A0;&#xFE0F; Якщо білд не проходить</h5>
+        <ul>
+          <li><strong>Type errors</strong> &mdash; виправте відповідно до повідомлення</li>
+          <li><strong>Module not found</strong> &mdash; пропущена залежність, <code>npm install</code></li>
+          <li><strong>Environment variable required</strong> &mdash; не використовуйте <code>process.env.X</code> у глобальному scope без default-значення (під час білда змінні можуть бути недоступні)</li>
+        </ul>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x1F50D; Чек-точка</h5>
+        <p>Перед переходом далі у вас має бути:</p>
+        <ul>
+          <li>Гілка <code>LR13</code> створена</li>
+          <li><code>.env.local.example</code> повний і актуальний</li>
+          <li><code>npm run build</code> проходить локально без помилок</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Секція 2: next/image -->
+    <section class="lecture-section" id="image">
+      <h2>2. Оптимізація зображень з next/image</h2>
+
+      <p>
+        Знайдемо у проєкті місця, де є <code>&lt;img&gt;</code> або велика hero-секція без
+        картинки, і використаємо <code>next/image</code>.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання 2.1: Знайти існуючі &lt;img&gt;</h4>
+        <pre><code>grep -rn "&lt;img" app components --include="*.js" --include="*.jsx"</code></pre>
+        <p>
+          Якщо знайшли &mdash; замініть на <code>&lt;Image&gt;</code> з <code>next/image</code>.
+        </p>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 2.2: Hero-картинка на головній сторінці</h4>
+        <p>
+          Якщо у вас на головній є hero-секція з градієнтом, додайте справжню фонову картинку.
+          Беремо безкоштовне зображення з <strong>Unsplash</strong> &mdash; його URL стабільний:
+        </p>
+        <pre><code>https://images.unsplash.com/photo-XXXXXXXXXXXXX?auto=format&amp;fit=crop&amp;w=1600&amp;q=80</code></pre>
+        <p>
+          Для своєї теми проєкту знайдіть тематичне зображення на <a href="https://unsplash.com" target="_blank">unsplash.com</a>
+          (бібліотека, фітнес, готель тощо), скопіюйте URL.
+        </p>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 2.3: Замінити hero на &lt;Image&gt;</h4>
+        <p>Відкрийте <code>app/page.js</code> і додайте hero-секцію з оптимізованим зображенням:</p>
+        <pre><code>import Image from "next/image";
+
+&lt;section className="relative h-[480px] flex items-center justify-center overflow-hidden"&gt;
+  &lt;Image
+    src="https://images.unsplash.com/photo-XXX?auto=format&amp;fit=crop&amp;w=1600&amp;q=80"
+    alt="Опис вашого зображення"
+    fill
+    priority
+    sizes="100vw"
+    className="object-cover"
+  /&gt;
+  {/* Темний overlay для читабельності тексту */}
+  &lt;div className="absolute inset-0 bg-gradient-to-r from-amber-900/80 to-amber-700/60" /&gt;
+  &lt;div className="relative container mx-auto px-4 text-center text-white"&gt;
+    &lt;h1 className="text-5xl font-bold mb-4"&gt;Назва вашого проєкту&lt;/h1&gt;
+    {/* ... решта вмісту hero ... */}
+  &lt;/div&gt;
+&lt;/section&gt;</code></pre>
+        <p>Звертаємо увагу:</p>
+        <ul>
+          <li><code>fill</code> &mdash; картинка заповнює батьківський контейнер</li>
+          <li>Батько має <code>position: relative</code> (через клас <code>relative</code>) і фіксовану висоту (<code>h-[480px]</code>)</li>
+          <li><code>priority</code> &mdash; картинка above-the-fold, завантажується першою</li>
+          <li><code>sizes="100vw"</code> &mdash; підказка браузеру: картинка займає всю ширину viewport</li>
+          <li><code>object-cover</code> &mdash; картинка обрізається, не розтягується</li>
+        </ul>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 2.4: Дозволити Unsplash у next.config.mjs</h4>
+        <p>
+          Без цього отримаєте помилку <em>"Invalid src prop... hostname is not configured"</em>:
+        </p>
+        <pre><code>// next.config.mjs
+const nextConfig = {
+  // Тиждень 13: дозволені домени для next/image
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "images.unsplash.com",
+      },
+    ],
+  },
+
+  // Тиждень 10: безпекові HTTP-заголовки
+  async headers() { /* ... */ },
+};</code></pre>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 2.5: Перевірити локально</h4>
+        <ol>
+          <li>Перезапустити dev-сервер (<code>Ctrl+C</code> &rarr; <code>npm run dev</code>) &mdash; зміни в <code>next.config.mjs</code> вимагають рестарту</li>
+          <li>Відкрити <code>http://localhost:3000</code></li>
+          <li>Hero-картинка має з'явитися</li>
+          <li>DevTools &rarr; Network &rarr; Img &mdash; побачите, що Next.js обслуговує <strong>WebP</strong> через свій ендпоінт <code>/_next/image?url=...</code></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Секція 3: Metadata -->
+    <section class="lecture-section" id="metadata">
+      <h2>3. Розширення metadata + OpenGraph</h2>
+
+      <p>
+        Зараз ваш <code>app/layout.js</code> має базові <code>title</code> + <code>description</code>.
+        Розширимо до повноцінного production-набору з OpenGraph і Twitter Cards.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання 3.1: Створити OG-зображення</h4>
+        <p>
+          Вам потрібна картинка <strong>1200&times;630px</strong> (стандарт OG) у <code>public/</code>.
+          Найпростіший варіант &mdash; SVG із градієнтом і назвою:
+        </p>
+        <pre><code>// public/og-image.svg
+&lt;svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630"&gt;
+  &lt;defs&gt;
+    &lt;linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"&gt;
+      &lt;stop offset="0%" stop-color="#92400e" /&gt;
+      &lt;stop offset="100%" stop-color="#d97706" /&gt;
+    &lt;/linearGradient&gt;
+  &lt;/defs&gt;
+  &lt;rect width="1200" height="630" fill="url(#bg)" /&gt;
+  &lt;text x="600" y="280" font-family="system-ui" font-size="120" font-weight="700"
+        fill="#ffffff" text-anchor="middle"&gt;Назва проєкту&lt;/text&gt;
+  &lt;text x="600" y="380" font-family="system-ui" font-size="36"
+        fill="#fef3c7" text-anchor="middle"&gt;Слоган&lt;/text&gt;
+&lt;/svg&gt;</code></pre>
+        <p>
+          Для свого проєкту змініть градієнт під свою тему (зелений для бібліотеки, синій для готелю
+          тощо) і вставте назву.
+        </p>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 3.2: Розширити metadata в app/layout.js</h4>
+        <pre><code>// app/layout.js
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+export const metadata = {
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Назва проєкту",
+    template: "%s | Назва проєкту",
+  },
+  description: "Опис вашого проєкту в одному реченні.",
+  keywords: ["ключове-слово-1", "ключове-слово-2"],
+  authors: [{ name: "Назва проєкту" }],
+  openGraph: {
+    type: "website",
+    locale: "uk_UA",
+    url: "/",
+    siteName: "Назва проєкту",
+    title: "Назва проєкту",
+    description: "Опис.",
+    images: [
+      {
+        url: "/og-image.svg",
+        width: 1200,
+        height: 630,
+        alt: "Назва проєкту",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Назва проєкту",
+    description: "Опис.",
+    images: ["/og-image.svg"],
+  },
+};</code></pre>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 3.3: Додати title для публічних сторінок</h4>
+        <p>
+          Для кожної публічної сторінки (наприклад, <code>/menu</code>, <code>/about</code>)
+          додайте власний <code>title</code> &mdash; шаблон з root layout автоматично додасть
+          &laquo;| Назва проєкту&raquo;:
+        </p>
+        <pre><code>// app/menu/page.js
+export const metadata = {
+  title: "Меню",
+  description: "Перегляньте повне меню кав'ярні.",
+};</code></pre>
+        <p>
+          Зробіть те саме для <code>/about</code> і будь-яких інших публічних сторінок.
+        </p>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 3.4: generateMetadata для динамічних сторінок</h4>
+        <p>
+          У вас уже є <code>app/menu/[id]/page.js</code> (або аналогічний для вашого варіанту) з
+          <code>generateMetadata</code> з тижня 7. Перевірте, що він повертає <code>title</code> =
+          назві з БД, і опціонально розширте <code>openGraph.title</code> + <code>openGraph.description</code>.
+        </p>
+        <pre><code>export async function generateMetadata({ params }) {
+  const { id } = await params;
+  await dbConnect();
+  const item = await Item.findById(id).lean();
+  if (!item) return { title: "Не знайдено" };
+
+  return {
+    title: item.name,
+    description: item.description,
+    openGraph: {
+      title: item.name,
+      description: item.description,
+    },
+  };
+}</code></pre>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x1F50D; Перевірка</h5>
+        <ol>
+          <li>Перезапустити dev-сервер</li>
+          <li>Відкрити будь-яку сторінку, у браузері: <strong>View Page Source</strong> (Ctrl+U)</li>
+          <li>У <code>&lt;head&gt;</code> побачите:</li>
+        </ol>
+        <pre><code>&lt;title&gt;Меню | Назва проєкту&lt;/title&gt;
+&lt;meta name="description" content="..."/&gt;
+&lt;meta property="og:title" content="..."/&gt;
+&lt;meta property="og:image" content="http://localhost:3000/og-image.svg"/&gt;
+&lt;meta name="twitter:card" content="summary_large_image"/&gt;</code></pre>
+      </div>
+    </section>
+
+    <!-- Секція 4: robots + sitemap -->
+    <section class="lecture-section" id="robots-sitemap">
+      <h2>4. robots.js + sitemap.js</h2>
+
+      <div class="task-box">
+        <h4>Завдання 4.1: Створити app/robots.js</h4>
+        <pre><code>// app/robots.js
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+export default function robots() {
+  return {
+    rules: [
+      {
+        userAgent: "*",
+        allow: "/",
+        disallow: ["/dashboard/", "/api/", "/login", "/register"],
+      },
+    ],
+    sitemap: `${siteUrl}/sitemap.xml`,
+  };
+}</code></pre>
+        <p>Заборонили ботам індексувати приватні маршрути. Допустили все інше.</p>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 4.2: Створити app/sitemap.js</h4>
+        <pre><code>// app/sitemap.js
+import dbConnect from "@/lib/db";
+import Item from "@/lib/models/Item";
+// ^^^ замініть на свою основну модель (Book, Property, Vacancy тощо)
+
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+export default async function sitemap() {
+  const staticRoutes = [
+    { url: `${siteUrl}/`, lastModified: new Date(), changeFrequency: "weekly", priority: 1 },
+    { url: `${siteUrl}/menu`, lastModified: new Date(), changeFrequency: "daily", priority: 0.9 },
+    { url: `${siteUrl}/about`, lastModified: new Date(), changeFrequency: "monthly", priority: 0.5 },
+  ];
+
+  let dynamicRoutes = [];
+  try {
+    await dbConnect();
+    const items = await Item.find({ available: true }).select("_id updatedAt").lean();
+    dynamicRoutes = items.map((d) =&gt; ({
+      url: `${siteUrl}/menu/${d._id}`,
+      lastModified: d.updatedAt || new Date(),
+      changeFrequency: "weekly",
+      priority: 0.7,
+    }));
+  } catch {
+    // якщо БД недоступна під час білда &mdash; повертаємо лише статичні
+  }
+
+  return [...staticRoutes, ...dynamicRoutes];
+}</code></pre>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x1F50D; Перевірка</h5>
+        <ol>
+          <li>Відкрити <code>http://localhost:3000/robots.txt</code> &mdash; побачити текстовий robots</li>
+          <li>Відкрити <code>http://localhost:3000/sitemap.xml</code> &mdash; побачити XML з усіма URL</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Секція 5: README -->
+    <section class="lecture-section" id="readme">
+      <h2>5. Написання README.md</h2>
+
+      <p>
+        Зараз у вас у корені проєкту, ймовірно, дефолтний README від <code>create-next-app</code>
+        (про <code>npm run dev</code> і кілька абзаців про Next.js). Замінимо його на якісний.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання 5.1: Створити README.md</h4>
+        <p>Замінити <code>README.md</code> у корені проєкту на:</p>
+        <pre><code># Назва вашого проєкту
+
+Один-два рядки опису: що це за проєкт, для кого, які основні функції.
+
+&gt; **Демо:** _додати посилання на Vercel-деплой після першого деплойменту_
+
+## Скріншоти
+
+_Додайте 3&ndash;5 скріншотів основних сторінок (головна, дашборд, форма тощо)._
+
+## Можливості
+
+- 🔐 Аутентифікація &mdash; реєстрація, логін, logout (NextAuth.js)
+- 👥 RBAC &mdash; дві ролі (admin, user) з розмежуванням доступу
+- 📚 CRUD основної сутності з валідацією
+- 🛒 Друга сутність зі зв'язками
+- 🎨 Сучасні форми &mdash; React Hook Form + Zod + Sonner
+- 🛡️ Безпека &mdash; серверна валідація, санітизація, security headers
+- 🚀 Production-ready &mdash; next/image, SEO metadata, robots.txt + sitemap.xml
+
+## Технологічний стек
+
+- **Frontend:** Next.js 16 (App Router), React 19, Tailwind CSS 4
+- **Backend:** Next.js API Routes, NextAuth.js, bcrypt
+- **База даних:** MongoDB Atlas + Mongoose ODM
+- **Форми:** React Hook Form + Zod
+- **UI feedback:** Sonner (toast)
+- **Деплой:** Vercel + GitHub
+
+## Локальний запуск
+
+\`\`\`bash
+git clone https://github.com/&lt;your-username&gt;/&lt;your-repo&gt;.git
+cd &lt;your-repo&gt;
+npm install
+cp .env.local.example .env.local
+# заповніть змінні в .env.local
+npm run dev
+\`\`\`
+
+## Змінні середовища
+
+| Змінна | Опис |
+|--------|------|
+| `MONGODB_URI` | Connection string з MongoDB Atlas |
+| `NEXTAUTH_SECRET` | згенерувати: `openssl rand -base64 32` |
+| `NEXTAUTH_URL` | URL застосунку (на Vercel = публічний URL) |
+| `NEXT_PUBLIC_SITE_URL` | URL для metadata, sitemap, robots |
+
+## Деплой на Vercel
+
+1. Push код на GitHub
+2. На vercel.com &mdash; Add New Project &rarr; Import репозиторію
+3. Додайте змінні з .env.local.example
+4. Deploy
+5. Оновіть `NEXTAUTH_URL` і `NEXT_PUBLIC_SITE_URL` на отриманий Vercel-URL &rarr; Redeploy</code></pre>
+        <p>Замініть назви, опис, фічі під ваш конкретний варіант проєкту.</p>
+      </div>
+
+      <div class="info-box info">
+        Скріншоти додамо після першого деплойменту. Зараз залишіть placeholder.
+      </div>
+    </section>
+
+    <!-- Секція 6: Vercel deploy -->
+    <section class="lecture-section" id="vercel">
+      <h2>6. Деплой на Vercel</h2>
+
+      <div class="task-box">
+        <h4>Завдання 6.1: Запушити поточні зміни на GitHub</h4>
+        <pre><code>git add .
+git commit -m "Week 13: production-ready (next/image, metadata, robots, sitemap, README)"
+git push origin LR13</code></pre>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 6.2: Merge LR13 у main</h4>
+        <p>Зробіть PR або merge напряму:</p>
+        <pre><code>git checkout main
+git merge LR13
+git push origin main</code></pre>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 6.3: Реєстрація на Vercel</h4>
+        <ol>
+          <li>Відкрити <a href="https://vercel.com/signup" target="_blank">vercel.com/signup</a></li>
+          <li>Натиснути <strong>Continue with GitHub</strong></li>
+          <li>Авторизувати Vercel доступ до вашого GitHub-акаунту</li>
+        </ol>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 6.4: Імпорт проєкту</h4>
+        <ol>
+          <li>На головній Vercel Dashboard &mdash; <strong>Add New&hellip; &rarr; Project</strong></li>
+          <li>У списку GitHub-репозиторіїв знайти ваш &mdash; натиснути <strong>Import</strong></li>
+          <li>Vercel автоматично визначить, що це Next.js. <strong>Не змінюйте</strong> Build Command, Output Directory, Install Command &mdash; усе має бути за замовчуванням</li>
+        </ol>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 6.5: Налаштувати Environment Variables</h4>
+        <p>
+          У секції <strong>Environment Variables</strong> додайте всі змінні з вашого
+          <code>.env.local</code>:
+        </p>
+        <table style="width: 100%; border-collapse: collapse; margin: 1rem 0;">
+          <thead>
+            <tr style="background: #f3f4f6;">
+              <th style="padding: 0.5rem; text-align: left; border: 1px solid #e5e7eb;">Key</th>
+              <th style="padding: 0.5rem; text-align: left; border: 1px solid #e5e7eb;">Value</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="padding: 0.5rem; border: 1px solid #e5e7eb;"><code>MONGODB_URI</code></td>
+              <td style="padding: 0.5rem; border: 1px solid #e5e7eb;">ваш Atlas connection string</td>
+            </tr>
+            <tr>
+              <td style="padding: 0.5rem; border: 1px solid #e5e7eb;"><code>NEXTAUTH_SECRET</code></td>
+              <td style="padding: 0.5rem; border: 1px solid #e5e7eb;">той самий, що й локально</td>
+            </tr>
+            <tr>
+              <td style="padding: 0.5rem; border: 1px solid #e5e7eb;"><code>NEXTAUTH_URL</code></td>
+              <td style="padding: 0.5rem; border: 1px solid #e5e7eb;">тимчасово залишіть <code>http://localhost:3000</code> &mdash; оновимо після деплою</td>
+            </tr>
+            <tr>
+              <td style="padding: 0.5rem; border: 1px solid #e5e7eb;"><code>NEXT_PUBLIC_SITE_URL</code></td>
+              <td style="padding: 0.5rem; border: 1px solid #e5e7eb;">тимчасово <code>http://localhost:3000</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 6.6: Whitelist у MongoDB Atlas</h4>
+        <p>
+          Vercel використовує динамічні IP. Якщо у MongoDB Atlas обмежено доступ &mdash; деплой
+          задеплоїться, але <strong>API крутитиме 500-помилки</strong>.
+        </p>
+        <ol>
+          <li>Відкрити <a href="https://cloud.mongodb.com" target="_blank">cloud.mongodb.com</a></li>
+          <li>Зайти у ваш кластер &rarr; <strong>Network Access</strong></li>
+          <li><strong>Add IP Address</strong> &rarr; <strong>Allow Access from Anywhere</strong> (0.0.0.0/0)</li>
+          <li>Підтвердити (зміна застосовується через 1&ndash;2 хвилини)</li>
+        </ol>
+        <div class="info-box info">
+          <strong>Чому це безпечно для навчального проєкту:</strong> MongoDB все одно вимагає логін/пароль з connection string. <code>0.0.0.0/0</code> &mdash; це лише про мережевий шар.
+        </div>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 6.7: Перший деплой</h4>
+        <ol>
+          <li>Натиснути <strong>Deploy</strong></li>
+          <li>Чекати 1&ndash;2 хвилини, поки йде білд</li>
+          <li>Після успіху Vercel показує preview скріншот і URL вигляду <code>https://your-project.vercel.app</code></li>
+        </ol>
+      </div>
+
+      <div class="error-box">
+        <h5>&#x26A0;&#xFE0F; Якщо білд впав</h5>
+        <ul>
+          <li>Натисніть <em>View Build Logs</em> &mdash; шукайте останню помилку</li>
+          <li>Виправіть локально, push &mdash; новий коміт автоматично запустить новий білд</li>
+          <li>Якщо помилка &laquo;Module not found&raquo; &mdash; перевірте <code>package.json</code></li>
+          <li>Якщо <code>process.env.X is undefined</code> &mdash; забули додати змінну в Settings</li>
+        </ul>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 6.8: Оновити NEXTAUTH_URL і NEXT_PUBLIC_SITE_URL</h4>
+        <p>
+          Тепер у вас є реальний production-URL. Скопіюйте його (наприклад, <code>https://my-app-abc123.vercel.app</code>):
+        </p>
+        <ol>
+          <li>У Vercel Dashboard &rarr; ваш проєкт &rarr; <strong>Settings &rarr; Environment Variables</strong></li>
+          <li>Знайти <code>NEXTAUTH_URL</code>, натиснути <strong>Edit</strong>, замінити значення на ваш Vercel-URL, зберегти</li>
+          <li>Те саме для <code>NEXT_PUBLIC_SITE_URL</code></li>
+          <li>Перейти у вкладку <strong>Deployments</strong>, на останньому деплої &mdash; <strong>...</strong> &rarr; <strong>Redeploy</strong></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Секція 7: Перевірка -->
+    <section class="lecture-section" id="verify">
+      <h2>7. Перевірка production</h2>
+
+      <div class="task-box">
+        <h4>Завдання 7.1: Smoke test основних flows</h4>
+        <ol>
+          <li>Відкрити ваш Vercel-URL у браузері</li>
+          <li>Зареєструвати нового користувача (через <code>/register</code>)</li>
+          <li>Залогінитися</li>
+          <li>Створити запис основної сутності</li>
+          <li>Створити запис другої (зв'язаної) сутності</li>
+          <li>Видалити запис</li>
+          <li>Зайти як admin (треба зробити користувача admin вручну в Mongo Compass)</li>
+          <li>Перевірити, що сторінка <code>/dashboard/users</code> доступна</li>
+        </ol>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 7.2: Перевірити SEO та зображення</h4>
+        <ol>
+          <li>Відкрити будь-яку публічну сторінку, View Page Source (Ctrl+U)</li>
+          <li>Знайти <code>&lt;title&gt;</code>, <code>&lt;meta property="og:..."&gt;</code> &mdash; вони мають бути з абсолютними URL (з вашим Vercel-доменом)</li>
+          <li>Відкрити <code>https://your-app.vercel.app/robots.txt</code> &mdash; перевірити, що sitemap-URL правильний</li>
+          <li>Відкрити <code>https://your-app.vercel.app/sitemap.xml</code> &mdash; перевірити XML</li>
+          <li>DevTools &rarr; Network &rarr; Img &mdash; hero-зображення має приходити через <code>/_next/image?...</code> у форматі WebP</li>
+        </ol>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 7.3: Перевірити OpenGraph через зовнішній сервіс</h4>
+        <p>
+          Відкрити <a href="https://www.opengraph.xyz" target="_blank">opengraph.xyz</a>, вставити
+          ваш Vercel-URL, побачити preview-картку для соцмереж. Якщо OG-картинка показується &mdash;
+          metadata налаштовано правильно.
+        </p>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 7.4: Переглянути логи у Vercel</h4>
+        <ol>
+          <li>Vercel Dashboard &rarr; ваш проєкт &rarr; <strong>Logs</strong></li>
+          <li>Зробіть кілька запитів до застосунку</li>
+          <li>У логах побачите HTTP-запити, статус-коди, час відповіді</li>
+          <li>Якщо щось 500-тить &mdash; тут буде stack trace</li>
+        </ol>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 7.5: Оновити README з реальним демо</h4>
+        <ol>
+          <li>Зробіть 3-5 скріншотів вашого застосунку (головна, дашборд, форма, деталі)</li>
+          <li>Покладіть їх у <code>public/screenshots/</code> або (краще) додайте у README через GitHub-завантаження зображень (drag-and-drop у markdown editor)</li>
+          <li>Замініть placeholder &laquo;_додати посилання_&raquo; на реальний Vercel-URL</li>
+          <li>Commit + push</li>
+          <li>Перевірте, що README на GitHub виглядає добре, скріншоти показуються, посилання працюють</li>
+        </ol>
+      </div>
+
+      <div class="checkpoint">
+        <h5>&#x1F50D; Чек-точка</h5>
+        <ul>
+          <li>Застосунок доступний за публічним URL</li>
+          <li>Реєстрація + логін працюють у production</li>
+          <li>CRUD працює у production</li>
+          <li><code>/robots.txt</code>, <code>/sitemap.xml</code> віддаються</li>
+          <li>OG-теги абсолютні (з вашим доменом)</li>
+          <li>README з демо-посиланням і скріншотами</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Секція 8: GitHub -->
+    <section class="lecture-section" id="github">
+      <h2>8. Збереження та завантаження на GitHub</h2>
+
+      <p>
+        Усі зміни вже на GitHub (для деплою це обов'язково). Цей крок &mdash; формальний:
+        перевірити стан, переконатися, що нічого не залишилося не закомічене.
+      </p>
+
+      <div class="task-box">
+        <h4>Завдання 8.1: Фінальна перевірка</h4>
+        <pre><code>git status</code></pre>
+        <p>Має бути <em>nothing to commit, working tree clean</em>. Якщо є зміни (наприклад,
+        оновлений README зі скріншотами) &mdash; commit і push:</p>
+        <pre><code>git add .
+git commit -m "Add screenshots and demo link to README"
+git push origin main</code></pre>
+        <p>Кожен push автоматично запускає новий Vercel-деплой.</p>
+      </div>
+
+      <div class="task-box">
+        <h4>Завдання 8.2: Перевірити автоматичний redeploy</h4>
+        <ol>
+          <li>Vercel Dashboard &rarr; <strong>Deployments</strong></li>
+          <li>Побачити новий deployment з вашим коміт-message</li>
+          <li>Через 1&ndash;2 хвилини він стає <em>Ready</em></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Підсумок -->
+    <section class="lecture-section">
+      <h2>Підсумок</h2>
+
+      <div class="final-result">
+        <h4>&#x1F3AF; Кінцевий результат тижня 13</h4>
+        <p>До кінця заняття ваш проєкт має задовольняти всі критерії:</p>
+        <ul class="criteria-list">
+          <li>Hero-секція використовує <code>&lt;Image&gt;</code> з <code>next/image</code> (з <code>fill</code> + <code>priority</code> + <code>sizes</code>)</li>
+          <li>У <code>next.config.mjs</code> налаштовано <code>images.remotePatterns</code> для зовнішнього домену</li>
+          <li>У <code>app/layout.js</code> розширено metadata: <code>metadataBase</code>, <code>title.template</code>, <code>openGraph</code>, <code>twitter</code></li>
+          <li>Створено <code>public/og-image.svg</code> 1200&times;630</li>
+          <li>Публічні сторінки мають власний <code>title</code></li>
+          <li>Створено <code>app/robots.js</code> &mdash; <code>/robots.txt</code> віддається</li>
+          <li>Створено <code>app/sitemap.js</code> &mdash; <code>/sitemap.xml</code> віддається з динамічними URL</li>
+          <li><code>README.md</code> у корені &mdash; з опису, demo-link, скріншотами, локальним запуском</li>
+          <li><code>.env.local.example</code> повний (включаючи <code>NEXT_PUBLIC_SITE_URL</code>)</li>
+          <li>Проєкт задеплоєно на Vercel за публічним URL</li>
+          <li>Аутентифікація + логін працюють у production</li>
+          <li>CRUD працює у production</li>
+          <li><code>NEXTAUTH_URL</code> у Vercel = реальному production-URL</li>
+          <li>MongoDB Atlas IP whitelist налаштовано (0.0.0.0/0 або строжче)</li>
+          <li>Гілку <code>LR13</code> змержено у <code>main</code>, push на GitHub</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Бонусні завдання -->
+    <section class="lecture-section">
+      <h2>Бонусні завдання</h2>
+
+      <div class="info-box info">
+        Бонусні завдання не є обов'язковими і не впливають на наступні практичні роботи.
+        Виконуються за бажанням для додаткових балів.
+      </div>
+
+      <h3>Бонус 1: Custom domain</h3>
+
+      <p>
+        Купити дешевий <code>.dev</code> або <code>.tech</code> домен (10&ndash;15 USD/рік) і
+        підключити до Vercel: <strong>Settings &rarr; Domains</strong>. Налаштувати DNS-записи у реєстратора
+        (зазвичай A-record + CNAME). Vercel автоматично видасть Let's Encrypt SSL.
+      </p>
+
+      <h3>Бонус 2: Динамічна OG-картинка</h3>
+
+      <p>
+        Замість статичного <code>og-image.svg</code> створити <code>app/opengraph-image.js</code>
+        або <code>app/menu/[id]/opengraph-image.js</code> &mdash; Next.js згенерує OG-image на льоту
+        через <code>ImageResponse</code> (з тексту, кольорів, fonts).
+      </p>
+
+      <h3>Бонус 3: Vercel Analytics</h3>
+
+      <p>
+        У Vercel Dashboard &rarr; <strong>Analytics</strong>. Безкоштовний tier для базових метрик.
+        Встановити <code>@vercel/analytics</code> і додати <code>&lt;Analytics /&gt;</code> у root layout.
+        Через кілька годин побачите Core Web Vitals реальних користувачів.
+      </p>
+
+      <h3>Бонус 4: Strict IP whitelist для MongoDB</h3>
+
+      <p>
+        Замінити <code>0.0.0.0/0</code> на конкретні Vercel IP-діапазони (доступні у Vercel docs).
+        Безпечніше, але вимагає періодичного оновлення, якщо Vercel змінить діапазони.
+      </p>
+
+      <h3>Бонус 5: Lighthouse CI</h3>
+
+      <p>
+        Запустити Lighthouse audit (вкладка Lighthouse у Chrome DevTools) на ваш Vercel-URL.
+        Ціль: 90+ за всіма метриками (Performance, Accessibility, Best Practices, SEO).
+        Якщо є проблеми &mdash; виправити (alt-теги, контраст, semantic HTML).
+      </p>
+
+      <h3>Бонус 6: Sentry або інша error monitoring</h3>
+
+      <p>
+        Підключити <a href="https://sentry.io" target="_blank">Sentry</a> для моніторингу
+        помилок у production. Безкоштовний tier дає 5K events/month. Бачитимете кожну помилку
+        з stack trace, user agent, breadcrumbs.
+      </p>
+    </section>
+  </article>
+
+  <footer style="background: #1f2937; color: #d1d5db; padding: 2rem 0; text-align: center; margin-top: 3rem;">
+    <div class="container">
+      <p>Курс &quot;Основи обробки та передачі інформації&quot; | Кібербезпека та захист інформації, 3 курс</p>
+    </div>
+  </footer>
+</body>
+</html>
